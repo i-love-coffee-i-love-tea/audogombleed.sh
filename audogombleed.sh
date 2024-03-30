@@ -234,17 +234,22 @@ _cli_log() {
 	local level=$1
 	shift
 
-	# log file is not open
-	if _cli_global_is_set LOG_OPENED && _cli_global_equals LOG_OPENED "1"; then
-		return
-	fi
-
 	# set log level if not set
 	if ! _cli_global_is_set CFG_LOG_LEVEL; then
 		_cli_global CFG_LOG_LEVEL 0
+		return
 	fi
 
-	# level matches?
+	# log file is not open
+	if ! _cli_global_is_set LOG_OPENED; then
+		return
+	fi
+	# log file is not open
+	if _cli_global_equals LOG_OPENED "1"; then
+		return
+	fi
+
+	# level does not match
 	if ! _cli_log_level_is_enabled "$level"; then
 		return
 	fi
@@ -286,16 +291,19 @@ _cli_is_sourced() {
 
 _cli_open_logfile() {
 	# log disabled?
-	if _cli_global_equals CFG_LOG_LEVEL "0" \
-	|| _cli_global_equals LOG_OPENED "0"; then
+	if _cli_global_equals CFG_LOG_LEVEL "0"; then
 		return
 	fi
+
+	if _cli_global_equals LOG_OPENED "0"; then
+		return
+	fi
+
 	if exec 3>"/tmp/cli$(_cli_get_shell_name).log";  then
-		_cli_global LOG_OPENED 0
+		_cli_global LOG_OPENED "0"
 		_cli_log 1 ">>>>>>>>>>>>>> file opened $(date +'%X %S.%N' ) >>>>>>>>>>>>>>>>"
 		_cli_log 1 "cli script: $__CLI_PROGNAME"
 	fi
-
 }
 
 _cli_close_logfile() {
@@ -1378,7 +1386,7 @@ $env_line"
 		_cli_log 1 "__CLI_CFG_LOG_LEVEL set to $(_cli_global CFG_LOG_LEVEL) by config. was $prev_log_level"
 		if [ "$(_cli_global CFG_LOG_LEVEL)" -gt 0 ] && [ "$prev_log_level" -lt 1 ]; then
 			# log enabled
-			_cli_open_logfile	
+			_cli_open_logfile
 		elif _cli_global_equals CFG_LOG_LEVEL "0" && [ "$prev_log_level" != "0" ]; then
 			# log disabled
             newlevel=$(_cli_global CFG_LOG_LEVEL)
@@ -1624,7 +1632,6 @@ _cli_getfirstwords() {
             break
 		done
     done | sort | uniq
-    #done < <(_awk output=command_names command_filter="$word") | sort| uniq
 }
 
 _cli_trim() {
@@ -1829,14 +1836,11 @@ _cli_complete_command() {
 			read -a a_cmd <<<"$cmd"
 		fi
 		if [ ! -z "${a_cmd[pos]}" ]; then
-			echo "${a_cmd[pos]}"
+			#echo "${a_cmd[pos]}"
+			_cli_log 4 "adding ${a_cmd[pos]}"
+			COMPREPLY+=("${a_cmd[pos]}")
 		fi
-	done < <(_awk output=command_names command_filter="$line") | uniq | \
-	while read match; do
-		_cli_log 4 "adding ${match}"
-		COMPREPLY+=("$match")
-	done
-
+	done < <(_awk output=command_names command_filter="$line")
 }
 
 _cli_complete_arg() {
