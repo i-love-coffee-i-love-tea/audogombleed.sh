@@ -18,7 +18,7 @@
              off: echo power off
              status: echo power status
           deeper
-             tree
+             tree                
                 echo: echo
                     :value:first
                     :list:fu|bar|fubar
@@ -31,6 +31,11 @@
    want to use: 
 
         $ source ~/bin/cluster-cli
+
+
+4. create an alias. it must be the same name as the link you sourced.
+
+        $ alias cluster-cli='_cli_execute'
 
 ## Testing autocompletion
 
