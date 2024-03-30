@@ -19,7 +19,7 @@ listed as if they were defined in `~/.cli.conf`.
 
 
 
-# Visualization if a root cli config importing the commands from two other config files
+# Visualization of a root cli config importing the commands from two other config files
 
 
                                                                                                                                                                                                                                
