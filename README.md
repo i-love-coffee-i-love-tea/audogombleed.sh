@@ -65,13 +65,17 @@ Run in script mode. This disables all output on stdout and stderr
 and those features which might require interactive user input.
 Namely only command expansion at the moment.
 
-Sets __CLI_CFG_SILENT="y"
-Sets __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS="n"
+- Sets __CLI_CFG_SILENT="y"
+- Sets __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS="n"
 
 
 ## --cli-print-awk-script
 
+Prints the embedded AWK script
+
 ## --cli-run-awk-command
+
+Runs the embedded AWK config parser script. Only there for development purposes.
 
 
 # Builtin Help Output
@@ -81,44 +85,43 @@ all configured commands.
 
 '?' can also be append to complete or incomplete commands.
 
-Example:
+Example configuration:
 
+    [commands]
+    # help for 'this' command group
+    this
+        # help for 'this is-the' command group
+        is-the
+            # help for command
+            command: echo it does nothing
 
-    Definition
+Display command help by appending a '?' or '-h' to the command line.
+When appended to a command group it will list the available 
+commands in the group/tree
 
-       [commands]
-       # help for 'this' command group
-       this
-            # help for 'this is-the' command group
-            is-the
-                # help for command
-                command: echo it does nothing
+    $ cli this is-the ?
+    help for 'this is-the' command group
 
-Display command help
+        command
 
-        $ cli this is-the ?
-        help for 'this is-the' command group
+When appended to a command, it will print detailed command help, if available
 
-            command
-
-
-        $ cli this is-the command ?
-        help for command
+    $ cli this is-the command ?
+    help for command
          
 
 Can be used to print help texts if there are any in the configuration file.
 Displays the optinal parts of command words in square brackets.
 
+Example help output:
 
-Example:
+    $ cli logs ?
 
-        $ cli logs ?
-    
-          | output tomcat logs
-    
-            lo[gs] w[ebapp]                                            view webapp logs
-            lo[gs] o[sgi-framework]                                    view osgi framework logs
-            lo[gs] c[atalina.out]                                      view catalina.out
+      | output tomcat logs
+
+        lo[gs] w[ebapp]                                            view webapp logs
+        lo[gs] o[sgi-framework]                                    view osgi framework logs
+        lo[gs] c[atalina.out]                                      view catalina.out
 
 
 
@@ -137,11 +140,11 @@ if you aren't careful with this.
 
 Example config mimicking the docker cli for demonstration:
 
-        [commands]
-        docker
-            list
-                containers: docker list containers
-                images: docker list images
+    [commands]
+    docker
+        list
+            containers: docker list containers
+            images: docker list images
 
 Considering the configuration above, you could execute `cluster-cli d l c` and it would expand to `cluster-cli docker list containers`
 
@@ -152,6 +155,6 @@ Considering the configuration above, you could execute `cluster-cli d l c` and i
 # Zsh support with bashcompinit
 .zshrc:
 
-        autoload bashcompinit
-        bashcompinit
-        setopt completealiases
+    autoload bashcompinit
+    bashcompinit
+    setopt completealiases
