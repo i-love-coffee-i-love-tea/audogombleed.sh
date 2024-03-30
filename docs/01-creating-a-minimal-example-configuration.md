@@ -18,7 +18,7 @@
              off: echo power off
              status: echo power status
           deeper
-             tree
+             tree                
                 echo: echo
                     :value:first
                     :list:fu|bar|fubar
@@ -27,7 +27,11 @@
                     :eval:seq 0 10 100
           EOF
 
-4. load autocompletion code
+3. create an alias
+
+        $ alias cluster-cli='_cli_execute'
+
+5. load autocompletion code
 
         $ source ~/bin/cluster-cli
 
