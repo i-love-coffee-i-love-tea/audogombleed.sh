@@ -9,6 +9,7 @@ jobs:
         uses: bats-core/bats-action@1.5.6
         with:
           support-path: ${{ github.workspace }}/test/bats-support
+          assert-path: ${{ github.workspace }}/test/bats-assert
       - name: Check out code
         uses: actions/checkout@v4
 
