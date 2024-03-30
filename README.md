@@ -150,8 +150,8 @@ Considering the configuration above, you could execute `cluster-cli d l c` and i
 
 
 # Zsh support with bashcompinit
-.zshrc 
+.zshrc:
 
-autoload bashcompinit
-bashcompinit          
-setopt completealiases
+        autoload bashcompinit
+        bashcompinit
+        setopt completealiases
