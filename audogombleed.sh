@@ -1822,16 +1822,21 @@ _cli_complete_command() {
 
 	_cli_log 4 "pos: $pos, word: $word, line: $line"
 	while read cmd; do
+		# create array to extract word at position
 		if _cli_shell_is_zsh; then
 			a_cmd=("${(z)cmd}")	
 		else
 			read -a a_cmd <<<"$cmd"
 		fi
 		if [ ! -z "${a_cmd[pos]}" ]; then
-			_cli_log 4 "adding ${a_cmd[pos]}"
-			COMPREPLY+=("${a_cmd[pos]}")
+			echo "${a_cmd[pos]}"
 		fi
-	done < <(_awk output=command_names command_filter="$line")
+	done < <(_awk output=command_names command_filter="$line") | uniq | \
+	while read match; do
+		_cli_log 4 "adding ${match}"
+		COMPREPLY+=("$match")
+	done
+
 }
 
 _cli_complete_arg() {
@@ -2061,6 +2066,7 @@ _cli_complete_()
 	fi
 	
 	if [ "$COMP_CWORD" -eq 1 ] && [ -n "$word" ]; then
+		# first word can be handled more efficiently
 		COMPREPLY=($(_cli_getfirstwords "$word"))
 	elif [ "$COMP_CWORD" -gt 1 ] || [ -n "$word" ]; then
 		local -a a_complete_cmd
