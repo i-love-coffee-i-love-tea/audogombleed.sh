@@ -1,6 +1,5 @@
 # Audogombleed
 
-
 This script can be used to easily create CLI interfaces with auto completable command trees.
 All you need to do is to create a link to the main script and a simple configuration file.
 
@@ -22,10 +21,9 @@ Or maybe you want to create a descriptive CLI for the program or script you are 
 
 A config file must at least contain a [commands] section and can contain an [env] section.
 
-The default configuration file is ~/.${0}.conf. So the script can be used to
+The default configuration filename is ~/.${0}.conf. So the script can be used to
 create multi CLI trees with different names and configs. The config name is
 derived from the program/alias name.
-
 
 ## comments
 
@@ -36,24 +34,44 @@ the following element.
 
 ## optional [env] section
 
-All lines in the [env] section of the config file are sourced before
-command completion and execution. The results can be used in the config file.
-This means you can define arrays and functions to use in argument completions.
-
-It can also be used to set CLI config variables.
-
 ### setting configuration options in the [env] section
 
+All lines in the `[env]` section are sourced before each completion
+and command execution, with one exemption: The `include_commands_from` keyword
+is handled differently (see [docs/04-hierarchical-configuration.md](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/blob/main/docs/04-hierarchical-configuration.md)).
+
+Everything that is possible in a shell script is possible here. Most useful to define
+array variables or functions to create argument lists for completions.
+
+Purpose:
+
+- set CLI options
+- define array variables or functions to create argument lists for completions
+- include function and variable definitions from other shell scripts
+- include other config files with the `include_commands_from` directive.
+
+#### Source shell scripts
+
+    source ~/bin/custom-cli-function.sh
+    
+#### Define/set variables and functions directly
 
 
+Function example:
 
+    function example_function { echo "foo"; echo "bar"; }
 
+Multiline function example. 
+
+    function example_function {
+        echo "foo"
+        echo "bar"
+    }  
 
 
 ## command configuration in the [commands] section
 
 The commands are configured in [commands] section in the config file.
-
 
 
 
