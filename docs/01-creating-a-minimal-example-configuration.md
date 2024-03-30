@@ -27,7 +27,8 @@
                     :eval:seq 0 10 100
           EOF
 
-4. load autocompletion code
+4. load autocompletion code. Must be sourced under the name you
+   want to use: 
 
         $ source ~/bin/cluster-cli
 
