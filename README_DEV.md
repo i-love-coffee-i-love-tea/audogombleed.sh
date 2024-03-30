@@ -11,7 +11,7 @@ It is embedded in the shell script and can be exported for delepment purposes as
 
 All used variables begin with `__CLI_`
 
-All but `__CLI_VERSION` are initialized during completion and command execution
+All but `__CLI_VERSION`, `__CLI_AWK_SCRIPT` and `__CLI_PROGNAME` are initialized during completion and command execution
 
 To list them all you can use the shell builtin compgen in bash (and zsh with loaded bash completion support, see `README.md`)
 
