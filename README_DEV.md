@@ -1,64 +1,32 @@
 # generic autocomplete tree - development notes
 
 All features work in bash and zsh, apart from one:
-In zsh the autocompletions use description labels
+In zsh the autocompletions can additionally use description labels, which
+aren't supported in bash.
 
 The core of the script is a config parser developed in AWK.
-It is embedded in the shell script and can be exported as described below.
+It is embedded in the shell script and can be exported for delepment purposes as described below.
 
+## global variables 
 
-## Bash tipps
+All used variables begin with `__CLI_`
 
-### performance
+All but `__CLI_VERSION` are initialized during completion and command execution
 
-Latency is important. It makes your computer feel slow or quick.
-It may sound obvious, but it's very very important for a good user experience.
+To list them all you can use the shell builtin compgen in bash (and zsh with loaded bash completion support, see `README.md`)
 
-Therefore, do not, unless absolutely necessary
+	compgen -A variable | grep ^__CLI_
 
-- use subshells
-- call external programs 
+## global functions
 
-
-
-Script execution time of 400 ms definitely makes it feel sluggish 
-
-About 200ms is OK
-
-100ms is good
-
-<100ms is very good
-
-
-time it with the time command
-
-		$ time <yourcli> <yourcommand>
-
-
-### global variables 
-
-All used variables begin with __CLI_
-
-All but __CLI_VERSION are initialized during completion and command execution
-
-To list them all you can use the shell builtin compgen in bash (and zsh with loaded bash completion support, see README.md)
-
-compgen -A variable | grep ^__CLI_
-
-## tracing 
-
-strace -c $YOUR_CLI_COMMAND
-
-
-### global functions
-
-All functions begin with _cli_
+All functions begin with `_cli_`
 
 Functions are loaded by sourcing the cli script
 
 
 Registered completion functions can be listed by calling complete without arguments
-$ complete | grep ^_cli
+
+	$ complete | grep ^_cli
 
 
 
@@ -110,6 +78,38 @@ I use shellcheck to find sources of uninteded errors.
 
    `$ shellcheck cli.sh`
 
+## Bash tipps
+
+### performance / completion and execution latency
+
+Latency is important. It makes your computer feel slow or quick.
+It may sound obvious, but it's very very important for a good user experience.
+
+Therefore, in auto completion functons, do not, unless absolutely necessary
+
+- use subshells
+- call external programs 
+
+
+
+Script execution time of 400 ms definitely makes it feel sluggish 
+
+- About 200ms is OK
+- 100ms is good
+- <100ms is very good
+
+
+time it with the `time` command
+
+	$ time <yourcli> <yourcommand>
+
+
+## tracing 
+
+	strace -c $YOUR_CLI_COMMAND
+
+
+
 ## Glossary
 
 ### 'completion' vs. 'expansion' in the code
@@ -124,24 +124,14 @@ expansion of submitted commands for execution, to allow
 abbreviation of commands.
 
 
-
-
-
-
-
-
-
-
-
 ## AWK config parser usage examples: 
 
+	% cli --cli-run-awk-command output=commands command_filter="filter bla rating"
+	__COMMAND=filter bla rating
+	__COMMAND_ARG[0]="list:lt|le|qe|gt|ge:comparison operator"
+	__COMMAND_ARG[1]="int_range:1-5:rating value to compare against"
 
- % cli --cli-run-awk-command output=commands command_filter="filter bla rating"
-__COMMAND=filter bla rating
-__COMMAND_ARG[0]="list:lt|le|qe|gt|ge:comparison operator"
-__COMMAND_ARG[1]="int_range:1-5:rating value to compare against"
-
-gobuki@archimedes cli --cli-run-awk-command output=commands command_filter="set comment"   
-__COMMAND=set comment
-__COMMAND_ARG[0]="INTEGER"
-__COMMAND_ARG[1]="STRING"
+	% cli --cli-run-awk-command output=commands command_filter="set comment"   
+	__COMMAND=set comment
+	__COMMAND_ARG[0]="INTEGER"
+	__COMMAND_ARG[1]="STRING"
