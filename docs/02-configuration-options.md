@@ -1,7 +1,7 @@
 # CLI Configuration Options
 
 The following configuration options are available.
-To change them put the variable assignment into you config file's [env] section.
+To change them put the variable assignment into you config file's `[env]` section.
 
 
 
@@ -15,13 +15,12 @@ Is mainly intended for debugging of the cli script.
 
 Other levels are not yet used
 
-If set to 4 a log file will be created under /tmp
+If set to 4 a log file will be created under `/tmp`:
 
-In zsh shells the file is /tmp/cli-zsh.log
+  - In zsh shells the file is `/tmp/cli-zsh.log`
+  - In bash it is `/tmp/cli-bash.log`
 
-In bash it is /tmp/cli-bash.log
-
-The debug output slows the CLI down noticeably.
+NOTE: The debug output slows the CLI down noticeably.
 
 
 ## __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS (default: "n")
