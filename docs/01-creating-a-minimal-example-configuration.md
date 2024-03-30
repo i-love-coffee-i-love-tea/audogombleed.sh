@@ -11,6 +11,7 @@
 
         $ cat > ~/.cluster-cli.conf <<EOF
           [env]
+           
           [commands]
           ipmi-power
              on: echo power on
