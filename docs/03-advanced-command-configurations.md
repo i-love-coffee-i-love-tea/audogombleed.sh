@@ -59,9 +59,9 @@ most simple way, with a static list
 
 ## Argument placeholders
 
-	The default is to append all defined command arugments at the end of the line.
- 	In cases where you need more flexibility, because the arguments need to be
-  	embedded in a command at the right places, you can use placeholders.
+The default is to append all defined command arugments at the end of the line.
+In cases where you need more flexibility, because the arguments need to be
+embedded in a command at the right places, you can use placeholders.
 
 Exmaple of placeholder usage. This config defines two static command args which can be completed
    
