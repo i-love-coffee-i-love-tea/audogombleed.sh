@@ -2007,6 +2007,7 @@ else
 fi
 
 
+
 _cli_complete_()
 {
 	# from bash man page
@@ -2021,9 +2022,9 @@ _cli_complete_()
 	local -a a_line
 
 	if _cli_shell_is_zsh; then
-		__CLI_PROGNAME="${COMP_WORDS[1]}"
+		__CLI_PROGNAME="$(basename ${COMP_WORDS[1]})"
 	else 
-		__CLI_PROGNAME="${COMP_WORDS[0]}"
+		__CLI_PROGNAME="$(basename ${COMP_WORDS[0]})"
 	fi
 		
 
@@ -2052,7 +2053,7 @@ _cli_complete_()
 	fi
 	_cli_log 4 "word: $word"
 	_cli_log 4 "COMP_CWORD: $COMP_CWORD"
-	_cli_log 4 "COMP_WORDS[@]: ${COMP_WORDS[@]}"
+	_cli_log 4 "COMP_WORDS[*]: ${COMP_WORDS[*]}"
 	
 	# remove first word
 	if _cli_shell_is_zsh; then
@@ -2060,10 +2061,10 @@ _cli_complete_()
 	else
 		read -a a_line <<<"$line"
 	fi
-	a_line=("${a_line[@]:1}")
+	a_line=("${a_line[@]:1:${#a_line[@]}-1}")
 	_cli_log 4 "line: '$line'"
 		
-	_cli_log 4 "line: '${a_line[@]}'"
+	_cli_log 4 "line: '${a_line[*]}'"
 
 	if [ -z "$word" ]; then
 		word="empty"
@@ -2077,7 +2078,7 @@ _cli_complete_()
 		local cmd_word_count
 		local line_word_count
 
-		if _cli_is_command_complete "${a_line[@]}"; then
+		if _cli_is_command_complete "${a_line[*]}"; then
 			if _cli_shell_is_zsh; then
 				a_complete_cmd=("${(z)__CLI_CMD_WORDS}")
 			else
@@ -2101,7 +2102,7 @@ _cli_complete_()
 		else
 			# complete next command word
 			_cli_log 4 "completing command"
-			_cli_complete_command $COMP_CWORD "${a_line[@]}"
+			_cli_complete_command $COMP_CWORD "${a_line[*]}"
 		fi
 	fi
 
@@ -2373,6 +2374,21 @@ _cli_execute() {
 # execute command, if not sourced
 # load completions if sourced
 if ! _cli_is_sourced; then
+	if [ "audogombleed.sh" = "$(basename $0)" ]; then
+		echo "This script is not intended to be called directly."
+		echo "Create a link and an alias with the same name as"
+		echo "the link to the global _cli_execute function"
+		echo
+		echo "    # once: create a config file and a cli instance link"
+		echo "    touch ~/.yourcli.conf"
+		echo "    ln -s ~/bin/audogombleed.sh ~/bin/yourcli"
+		echo
+		echo "    # in your ~/.bashrc or ~/.zshrc"
+		echo "    source ~/bin/yourcli"
+		echo "    alias yourcli='_cli_execute'"
+		echo
+		exit
+	fi
 	_cli_execute $@
 else 
 	if _cli_shell_is_bash; then
