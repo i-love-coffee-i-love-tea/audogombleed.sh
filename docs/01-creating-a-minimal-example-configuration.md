@@ -27,13 +27,14 @@
                     :eval:seq 0 10 100
           EOF
 
-3. create an alias
-
-        $ alias cluster-cli='_cli_execute'
-
-5. load autocompletion code
+3. load autocompletion code
 
         $ source ~/bin/cluster-cli
+
+
+4. create an alias. it must be the same name as the link you sourced.
+
+        $ alias cluster-cli='_cli_execute'
 
 ## Testing autocompletion
 
