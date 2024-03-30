@@ -10,10 +10,10 @@ Example of a failing command:
 
 Possible solutions:
 
-	- change to a directory that doesn't contain single character files
-	- escape the ? with a backslash, to prevent shell expansion
-	- remove the file
- 	- use -h, -? or escape the question mark (see below)
+- change to a directory that doesn't contain single character files
+- escape the ? with a backslash, to prevent shell expansion
+- remove the file
+- use -h, -? or escape the question mark (see below)
 
 Submit with backspace to prevent expansion: 
 
