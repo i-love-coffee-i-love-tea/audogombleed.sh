@@ -32,6 +32,70 @@ are related to the following command or tree element.
 All comment lines before a command or tree element belong to
 the following element.
 
+
+## command configuration in the [commands] section
+
+The commands are configured in [commands] section in the config file.
+
+### Most simple command configuration
+
+Let's first look at a an example of a most simple command configuration:
+
+    [commands]
+    first-word: echo
+
+Now, if we created our cli with `ln -s ~/bin/audogombleed.sh ~/bin/cli` and
+have created an alias `alias cli='_cli_execute'`, we can
+write
+
+    $ cli <TAB><TAB>
+
+and it will be completed, because there is only one command available at the root level.
+
+    $ cli first-word
+
+On hitting <enter> the `echo` command will be executed and all arguments that follow `first-word`
+on the command line will be appended.
+
+
+### Command tree configuration
+
+Where it really starts to get useful is when the hierarchical command tree structure comes into play.
+
+Let's look at a more complex command tree now, with a demonstration of using variables.
+Since autocompletion scripts are sourced, you can create directory bookmarks.
+
+    [env]
+    GIT_ROOT="~/git/some/deep/directory/structure/in/a/large/git/repository/"
+    PROJECTS_DIR="/var/server/group/group_x/projects"
+    [commands]
+    cd
+        git-projects
+            project1: cd $GIT_ROOT/\0
+            project2: cd $GIT_ROOT/\0
+            project3: cd $GIT_ROOT/\0
+        app-instances
+            app1: cd $PROJECTS_DIR/\0
+            app2: cd $PROJECTS_DIR/\0
+            app3: cd $PROJECTS_DIR/\0
+
+It will create these commands with full autocompletion support:
+
+    cd git-projects projects1
+    cd git-projects projects2
+    cd git-projects projects3
+    cd app1 projects
+    cd app2 projects1
+    cd app3 projects1
+    
+
+Defined variables can be used in command expressions.
+`\0` will be replaced by the last command word. 
+
+See [docs/03-advanced-command-configuration.md](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/blob/main/docs/03-advanced-command-configuration.md).
+for more info about command definition possibilities.
+
+
 ## optional [env] section
 
 ### setting configuration options in the [env] section
@@ -66,14 +130,7 @@ Multiline function example.
     function example_function {
         echo "foo"
         echo "bar"
-    }  
-
-
-## command configuration in the [commands] section
-
-The commands are configured in [commands] section in the config file.
-
-
+    }
 
 # CLI command line arguments
 
