@@ -16,6 +16,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Test
-        run: bats -r .
+        run: ./test/bats/bin/bats test/test.bats
 
       
