@@ -109,6 +109,13 @@ time it with the `time` command
 	strace -c $YOUR_CLI_COMMAND
 
 
+## bats test automation
+
+Run bats test with the following command after checking out submodules
+
+	test/bats/bin/bats test/test.bats
+
+
 
 ## Glossary
 
