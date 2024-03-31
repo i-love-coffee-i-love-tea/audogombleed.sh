@@ -63,3 +63,20 @@ teardown() {
 	run ./testcli return2
 	assert_failure 2
 }
+@test "complex tree structure commands are parsed correctly - 1" {
+	run ./testcli install jar from file /some/file
+	assert_output '/some/file'
+}
+@test "complex tree structure commands are parsed correctly - 2" {
+	run ./testcli install jar from maven _coords_
+	assert_output '_coords_'
+}
+@test "complex tree structure commands are parsed correctly - 3" {
+	run ./testcli install war from file /some/file
+	assert_output '/some/file'
+}
+@test "complex tree structure commands are parsed correctly - 4" {
+	run ./testcli install war from file _coords_
+	assert_output '_coords_'
+}
+
