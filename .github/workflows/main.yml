@@ -8,8 +8,10 @@ jobs:
       - name: Setup Bats and Bats libs
         uses: bats-core/bats-action@1.5.6
         with:
-          support-path: ${{ github.workspace }}/test/bats-support
-          assert-path: ${{ github.workspace }}/test/bats-assert
+          support-path: ${{ github.workspace }}/test/test-helper/bats-support
+          support-version: 0.3.0
+          assert-path: ${{ github.workspace }}/test/test-helper/bats-assert
+          assert-version: 2.1.0
       - name: Check out code
         uses: actions/checkout@v4
 
