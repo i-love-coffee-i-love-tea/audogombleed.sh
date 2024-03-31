@@ -3,39 +3,7 @@ setup() {
     load 'test_helper/bats-assert/load'
 	ln -s ./audogombleed.sh ./testcli
 	if [ ! -e "~/.testcli.conf" ]; then
-		cat > ~/.testcli.conf <<'EOF'
-[env]
-__CLI_CFG_EXEC_SILENT="y"
-export __VAR_EXPANSION_WORDS="first \
-second"
-function create_cmd_words() {
-	echo "thievery"
-	echo "corporation"
-}
-function create_arg_options() {
-	echo "opt1"
-	echo "opt2"
-}
-export ARGUMENT_OPTIONS="option1 \
-option2 \
-option3"
-export -f create_cmd_words
-[commands]
-echo: echo \0 \2 \1
-var-expansion
-	$__VAR_EXPANSION_WORDS: echo \0
-function-expansion
-	&create_cmd_words: echo \0
-list-expansion
-	thievery|corporation: echo \0
-list-argument
-	static: echo
-		:one-of-a-static-list:list:first-element|second|third|etc
-	from-function: echo
-		:arg-generated-by-function:eval:create_arg_options
-	from-variable: echo
-		:arg-from-variable:list:$ARGUMENT_OPTIONS
-EOF
+		cp example.conf ~/.testcli.conf
 	fi
 }
 teardown() {
@@ -85,4 +53,9 @@ teardown() {
 @test "can run command with function list argument" {
 	run ./testcli list-argument from-function option1 more args
 	assert_output 'option1 more args'
+}
+
+@test "failing command returns correct exit status" {
+	run ./testcli false
+	assert_failure
 }
