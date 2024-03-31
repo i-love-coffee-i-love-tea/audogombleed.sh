@@ -1,6 +1,6 @@
 # Audogombleed
 
-This script can be used to easily create CLI interfaces with auto completable command trees.
+This script can be used to easily create CLIs with auto completable command trees.
 All you need to do is to create a link to the main script and a simple configuration file.
 
 The configuration file defines a command tree. 
