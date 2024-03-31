@@ -155,7 +155,7 @@ Runs the embedded AWK config parser script. Only there for development purposes.
 
 # Builtin Help Output
 
-If the CLI is executed it just a '?' as argument it will print the help for
+If the CLI is executed with '?' as sole argument, it will print the help for
 all configured commands.
 
 '?' can also be append to complete or incomplete commands.
@@ -226,10 +226,23 @@ Considering the configuration above, you could execute `cluster-cli d l c` and i
     $ cluster-cli 
 
 
+# Exit status
+
+In case of failed command execution the script uses the exit status to indicate
+the reason
+
+	- 49 script was called with wrong name. need to create a link and use this.
+	- 50 no command supplied
+	- 51 attempt to expand abbreviated command failed
+	- 52 not all positional arguments could be resolved. not enough arguments.
+	- 53 not enough arguments provided
+
 
 # Zsh support with bashcompinit
 .zshrc:
 
     autoload bashcompinit
     bashcompinit
+
+	# if you want to use completion with an alias you need to set this	
     setopt completealiases

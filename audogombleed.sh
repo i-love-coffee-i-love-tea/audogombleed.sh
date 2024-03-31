@@ -128,7 +128,7 @@ _cli_global_is_positive_bool() {
 
 _cli_is_positive_bool() {
 	case "$1" in
-		y|yes|true|0)
+		Y|YES|Yes|y|yes|true|0)
 			return 0
 	esac
 	return 1
@@ -196,6 +196,7 @@ _cli_config_file_is_present() {
 
 _cli_init_global_vars() {
 	_cli_global CFG_EXEC_ACK_EXPANDED_COMMANDS "y"
+	_cli_global CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS "y"
 	_cli_global CFG_EXEC_EXPAND_ABBREVIATED_ARGS "n"       
 	_cli_global CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS "y"
 	_cli_global CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY "n"
@@ -279,6 +280,15 @@ _cli_error() {
 		echo -E "$@" >&2
 	fi
 }
+_cli_exit_if_not_sourced() {
+	if _cli_is_sourced; then
+		return $1
+	else
+		_cli_log 3 "exiting with status $1"
+		_cli_close_logfile
+		exit $1
+	fi
+}
 
 _cli_is_sourced() {
 	if _cli_shell_is_bash; then
@@ -315,7 +325,7 @@ _cli_close_logfile() {
 	_cli_global LOG_OPENED 1
 }
 
-_cli_read_config() {
+_cli_read_command_list() {
 	_cli_log 1 "config file: $(_cli_global CONFIG_FILE)"
 	__CLI_CONFIG=$(_awk "output=commands")
 	for l in "${__CLI_CONFIG[@]}"; do
@@ -1313,15 +1323,23 @@ _cli_load_config_environment() {
 	local script
 	local prev_cli_debug
 	local prev_log_level
+	local prev_cli_silent
 
 	cli_silent_arg=$1
 	prev_log_level=$(_cli_global CFG_LOG_LEVEL)
+	prev_cli_silent=$(_cli_global CFG_EXEC_SILENT)
 	line_nr=1
 
 	while read env_line; do
 		_cli_log 4 "$env_line"
 		first_word="${env_line%% *}"
 		_cli_log 4 "first_word: $first_word"
+
+		if [[ "$env_line" == "#"* ]]; then
+			line_nr=$((line_nr + 1))
+			continue
+		fi
+
 		if [ "source" = "$first_word" ]; then
 			# eval to expand '~'  and variables in path 
 			src_file=$(eval echo ${env_line##* })
@@ -1377,11 +1395,11 @@ $env_line"
 	# apply changed config settings
 	#
 
-	# log level
 	if ! _cli_global_is_set CFG_LOG_LEVEL; then
 		return
 	fi
 
+	# log level changed by config?
 	if ! _cli_global_equals CFG_LOG_LEVEL "$prev_log_level"; then
 		_cli_log 1 "__CLI_CFG_LOG_LEVEL set to $(_cli_global CFG_LOG_LEVEL) by config. was $prev_log_level"
 		if [ "$(_cli_global CFG_LOG_LEVEL)" -gt 0 ] && [ "$prev_log_level" -lt 1 ]; then
@@ -1397,8 +1415,13 @@ $env_line"
 		fi
 	fi
 	
-	# batch mode
-
+	# silent flag changed by config?
+	if ! _cli_global_equals CFG_EXEC_SILENT "$prev_cli_silent"; then
+		if _cli_global_equals CFG_EXEC_SILENT "y"; then
+			_cli_global CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS "n"
+			_cli_global CFG_EXEC_EXPAND_ABBREVIATED_ARGS "n"	
+		fi
+	fi
 	
 }
 
@@ -1650,18 +1673,16 @@ _cli_is_one_word() {
 }
 
 _cli_yes_no_prompt() {
-	read -p "$@" user_input
+	if _cli_shell_is_zsh; then
+		_cli_error "$@"
+		read user_input
+	else
+		read -p "$@" user_input
+	fi
 	if [ -z "$user_input" ]; then
 		return 0
 	fi
-	case $user_input in
-		y|yes)
-			return 0
-			;;
-		*)
-			return 1
-			;;
-	esac
+	_cli_is_positive_bool "$user_input"
 }
 
 _cli_is_env_var_defined() {
@@ -1675,9 +1696,18 @@ _cli_is_env_var_defined() {
 	return 1
 }
 
+_cli_print_usage() {
+	local msg="$1"
+	if [ ! -z "$msg" ]; then
+		echo "$msg"
+	fi
+	echo "execute '$__CLI_PROGNAME ?' or '$__CLI_PROGNAME -h' to display available commands"
+}
+
 _cli_execute_command() {
 	local cmdline
-	local expanded
+	local cmd_expanded
+	local args_expanded
 	local expanded_cmdline
 	local expanded_args
 	# only cmd, only args
@@ -1689,39 +1719,56 @@ _cli_execute_command() {
 	local exit_code
 
 	cmdline="$*"
-	expanded="n"
-	if _cli_shell_is_zsh; then
-		expanded_cmdline=$(_cli_expand_abbreviated_command ${(z)cmdline})
-	else 
-		expanded_cmdline=$(_cli_expand_abbreviated_command $cmdline)
+	cmd_expanded="n"
+	args_expanded="n"
+
+	if [ -z "$cmdline" ]; then
+		_cli_print_usage "no command supplied"
+		exit_code=50
+		_cli_exit_if_not_sourced $exit_code
+		return $exit_code
 	fi
 
-	if [ -z "$expanded_cmdline" ]; then
-		if [ -z "$cmdline" ]; then
-			echo "no command supplied"
+	if _cli_global_equals CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS "y"; then
+		if _cli_shell_is_zsh; then
+			expanded_cmdline=$(_cli_expand_abbreviated_command ${(z)cmdline})
 		else
-			echo "not a recognized command: '$cmdline'"
+			expanded_cmdline=$(_cli_expand_abbreviated_command $cmdline)
 		fi
-		echo "execute '$__CLI_PROGNAME ?' or '$__CLI_PROGNAME -h' to display available commands"
-		return
+
+		if [ ! -z "$expanded_cmdline" ]; then
+			if [ "$cmdline" != "$expanded_cmdline" ]; then
+				_cli_log 4 "command expanded: '$cmdline' --> '$expanded_cmdline'"
+				cmd_expanded="y"
+				cmdline="$expanded_cmdline"
+			else
+				# command wasn't changed, keep cmdline as it is
+				true
+			fi
+		else
+			_cli_print_usage "not a recognized command: '$cmdline'"
+			exit_code=51
+			_cli_exit_if_not_sourced $exit_code
+			return $exit_code
+		fi
+		_cli_log 4 "cmd after expanson: $expanded_cmdline"
 	fi
 
-	_cli_log 4 "cmd after expanson: $expanded_cmdline"
-
-	if _cli_is_command_complete "$expanded_cmdline"; then
+	if _cli_is_command_complete "$cmdline"; then
 		cmd="$__CLI_CMD_WORDS"
 		# remove command words from command line, to get args
 		if _cli_shell_is_zsh; then
-			args=(${(z)expanded_cmdline#$cmd})
+			args=(${(z)cmdline#$cmd})
 		else
-			args=(${expanded_cmdline#$cmd})
+			args=(${cmdline#$cmd})
 		fi
 		if _cli_global_is_positive_bool CFG_EXEC_EXPAND_ABBREVIATED_ARGS; then
 			_cli_log 4 "trying to expand command args for cmd: $cmd, args: ${args[*]}" 
 			expanded_args=$(_cli_expand_abbreviated_args "$cmd" $args)
 			if [ "${args[*]}" != "$expanded_args" ]; then
 				args="$expanded_args"
-				expanded="y"
+				_cli_log 4 "args expanded"
+				args_expanded="y"
 			fi
 		fi
 
@@ -1734,7 +1781,6 @@ _cli_execute_command() {
 			if [ -n "$cmd_expr" ]; then
 				_cli_log 4 "cmdline: '$cmdline'"
 				_cli_log 4 "cmd_expr: '$cmd_expr'"
-				_cli_log 4 "expanded cmdline: '$expanded_cmdline'"
 
 				# replace positional arguments
 				last_word="$(_cli_get_last_word $cmd)"
@@ -1755,7 +1801,9 @@ _cli_execute_command() {
 						if [ "$all_args_used_in_placeholders" -eq 0 ]; then
 							_cli_log 4 "more placeholders than arguments"
 							_cli_error "more placeholders in command expression than args provided: $cmd_expr"
-							return 1
+							exit_code=52
+							_cli_exit_if_not_sourced $exit_code
+							return $exit_code
 						fi
 						cmd_expr=${cmd_expr//\\$i/${arg}} 
 						_cli_log 4 "inserting arg: \\$i: $arg"
@@ -1764,18 +1812,15 @@ _cli_execute_command() {
 					fi
 					i=$((i+1))
 				done
+
 				# warn if there are more placeholders
 				if [[ "$cmd_expr" == *"\\$i"* ]]; then
-					true
+					_cli_log 4 "more placeholders in command expression than args supplied"
 				fi
 				
-
-				if [ "$expanded_cmdline" != "$cmdline" ]; then
-					_cli_log 4 "command expanded: '$cmdline' --> '$expanded_cmdline'"
-					expanded="y"
-				fi
-				_cli_log 4 "expanded: $expanded"
-				if [ "$expanded" = "y" ]; then
+				_cli_log 4 "cmd expanded: $cmd_expanded"
+				_cli_log 4 "args expanded: $args_expanded"
+				if [ "$cmd_expanded" = "y" ] || [ "$args_expanded" = "y" ]; then
 					if ! _cli_global_is_negative_bool CFG_EXEC_ACK_EXPANDED_COMMANDS; then
 						if ! _cli_yes_no_prompt "Execute expanded command? '$cmd $args' [Y/n]: "; then
 							return 1
@@ -1795,8 +1840,14 @@ _cli_execute_command() {
 			if ! _cli_global_is_negative_bool CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS; then
 				_awk output=help command_filter="$cmd" do_format=1
 			fi
+			exit_code=53
+			_cli_exit_if_not_sourced $exit_code
 		fi
 		
+	else
+		_cli_print_usage "not a recognized command: '$cmdline'"
+		exit_code=51
+		_cli_exit_if_not_sourced $exit_code
 	fi
 
 	unset __CLI_CMD_WORDS
@@ -2022,9 +2073,13 @@ _cli_complete_()
 	local -a a_line
 
 	if _cli_shell_is_zsh; then
-		__CLI_PROGNAME="$(basename ${COMP_WORDS[1]})"
+		if [ ! -z "${COMP_WORDS[1]}" ]; then
+			__CLI_PROGNAME="$(basename ${COMP_WORDS[1]})"
+		fi
 	else 
-		__CLI_PROGNAME="$(basename ${COMP_WORDS[0]})"
+		if [ ! -z "${COMP_WORDS[0]}" ]; then
+			__CLI_PROGNAME="$(basename ${COMP_WORDS[0]})"
+		fi
 	fi
 		
 
@@ -2033,9 +2088,9 @@ _cli_complete_()
 	_cli_init_global_vars
 	_cli_open_logfile
 	_cli_read_awk_script
-	_cli_read_config
 	_cli_load_config_environment
 	_cli_load_command_word_functions
+	_cli_read_command_list
 
 	if _cli_shell_is_bash; then
 		# bash completion sets $COMP_WORDS, $COMP_CWORD and $COMP_LINE
@@ -2250,6 +2305,15 @@ _cli_load_command_word_functions() {
 }
 
 _cli_execute() {
+	if _cli_shell_is_zsh; then
+		if [ ! -z "${COMP_WORDS[1]}" ]; then
+			__CLI_PROGNAME="$(basename ${COMP_WORDS[1]})"
+		fi
+	else 
+		if [ ! -z "${COMP_WORDS[0]}" ]; then
+			__CLI_PROGNAME="$(basename ${COMP_WORDS[0]})"
+		fi
+	fi
 
 	local cmd_args
 	local arg
@@ -2276,26 +2340,27 @@ _cli_execute() {
 	_cli_open_logfile
 	# 14ms
 	_cli_read_awk_script
-	# 18ms
-	# 12ms
-	_cli_read_config
 	# 273ms with about 20 lines
 	# 143ms after removing some subshell calls in loading code
 	# 106ms after removing more subshell calls
 	# 20ms after removing even more
 	_cli_load_config_environment $batch_mode
+	# 36ms
+	# 30ms
+	# 12ms
+	_cli_load_command_word_functions
+	# 18ms
+	# 12ms
+	_cli_read_command_list
 
 	if _cli_is_positive_bool "$batch_mode"; then
 		# overwrite loaded config value again if configured,
 		# because cli arg should have precedence
 		_cli_global CFG_EXEC_SILENT "y"
-		_cli_global CFG_EXPAND_ABBREVIATED_ARGS "n"
+		_cli_global CFG_EXEC_EXPAND_ABBREVIATED_ARGS "n"
+		_cli_global CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS "n"
 	fi
 
-	# 36ms
-	# 30ms
-	# 12ms
-	_cli_load_command_word_functions
 	
 	while [ $# -gt 0 ]; do
 		case $1 in
@@ -2387,7 +2452,8 @@ if ! _cli_is_sourced; then
 		echo "    source ~/bin/yourcli"
 		echo "    alias yourcli='_cli_execute'"
 		echo
-		exit
+		_cli_close_logfile
+		exit 49
 	fi
 	_cli_execute $@
 else 

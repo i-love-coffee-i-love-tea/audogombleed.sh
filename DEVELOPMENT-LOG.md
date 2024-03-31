@@ -649,3 +649,41 @@
 
 		DEV-0048 done
 		
+2024-03-31
+
+		New:
+			DEV-0049 interactive user acknowledgment of expanded command does not work in zsh
+
+					 _cli_yes_no_prompt:read:1: -p: no coprocess
+
+			DEV-0050 detected through bats testing: commands parameterized by function do not execute
+					 when the interactive auto complete function didn't run before (<TAB><TAB>)
+
+			DEV-0051 in zsh, during execution, detection of sourcing doesn't work
+					 result is that the shell runs exit when it is running from
+					 the sourced function. This should only happen when the script
+					 is called directly (=in a subshell)
+
+			DEV-0052 script prints name from previous execution, when no command is found
+
+						$ testcli --cli-use-awk-command output=command_names
+						not a recognized command: '--cli-use-awk-command output=command_names'
+						execute 'tomcat ?' or 'tomcat -h' to display available commands
+
+			DEV-0053 Commands are expanded in batch mode. Should not happen.
+					 The reason is, that the command expansion flag was really only working to
+					 disable argument expansion. Introduce a new flag for command expansion.
+
+			DEV-0054 special error codes for cli errors
+
+
+		DEV-0046 done
+		DEV-0049 done
+		DEV-0050 done
+		DEV-0051 done
+		DEV-0052 done
+		DEV-0053 done. New flag is CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS (default: "y")
+		DEV-0054 done
+
+
+

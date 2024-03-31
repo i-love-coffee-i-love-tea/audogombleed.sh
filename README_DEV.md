@@ -133,12 +133,20 @@ abbreviation of commands.
 
 ## AWK config parser usage examples: 
 
-	% cli --cli-run-awk-command output=commands command_filter="filter bla rating"
+
+### print all available info about a specific complete command
+
+	$ cli --cli-run-awk-command output=commands command_filter="filter bla rating"
 	__COMMAND=filter bla rating
 	__COMMAND_ARG[0]="list:lt|le|qe|gt|ge:comparison operator"
 	__COMMAND_ARG[1]="int_range:1-5:rating value to compare against"
 
-	% cli --cli-run-awk-command output=commands command_filter="set comment"   
+	$ cli --cli-run-awk-command output=commands command_filter="set comment"   
 	__COMMAND=set comment
 	__COMMAND_ARG[0]="INTEGER"
 	__COMMAND_ARG[1]="STRING"
+
+
+### print a list of available commands without formatting
+
+	$ cli --cli-run-awk-command output="command_names"

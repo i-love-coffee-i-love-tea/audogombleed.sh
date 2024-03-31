@@ -23,9 +23,13 @@ If set to 4 a log file will be created under `/tmp`:
 NOTE: The debug output slows the CLI down noticeably.
 
 
-## __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS (default: "n")
+## __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS (default: "y")
 
 Allow abbreviated commands. 
+
+## __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS (default: "n")
+
+Allow abbreviated command arguments. 
 
 
 ## __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS (default: "y")
@@ -61,3 +65,10 @@ be able to access the real command exit code, so this is disable by default.
 ## __CLI_CFG_EXEC_SILENT (default: "n")
 
 The CLI itself does not output anything on stdout and stderr, if set to "y"
+
+If set to "y', the following settings are also made, overriding their configuration
+
+	__CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS="n"
+	__CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS="n"
+
+
