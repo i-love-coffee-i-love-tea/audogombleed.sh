@@ -59,3 +59,7 @@ teardown() {
 	run ./testcli false
 	assert_failure
 }
+@test "arbitray exit status is returned correctly" {
+	run ./testcli return2
+	assert_failure 2
+}
