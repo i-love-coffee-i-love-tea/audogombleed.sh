@@ -54,7 +54,7 @@ and it will be completed, because there is only one command available at the roo
 
     $ cli first-word
 
-On hitting <enter> the `echo` command will be executed and all arguments that follow `first-word`
+On hitting `<enter>` the `echo` command will be executed and all arguments that follow `first-word`
 on the command line will be appended.
 
 
