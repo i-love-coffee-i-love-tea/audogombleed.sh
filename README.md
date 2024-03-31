@@ -141,6 +141,7 @@ and those features which might require interactive user input.
 Namely only command expansion at the moment.
 
 - Sets __CLI_CFG_SILENT="y"
+- Sets __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS="n"
 - Sets __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS="n"
 
 
