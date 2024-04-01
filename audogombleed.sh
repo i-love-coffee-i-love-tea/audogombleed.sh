@@ -2398,7 +2398,6 @@ _cli_execute() {
 		read -a a_cmd_args <<<"$cmd_args"
 	fi
 	for arg in ${a_cmd_args[@]}; do
-		echo "arg: $cmd_args" >> /tmp/zsh
 		last_arg=$arg
 	done
 
