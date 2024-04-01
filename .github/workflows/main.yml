@@ -1,4 +1,4 @@
-name: "CI"
+name: "Automated Bash Tests"
 on: [push, pull_request]
 jobs:
   build:
@@ -16,10 +16,6 @@ jobs:
           ls ${{ github.workspace }}/test/
           ls ${{ github.workspace }}/test/test_helper
       - run: echo "This job's status is ${{ job.status }}."
-
+      
       - name: Test
         run: test/bats/bin/bats test/test.bats
-
-
-
-      
