@@ -1462,7 +1462,6 @@ _cli_is_command_complete() {
                         words=$((words + 1))
                     done
                     i=1
-                    echo $words >> /tmp/words
                     for w in ${(z)line}; do
                         if [ "$i" = "$words" ]; then
                             break
@@ -1479,7 +1478,6 @@ _cli_is_command_complete() {
                         words=$((words + 1))
                     done
                     i=1
-                    echo $words >> /tmp/words
                     for w in $line; do
                         if [ "$i" = "$words" ]; then
                             break
