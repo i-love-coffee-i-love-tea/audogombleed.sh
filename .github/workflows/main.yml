@@ -18,7 +18,7 @@ jobs:
       - run: echo "This job's status is ${{ job.status }}."
 
       - name: Test
-        run: test/bats/bin/bats --report-formatter junit --output /tmp test/test.bats
+        run: test/bats/bin/bats --report-formatter junit --output . test/test.bats
 
 
       - name: Test Report
@@ -27,7 +27,7 @@ jobs:
         if: success() || failure()    # run this step even if previous step failed
         with:
           name: BATS Tests            # Name of the check run which will be created
-          path: /tmp/report.xml    # Path to test results
+          path: ./report.xml    # Path to test results
           reporter: java-junit        # Format of test results
 
       - name: Read output variables
