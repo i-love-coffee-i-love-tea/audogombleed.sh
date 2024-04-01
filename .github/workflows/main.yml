@@ -18,8 +18,21 @@ jobs:
       - run: echo "This job's status is ${{ job.status }}."
 
       - name: Test
-        run: test/bats/bin/bats test/test.bats
+        run: test/bats/bin/bats --report-formatter junit --output /tmp test/test.bats
 
+
+      - name: Test Report
+        uses: phoenix-actions/test-reporting@v8
+        id: test-report               # Set ID reference for step
+        if: success() || failure()    # run this step even if previous step failed
+        with:
+          name: BATS Tests            # Name of the check run which will be created
+          path: /tmp/report.xml    # Path to test results
+          reporter: java-junit        # Format of test results
+
+      - name: Read output variables
+        run: |
+          echo "url is ${{ steps.test-report.outputs.runHtmlUrl }}"
 
 
       
