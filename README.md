@@ -1,3 +1,5 @@
+[![Automated Bash Tests](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/main.yml)
+
 # Audogombleed
 
 This script can be used to easily create CLIs with auto completable command trees.
