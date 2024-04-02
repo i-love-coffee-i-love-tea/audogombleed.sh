@@ -2339,7 +2339,7 @@ _cli_execute() {
 	local include_file 
 	local include_parent_command
 	local batch_mode
-	local exit_code
+	local exit_code=0
 	declare -a include_files
 	declare -a __CLI_CONFIG
 	_cli_global CONFIG_FILE "$HOME/.${__CLI_PROGNAME}.conf"
