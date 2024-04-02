@@ -418,8 +418,10 @@ BEGIN {
 	cols=120
 	col_width=60
 	if (ENVIRON["COLUMNS"] != "") {
-		col_width=int(ENVIRON["COLUMNS"]/2)
-		cols=ENVIRON["COLUMNS"]
+		if (ENVIRON["COLUMNS"] < cols) {
+			col_width=int(ENVIRON["COLUMNS"]/2)
+			cols=ENVIRON["COLUMNS"]
+		}
 	} 
 	
 	if (ENVIRON["TERM"] ~ "color") {
@@ -694,6 +696,7 @@ END {
 
 					args=""
 					arg_idx=0
+					# collect argument names 
 					while ("" != v_argnames[unformatted_command, arg_idx]) {
 						if (args == "") {
 							args = v_argnames[unformatted_command, arg_idx]
@@ -702,31 +705,35 @@ END {
 						}
 						arg_idx++
 					} 
+					# append arguments to command
 					if (args != "") {
 						formatted_commands[i] = formatted_commands[i] " " args
 					}
-					# print first line, command and first comment line
+					# print first line: command and first comment line
 					if (cmd_help_by_cmd[unformatted_command, 0] == "") {
 						# no help text available, print command only
-						
+
 						printf prefix_spaces "  %s\n", formatted_commands[i]
 					} else {
-						# command and first line of help text
+						# help text available, print command in first line and
+						# rest of help text in following lines
+
 						#printf "    %-" help_width "s %s\n", formatted_commands[i], cmd_help_by_cmd[unformatted_command, 0]	
 						line_no=0
+
+						# append words from help text to line up to length=col_width
 						split(cmd_help_by_cmd[unformatted_command, 0], unformatted_help_line, " ")
-						
 						for (word_idx in unformatted_help_line) {
 							wl=length(unformatted_help_line[word_idx])
 							if (length(line) + wl >= help_width) {
 								if (line_no == 0) {
+									# if command is long, print first help text in next line
 									if (length(formatted_commands[i]) >= help_width) {
 										printf prefix_spaces "  %s\n", formatted_commands[i]
 										printf prefix_spaces "  %-" help_width "s %s\n", "", line
 									} else {
 										printf prefix_spaces "  %-" help_width "s %s\n", formatted_commands[i], line
 									}
-
 								} else {
 									printf prefix_spaces "  %-" help_width "s %s\n", "", line
 								}
@@ -739,16 +746,23 @@ END {
 								line = line " " unformatted_help_line[word_idx]
 							}
 						}
+						# print 
 						if (line != "") {
 							if (line_no == 0) {
-								printf prefix_spaces "  %-" help_width "s %s\n", formatted_commands[i], line
+								# if command is long, print first help text in next line
+								if (length(formatted_commands[i]) >= help_width) {
+									printf prefix_spaces "  %s\n", formatted_commands[i]
+									printf prefix_spaces "  %-" help_width "s %s\n", "", line
+								} else {
+									printf prefix_spaces "  %-" help_width "s %s\n", formatted_commands[i], line
+								}
 							} else {
 								printf prefix_spaces "  %-" help_width "s %s\n", "", line
 							}
 							line=""
 						}
 					}
-					# rest of the comment lines
+					# rest of the comment lines for the command path
 					help_idx=1
 					while ("" != cmd_help_by_cmd[unformatted_command, help_idx]) {
 						# printf "    %-" col_width "s %s\n", "", cmd_help_by_cmd[unformatted_command, help_idx]
@@ -1227,13 +1241,13 @@ _awk() {
 
 		# write main config file to fifo
 		local tmpname=$(mktemp -u)
-		mkfifo ${tmpname}.main_config
-		cat $(_cli_global CONFIG_FILE) > ${tmpname}.main_config &
+		mkfifo "${tmpname}".main_config
+		cat "$(_cli_global CONFIG_FILE)" > "${tmpname}".main_config &
 
 		# write include files to fifos
 		for file in ${include_files[@]}; do
 			include_file="${file%%|*}"
-			if [ -z "$include_file" ]; then
+			if [ "$include_file" = "" ]; then
 				continue
 			fi
 			_cli_log 4 "creating fifo for file: $include_file" 
@@ -1692,6 +1706,8 @@ _cli_is_env_var_defined() {
 
 _cli_print_usage() {
 	local msg="$1"
+	_cli_global_is_positive_bool CFG_EXEC_SILENT && return
+		
 	if [ ! -z "$msg" ]; then
 		echo "$msg"
 	fi
@@ -1720,7 +1736,7 @@ _cli_execute_command() {
 		_cli_print_usage "no command supplied"
 		exit_code=50
 		_cli_exit_if_not_sourced $exit_code
-		return $exit_code
+		return "$exit_code"
 	fi
 
 	if _cli_global_equals CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS "y"; then
@@ -1743,7 +1759,7 @@ _cli_execute_command() {
 			_cli_print_usage "not a recognized command: '$cmdline'"
 			exit_code=51
 			_cli_exit_if_not_sourced $exit_code
-			return $exit_code
+			return "$exit_code"
 		fi
 		_cli_log 4 "cmd after expanson: $expanded_cmdline"
 	fi
@@ -1797,7 +1813,7 @@ _cli_execute_command() {
 							_cli_error "more placeholders in command expression than args provided: $cmd_expr"
 							exit_code=52
 							_cli_exit_if_not_sourced $exit_code
-							return $exit_code
+							return "$exit_code"
 						fi
 						cmd_expr=${cmd_expr//\\$i/${arg}} 
 						_cli_log 4 "inserting arg: \\$i: $arg"
@@ -1845,7 +1861,7 @@ _cli_execute_command() {
 	fi
 
 	unset __CLI_CMD_WORDS
-	return $exit_code
+	return "$exit_code"
 }
 
 # Tests if the first argument is an integer
@@ -2432,7 +2448,7 @@ _cli_execute() {
 		exit_code=0
 	fi
 	_cli_close_logfile
-	return $exit_code
+	return "$exit_code"
 }
 
 ######################### MAIN #############################
@@ -2456,7 +2472,7 @@ if ! _cli_is_sourced; then
 		_cli_close_logfile
 		exit 49
 	fi
-	_cli_execute $@
+	_cli_execute "$*"
 else 
 	if _cli_shell_is_bash; then
 		complete -F _cli_complete_ "$__CLI_PROGNAME"

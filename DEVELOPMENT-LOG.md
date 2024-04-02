@@ -687,3 +687,10 @@
 
 
 
+2024-04-02
+
+		New:
+
+			DEV-0055 Apply changes shellharden suggests. It isn't much. Mostly quoting.
+			DEV-0056 Use #!/usr/bin/env bash in shebang line?
+			
