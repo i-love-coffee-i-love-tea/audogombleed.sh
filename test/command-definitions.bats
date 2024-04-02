@@ -1,25 +1,33 @@
-setup() {
-    load 'test_helper/bats-support/load'
-    load 'test_helper/bats-assert/load'
-	ln -s ./audogombleed.sh ./testcli
-	if [ ! -e "~/.testcli.conf" ]; then
-		cp example.conf ~/.testcli.conf
-	fi
+#
+#	Tests all possible command definition variations
+#   in silent mode	
+#
+
+setup_file() {
+    load 'common-setup'
+    _common_setup __CLI_CFG_EXEC_SILENT="y"
 }
-teardown() {
-	rm -rf ./testcli
-	rm ~/.testcli.conf
+teardown_file() {
+    load 'common-teardown'
+    _common_teardown
+}
+setup() {
+	load 'test_helper/bats-support/load'
+	load 'test_helper/bats-assert/load'
 }
 
-@test "script runs without arguments" {
+
+@test "directly executed, it displays a message and exits" {
     run ./audogombleed.sh
 	assert_line 'This script is not intended to be called directly.'
 }
 
-@test "can run our script with link" {
-    run ./testcli
-	assert_line 'no command supplied'
-	assert_line $'execute \'testcli ?\' or \'testcli -h\' to display available commands'
+@test "executed without argument, returns exit code 50 and doesn't print anything" {
+    run env __CLI_testcli_CFG_EXEC_SILENT="n" ./testcli
+	assert_failure 50 
+	assert_output ""  
+#	assert_line 'no command supplied'
+#	assert_line $'execute \'testcli ?\' or \'testcli -h\' to display available commands'
 }
 
 @test "can run command with positional argument placeholders" {
