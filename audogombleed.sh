@@ -2383,23 +2383,24 @@ _cli_execute() {
 	while [ $# -gt 0 ]; do
 		case $1 in
 		-b|--batch)
+			# already processed earlier
 			;;
 		--cli-print-awk-script)
 			echo -E "${__CLI_AWK_SCRIPT}"
-			return
+			return 0
 			;;
 		--cli-print-env)
 			_awk output=env
-			return  
+			return $? 
 			;;
 		--cli-run-awk-command)
 			shift
 			_awk "$@"
-			return
+			return 0
 			;;
 		--version)
 			echo $__CLI_VERSION
-			return
+			return 0
 			;;
 		*)
 			if [ -z "$cmd_args" ]; then
@@ -2472,7 +2473,7 @@ if ! _cli_is_sourced; then
 		_cli_close_logfile
 		exit 49
 	fi
-	_cli_execute "$*"
+	_cli_execute $@
 else 
 	if _cli_shell_is_bash; then
 		complete -F _cli_complete_ "$__CLI_PROGNAME"

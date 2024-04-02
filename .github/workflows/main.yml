@@ -18,4 +18,4 @@ jobs:
       - run: echo "This job's status is ${{ job.status }}."
       
       - name: Test
-        run: test/bats/bin/bats test/test.bats
+        run: test/bats/bin/bats test/*.bats
