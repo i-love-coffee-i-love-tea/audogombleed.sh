@@ -17,6 +17,7 @@ _common_setup() {
 		cp example.conf ~/.testcli.conf
 	fi
 
+	source ./testcli
 	# process setup options
 	while [ $# -gt 0 ]; do
 		local optname="${1%%=*}"

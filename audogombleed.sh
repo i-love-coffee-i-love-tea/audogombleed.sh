@@ -1071,7 +1071,11 @@ function print_command_environment_vars(fullcmd, cmd_exec) {
 		printf "__CMD_ARG_NAME[%s]=\"%s\"\n", arg, cmd_argname[arg]
 		printf "__CMD_ARG_TYPE[%s]=\"%s\"\n", arg, cmd_argtype[arg]
 		printf "__CMD_ARG_DESC[%s]=\"%s\"\n", arg, cmd_argdesc[arg]
+		if (substr(cmd_argvalue[arg], 0, 1) == "$") {
+			printf "__CMD_ARG_VALUE[%s]=\"\\%s\"\n", arg, cmd_argvalue[arg]
+		} else {
 		printf "__CMD_ARG_VALUE[%s]=\"%s\"\n", arg, cmd_argvalue[arg]
+		}
 	}
 	if (length(cmd_args) == 0) {
 		printf "__CMD_ARG=\"\"\n", arg
@@ -1694,14 +1698,15 @@ _cli_yes_no_prompt() {
 }
 
 _cli_is_env_var_defined() {
-	local varname=$1
+	local varname=$1 found=1
+	_cli_log 4 "varname: $varname"
+
+	# this whole construct returns >0 when no match is found
 	compgen -A variable $varname | while read l; do
-		 if [ "$l" = "__CLI_VERSION" ]; then
-			 return 0
-		 fi
-		 break
+		if [[ "$l" = "$varname" ]]; then
+			return 0
+		fi
 	done
-	return 1
 }
 
 _cli_print_usage() {
@@ -1899,7 +1904,9 @@ _cli_complete_command() {
 		if [ ! -z "${a_cmd[pos]}" ]; then
 			#echo "${a_cmd[pos]}"
 			_cli_log 4 "adding ${a_cmd[pos]}"
-			COMPREPLY+=("${a_cmd[pos]}")
+			if ! [[ " ${COMPREPLY[*]} " =~ " ${a_cmd[pos]} " ]]; then
+				COMPREPLY+=("${a_cmd[pos]}")
+			fi
 		fi
 	done < <(_awk output=command_names command_filter="$line")
 }
@@ -1912,12 +1919,13 @@ _cli_complete_arg() {
 	shift
 	local cmd="$1"
 	
-	# command has no args
+	local line arg_type arg_min arg_max
+	local -a arg_list
+	line="$*"
 
+	# command has no args
 	_cli_load_completion_vars "$cmd"
 	if [ -z "$__CMD_EXEC" ]; then
-		echo 
-		echo "returning"
 		return
 	fi
 
@@ -1929,14 +1937,7 @@ _cli_complete_arg() {
 	else 
 		pos=$((pos - 1))
 	fi
-	local line arg_type arg_min arg_max
-	local -a arg_list
-	line="$*"
 
-	#if _cli_shell_is_zsh;  then
-	#	pos=$((pos + 1))
-	#fi
-	
 	if [ "${#__CMD_ARG_TYPE}" -eq 0 ]; then
 		return
 	fi
@@ -1959,7 +1960,7 @@ _cli_complete_arg() {
 	elif [ "$arg_type" = "eval" ]; then
 		eval_cmd="${__CMD_ARG_VALUE[$pos]}"
 	fi
-	
+
 	_cli_log 4 "arg type: $arg_type"
 	_cli_log 4 "arg list: $arg_list"
 	case "$arg_type" in
@@ -1967,21 +1968,26 @@ _cli_complete_arg() {
 			if [ -n "$word" ];  then
 				echo "$word"
 			fi
-			description="string argument" 
+			description="string argument"
 			;;
 		list)
-			# starting with "$" means 
+			# starting with "$" means
 			if [[ "$arg_list" =~ ^\$ ]]; then
 				# variable
-				_cli_log 4 "arg_list: $arg_list"
-				if _cli_is_env_var_defined $arg_list; then
-					arg_list=$(eval echo \$$arg_list)
+				_cli_log 4 "var arg_list: ${arg_list//\$/}"
+				var_name="${arg_list//\$/}"
+				if _cli_is_env_var_defined "$var_name"; then
+					_cli_log 4 "var is defined"
+					arg_list=$(eval echo $arg_list)
 					compgen -W "$arg_list" "$word"
+				else
+					_cli_log 4 "var is not defined"
 				fi
+
 			elif [[ "$arg_list" =~ \| ]]; then
 				# list separated by |
 				arg_list=${arg_list//|/ }
-				_cli_log 4 "arg_list, word: $arg_list, $word"
+				_cli_log 4 "function arg_list, word: $arg_list, $word"
 				compgen -W "$arg_list" "$word"
 			else
 				echo $arg_list

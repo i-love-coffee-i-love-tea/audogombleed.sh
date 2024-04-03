@@ -693,4 +693,21 @@
 
 			DEV-0055 Apply changes shellharden suggests. It isn't much. Mostly quoting.
 			DEV-0056 Use #!/usr/bin/env bash in shebang line?
-			
+			DEV-0057 Command parser always print the first letter of a word as required, even
+					 if there is only one word at this tree level for all commands
+
+                     Example:
+
+						  | example of deeper structure
+
+						    i[nstall] j[ar] f[rom] f[ile] <jar-file>
+						    i[nstall] j[ar] f[rom] m[aven] <mvn-coords>
+						    i[nstall] w[ar] f[rom] f[ile] <war-file>
+						    i[nstall] w[ar] f[rom] m[aven] <mvn-coords>
+
+					 Here install and from are the same for all commands.
+					 The i in install is correct, be cause there are other commands (not displayed)
+					 The f in from does not have to be typed. I don't know how to format it differently
+					 to make any sense. No brackets would inidicate the whole word must be typed.
+					 Brackets around the whole word semantically indicate that the whole word is optional,
+					 which also isn't correct. -> keep it as it is. It's the best option of the three and good enough.
