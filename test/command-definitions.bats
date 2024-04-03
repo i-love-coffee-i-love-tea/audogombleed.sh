@@ -32,7 +32,7 @@ setup() {
 
 @test "can run command with positional argument placeholders" {
 	run ./testcli echo first second third
-	assert_output 'echo second first third'
+	assert_output 'second first third'
 }
 
 @test "can run command with variable expansion in command" {
