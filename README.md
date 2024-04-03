@@ -5,10 +5,7 @@
 This script can be used to easily create CLIs with auto completable command trees.
 All you need to do is to create a link to the main script and a simple configuration file.
 
-The configuration file defines a command tree. 
-Indentation and previous hierarchy elements define where a command will reside in the tree. 
-It also defines command arguments. Arguments have a type which determines which function, variable or static list will be used for completion.
-
+**Goal**: Make auto completion quick to setup and customize without coding.
 
 ### Who is this for?
 
@@ -18,8 +15,25 @@ arguments they require, this might be of interest to you.
 
 Or maybe you want to create a descriptive CLI for the program or script you are developing.
 
+#### But why don't you just use shell autocompletion? Bash and ZSH both have support for it?!
+
+This script of course makes use of bash and zsh completion features. My problem with it was,
+that it is not declarative. This means, if you want to use auto completion with 20 scripts, you
+need to have 20 auto completion files. Or you write one function that can handle every one of your
+scripts. This would get you very much in the direction this script took. 
+
+The next problem is that it is all hard coded. If you change a script parameter name or add or remove a parameter,
+you need to also change code in the auto completion function to keep it in sync with the implementation.
+
+**This script implements a delarative approach to autocompletion.**
+You can add or remove words in auto completions for commands and restructure the completion
+tree by copying and pasting and changing indentation, etc.
 
 # Configuration
+
+A configuration file defines a command tree. 
+Indentation and previous hierarchy elements define where a command will reside in the tree. 
+It also defines command arguments. Arguments have a type which determines which function, variable or static list will be used for completion.
 
 A config file must at least contain a [commands] section and can contain an [env] section.
 
@@ -65,7 +79,11 @@ on the command line will be appended.
 Where it really starts to get useful is when the hierarchical command tree structure comes into play.
 
 Let's look at a more complex command tree now, with a demonstration of using variables.
-Since autocompletion scripts are sourced, you can create directory bookmarks.
+Since autocompletion scripts are sourced, you can create directory bookmarks with this configuration.
+The indentation ca be freely chosen. The identation of the first indented line after the binning of a
+command tree decides how the rest of the file must be indented (meaning which indentation depth is one level
+in tree depth).
+
 
     [env]
     GIT_ROOT="~/git/some/deep/directory/structure/in/a/large/git/repository/"
@@ -234,11 +252,12 @@ Considering the configuration above, you could execute `cluster-cli d l c` and i
 In case of failed command execution the script uses the exit status to indicate
 the reason
 
-	- 49 script was called with wrong name. need to create a link and use this.
-	- 50 no command supplied
-	- 51 attempt to expand abbreviated command failed
-	- 52 not all positional arguments could be resolved. not enough arguments.
-	- 53 not enough arguments provided
+- 49 script was called with wrong name. need to create a link and use this.
+- 50 no command supplied
+- 51 attempt to expand abbreviated command failed
+- 52 not all positional arguments could be resolved. not enough arguments.
+- 53 not enough arguments provided
+- 127 the command in the resolved command expression was not found by the shell
 
 
 # Zsh support with bashcompinit
