@@ -691,7 +691,7 @@
 
 		New:
 
-			DEV-0055 Apply changes shellharden suggests. It isn't much. Mostly quoting.
+			DEV-0055 Apply changes shellharden suggests. It isn't much. Mostly quoting. Hah.
 			DEV-0056 Use #!/usr/bin/env bash in shebang line?
 			DEV-0057 Command parser always print the first letter of a word as required, even
 					 if there is only one word at this tree level for all commands
@@ -711,3 +711,5 @@
 					 to make any sense. No brackets would inidicate the whole word must be typed.
 					 Brackets around the whole word semantically indicate that the whole word is optional,
 					 which also isn't correct. -> keep it as it is. It's the best option of the three and good enough.
+
+			DEV-0058 write test for including other configs

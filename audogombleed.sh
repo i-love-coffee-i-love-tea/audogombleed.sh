@@ -38,8 +38,8 @@
 #	Implements a generic, configurable, auto complete command tree.
 #	It works in bash and zsh
 #
-#
 #	To use this script you need to
+#
 #		1. create a link to the main script
 #
 #			`ln -s ~/bin/audogombleed.sh ~/bin/yourcli`
@@ -62,6 +62,8 @@
 #	If you need to debug it, you can set __CLI_LOG_LEVEL=4 to write
 #	debug logs to /tmp/cli-bash.log or /tmp/cli-zsh.log depending
 #   on the shell you are using
+#
+# 	Documention is available here: https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
 #	
 __CLI_VERSION="1.0"
 
@@ -83,17 +85,17 @@ _cli_remove_first_word() {
 }
 
 _cli_shell_is_bash() {
-	[ -n "$BASH_VERSION" ]
+	[ "$BASH_VERSION" != "" ]
 }
 
 _cli_shell_is_zsh() {
-	[ -n "$ZSH_VERSION" ]
+	[ "$ZSH_VERSION" != "" ]
 }
 _cli_get_shell_name() {
 	local name=""
 	_cli_shell_is_bash && name="-bash"
 	_cli_shell_is_zsh && name="-zsh"
-	echo $name
+	echo "$name"
 }
 
 _cli_global_is_negative_bool() {
@@ -107,8 +109,9 @@ _cli_global_is_negative_bool() {
 	fi
 	
 	case "$value" in
-		n|no|false|1)
+		N|No|n|no|false|1)
 			return 0
+			;;
 	esac
 	return 1
 }
@@ -126,6 +129,7 @@ _cli_is_positive_bool() {
 	case "$1" in
 		Y|YES|Yes|y|yes|true|0)
 			return 0
+			;;
 	esac
 	return 1
 }
@@ -138,13 +142,13 @@ _cli_global() {
 		# get value
 		var_name=__CLI_${__CLI_PROGNAME}_${var_name}
 		if _cli_shell_is_zsh; then
-			echo ${(P)var_name}
+			echo "${(P)var_name}"
 		else
-			echo ${!var_name}
+			echo "${!var_name}"
 		fi
 	elif [ $# -eq 2 ]; then
 		# set value
-		printf -v "__CLI_${__CLI_PROGNAME}_${var_name}" '%s' "${val}"	
+		printf -v "__CLI_${__CLI_PROGNAME}_${var_name}" '%s' "$val"	
 	fi
 }
 
@@ -259,7 +263,7 @@ _cli_log() {
 		funcname+=("${FUNCNAME[1]}")
 		funcname+=("${FUNCNAME[2]}")
 	fi
-	if [ -z "${funcname[1]}" ]; then
+	if [ "${funcname[1]}" = "" ]; then
 		funcname[1]="."
 	fi
 	case $level in
@@ -278,11 +282,11 @@ _cli_error() {
 }
 _cli_exit_if_not_sourced() {
 	if _cli_is_sourced; then
-		return $1
+		return "$1"
 	else
 		_cli_log 3 "exiting with status $1"
 		_cli_close_logfile
-		exit $1
+		exit "$1"
 	fi
 }
 
@@ -331,7 +335,7 @@ _cli_read_command_list() {
 
 _cli_map_function_output_to_env_var() {
     local FUNC_TO_CALL=$1
-    export _cli_${FUNC_TO_CALL}_result="$($FUNC_TO_CALL)"
+    export "_cli_${FUNC_TO_CALL}_result=$("$FUNC_TO_CALL")"
 }
 
 _cli_read_awk_script() {
@@ -439,8 +443,9 @@ BEGIN {
 		#printf "skipping empty line: '%s'\n", fullcmd
 		if (fullcmd != "") {
 			print_command()
+			cache_command_names()
+			clear_command_vars_for_next_command()
 		}
-		#next
 	}
 	next
 }
@@ -474,6 +479,8 @@ BEGIN {
 		}
 		if (fullcmd != "") {
 			print_command()
+			cache_command_names()
+			clear_command_vars_for_next_command()
 		}
 	}
 }
@@ -495,6 +502,8 @@ BEGIN {
 		}
 		if (fullcmd != "") {
 			print_command()
+			cache_command_names()
+			clear_command_vars_for_next_command()
 		}
 		if (output_type == "command_word_functions") {
 			if (type == "command") {
@@ -551,7 +560,7 @@ BEGIN {
 			} else {
 				fullcmd=cmd" "$1
 			}
-			print_cmd_help(fullcmd)
+			cache_cmd_help(fullcmd)
 			if (length(cmd_details_help) > 0) {
 				for (i in cmd_details_help) {
 					v_cmd_details_help[gensub(":", "", 1, fullcmd), i]=cmd_details_help[i]
@@ -592,8 +601,8 @@ BEGIN {
 				cmd=cmd" "$1
 			}
 			if (output_type == "help") { 
-				print_cmd_help(cmd)
-				print_cmd_details_help(cmd)
+				cache_cmd_help(cmd)
+				cache_cmd_details_help(cmd)
 			} 
 		}
 	}
@@ -602,6 +611,7 @@ BEGIN {
 END {
 	if (output_type == "command_names" || output_type == "help") {
 		print_command()
+		cache_command_names()
 
 		# enrich with marking for optional characters
 		if (do_format_command_names != 1) {
@@ -646,7 +656,6 @@ END {
 				first_word=cmd_words[1]
 				
 				# print all help texts in the hierarchy of this command from the first command word on
-				cmd_tree_path
 				if (first_word != prev_first_word) {
 					# new command tree; print separating line
 					printf "\n"
@@ -660,13 +669,20 @@ END {
 							}
 							grp_help_idx=0
 							while ("" != cmd_help_by_cmd[cmd_tree_path, grp_help_idx]) {
+								# unformatted_help_line: help lines as they are in the config,
+								# not yet broken or joined to col_width
+								# split to words and append to line up to col_width
 								split(cmd_help_by_cmd[cmd_tree_path, grp_help_idx], unformatted_help_line, " ")
 								for (word_idx in unformatted_help_line) {
 									wl=length(unformatted_help_line[word_idx])
+									# -2 because of 4 indentation spaces at line start.
+									# print line and start a new one if the word doesn't fit
 									if (length(line) + wl >= cols-2) {
 										printf prefix_spaces "| %s\n", line
 										line=""
 									}
+
+									# append word
 									if (line == "") {
 										line = unformatted_help_line[word_idx]
 									} else {
@@ -674,6 +690,9 @@ END {
 									}
 								}
 							
+								# print line if it has content - this is to assure line breaks in help
+								# text are not removed. The effect is that lines never get longer as defined,
+								# but will broken up when there is not enough space.
 								if (line != "") {
 									printf prefix_spaces "| %s\n", line
 									line=""
@@ -820,6 +839,8 @@ END {
 		# it is terminated here.
 		if (fullcmd != "") {
 			print_command()
+			cache_command_names()
+			clear_command_vars_for_next_command()
 		}
 		
 		# if a filter was set and no command was found,
@@ -1086,35 +1107,44 @@ function print_command_environment_vars(fullcmd, cmd_exec) {
 	}
 }
 
+
+function cache_command_names() {
+	# remove trailing colon
+	fullcmd=gensub("[ \\t]{0,}(.*?):", "\\1", "g", fullcmd) 
+	if (output_type == "command_names" || output_type == "help") {
+	    # create a list of all commands
+	    split(fullcmd, cmdparts, " ")
+	    last_word=cmdparts[length(cmdparts)]
+	    if (is_dynamic_command(last_word)) {
+	        # expand commands with dynamic parts in the command part
+	        expand_dynamic_commands(fullcmd, last_word)
+	        for (c in dyn_cmds) {
+	            command_names_index++;
+	            command_names[command_names_index]=dyn_cmds[c]
+	            #args=v_argnames[fullcmd,   
+	            arg_idx=0
+	            while ("" != v_argnames[fullcmd, arg_idx]) {
+	                v_argnames[dyn_cmds[c], arg_idx]=v_argnames[fullcmd, arg_idx]
+	                arg_idx++
+	            }
+	        }
+	    } else {
+	        command_names_index++;
+	        command_names[command_names_index]=gensub("(.*?):", "\\1", "g", fullcmd) 
+	    }
+	}
+}
+
+# The when the logic got more complex I moved most of the printing 
+# to the END block. The only printing still happening here is
+# for output=commands without command filter 
 function print_command() {
 	
 	# remove trailing colon
 	fullcmd=gensub("[ \\t]{0,}(.*?):", "\\1", "g", fullcmd) 
 
-	if (output_type == "command_names" || output_type == "help") {
-		# create a list of all commands
-		split(fullcmd, cmdparts, " ")
-		last_word=cmdparts[length(cmdparts)]
-		if (is_dynamic_command(last_word)) {
-			# expand commands with dynamic parts in the command part
-			expand_dynamic_commands(fullcmd, last_word)
-			for (c in dyn_cmds) {
-				command_names_index++;
-				command_names[command_names_index]=dyn_cmds[c]
-				#args=v_argnames[fullcmd, 	
-				arg_idx=0
-				while ("" != v_argnames[fullcmd, arg_idx]) {
-					v_argnames[dyn_cmds[c], arg_idx]=v_argnames[fullcmd, arg_idx]
-					arg_idx++
-				}
-				
-				# xxx
-			}
-		} else {
-			command_names_index++;
-			command_names[command_names_index]=gensub("(.*?):", "\\1", "g", fullcmd) 
-		}
-	} else if (output_type == "commands") {
+
+	if (output_type == "commands") {
 		split(fullcmd, cmdparts, " ")
 		last_word=cmdparts[length(cmdparts)]
 		if ( command_filter == "") {
@@ -1151,7 +1181,9 @@ function print_command() {
 			print_command_environment_vars(fullcmd, cmd_exec)
 		}
 	} 
-	#printf "========================= CMD: %s\n", $0
+}
+
+function clear_command_vars_for_next_command() {
 	delete cmd_args
 	delete cmd_argname
 	delete cmd_argtype
@@ -1172,7 +1204,7 @@ function get_indentation() {
 	return indentation
 }
 
-function print_cmd_help(cmd) {
+function cache_cmd_help(cmd) {
 	if (length(cmd_help) == 0) {
 		return
 	}
@@ -1194,7 +1226,7 @@ function print_cmd_help(cmd) {
 	delete cmd_help
 }
 
-function print_cmd_details_help(cmd) {
+function cache_cmd_details_help(cmd) {
 	if (length(cmd_details_help) == 0) {
 		return
 	}
@@ -1209,16 +1241,12 @@ function print_cmd_details_help(cmd) {
 				len=length(cmd_details_help[i+1])
 			}	
 		}
-		#print "" 
 		for (i in cmd_details_help) {
 			if (i % 2 != 0) {
 				continue
 			}
-			#printf "\t%-" (len+4) "s %s\n", cmd_details_help[i+1], gensub("[ \\t]{0,}#[ \\t]{0,}(.*)", "\\1", "1", cmd_details_help[i]) 
 			cmd_help_by_cmd[cmd, i] = gensub("[ \\t]{0,}#[ \\t]{0,}(.*)", "\\1", "1", cmd_details_help[i]) 
-			
 		}
-		#print "" 
 	}
 	cmd_details_help_index=0
 	delete cmd_details_help
@@ -1239,14 +1267,14 @@ _awk() {
 
 	if [ "${#include_files[@]}" -eq 0 ]; then	
 		# no includes configured, load only the main configuration, 
-		echo -E "${__CLI_AWK_SCRIPT}" | awk -f - "$(_cli_global CONFIG_FILE)" "$@"
+		echo -E "$__CLI_AWK_SCRIPT" | awk -f - "$(_cli_global CONFIG_FILE)" "$@"
 	else 
 		# merge main config and include config files before parsing
 
 		# write main config file to fifo
 		local tmpname=$(mktemp -u)
-		mkfifo "${tmpname}".main_config
-		cat "$(_cli_global CONFIG_FILE)" > "${tmpname}".main_config &
+		mkfifo "$tmpname".main_config
+		cat "$(_cli_global CONFIG_FILE)" > "$tmpname".main_config &
 
 		# write include files to fifos
 		for file in ${include_files[@]}; do
@@ -1256,31 +1284,31 @@ _awk() {
 			fi
 			_cli_log 4 "creating fifo for file: $include_file" 
 			include_parent_command="${file##*|}" 
-			include_filenames+=($include_file)
-			mkfifo ${tmpname}.include_file_${fifo_idx}
+			include_filenames+=("$include_file")
+			mkfifo "$tmpname".include_file_${fifo_idx}
 			include_fifos+=("${tmpname}.include_file_${fifo_idx}")
 			# write the [commands] content to the fifo
 			# the section is expected to be the last in the file
 			if [ "$include_parent_command" = "ROOT" ]; then
-				awk '$1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print $0}}' $include_file > ${tmpname}.include_file_${fifo_idx} &
+				awk '$1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print $0}}' $include_file > "$tmpname".include_file_${fifo_idx} &
 			else
-				awk 'BEGIN {print gensub("parent=(.*)","\\1", 1, ARGV[2])}; $1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print "    " $0}}' $include_file parent="$include_parent_command" > ${tmpname}.include_file_${fifo_idx} &
+				awk 'BEGIN {print gensub("parent=(.*)","\\1", 1, ARGV[2])}; $1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print "    " $0}}' $include_file parent="$include_parent_command" > "$tmpname".include_file_${fifo_idx} &
 			fi
 			fifo_idx=$((fifo_idx + 1))
 		done
 
 		# merge fifos
-		mkfifo ${tmpname}.merged_config
+		mkfifo "$tmpname".merged_config
 		_cli_log 4 "include fifos: ${include_fifos[@]}"
-		cat ${tmpname}.main_config ${include_fifos[@]} > ${tmpname}.merged_config &
+		cat "$tmpname".main_config ${include_fifos[@]} > "$tmpname".merged_config &
 
 		# parse merged_config
 		export COLUMNS
-		echo -E "${__CLI_AWK_SCRIPT}" | awk -f - ${tmpname}.merged_config "$@"
+		echo -E "$__CLI_AWK_SCRIPT" | awk -f - "$tmpname".merged_config "$@"
 
-		rm -rf ${tmpname}.main_config 2>/dev/null
-		rm -rf ${tmpname}.include_file* 2>/dev/null
-		rm -rf ${tmpname}.merged_config 2>/dev/null
+		rm -rf "$tmpname".main_config 2>/dev/null
+		rm -rf "$tmpname".include_file* 2>/dev/null
+		rm -rf "$tmpname".merged_config 2>/dev/null
 	fi
 
 }
@@ -1310,7 +1338,7 @@ _cli_count_matching_commands() {
 	# misusing return code here, to avoid having
 	# to use a global variable or subshell to read it
 	# saved 60ms during command execution with development config
-	return $n
+	return "$n"
 }
 
 _cli_command_is_exact_match() {
@@ -1319,7 +1347,7 @@ _cli_command_is_exact_match() {
 }
 
 _cli_load_completion_vars() {
-	[ -z "$1" ] && return	
+	[ "$1" = "" ] && return	
 	eval "$(_awk output=commands command_filter="$1")" 
 }
 
@@ -1425,7 +1453,7 @@ $env_line"
             #export __CLI_CFG_LOG_LEVEL=1
 			_cli_global CFG_LOG_LEVEL 1
 			_cli_close_logfile	
-			_cli_global CFG_LOG_LEVEL $newlevel
+			_cli_global CFG_LOG_LEVEL "$newlevel"
 		fi
 	fi
 	
@@ -1480,7 +1508,7 @@ _cli_is_command_complete() {
                         if [ "$i" = "$words" ]; then
                             break
                         fi
-                        if [ -z "$new_line" ]; then
+                        if [ "$new_line" = "" ]; then
                             new_line=$w
                         else
                             new_line="$new_line $w"
@@ -1496,7 +1524,7 @@ _cli_is_command_complete() {
                         if [ "$i" = "$words" ]; then
                             break
                         fi
-                        if [ -z "$new_line" ]; then
+                        if [ "$new_line" = "" ]; then
                             new_line=$w
                         else
                             new_line="$new_line $w"
@@ -1506,7 +1534,7 @@ _cli_is_command_complete() {
                 fi
                 line="$new_line"
 
-                if [ -z "$line" ]; then
+                if [ "$line" = "" ]; then
                     break
                 fi
             fi
@@ -1518,7 +1546,7 @@ _cli_is_command_complete() {
     __CLI_CMD_WORDS="$cmd"
     _cli_log 4 "cmd: $cmd, is_complete: $is_complete"
     # | wc -w
-    return $is_complete
+    return "$is_complete"
 }
 
 
@@ -1532,7 +1560,7 @@ _cli_get_command_args() {
 		fi
 		break
 	done <<< "${__CLI_CONFIG[@]}"); do
-		 echo -E $w
+		 echo -E "$w"
 	done
 }
 
@@ -1568,6 +1596,7 @@ _cli_cut() {
             ;;
         *)
             IFS="$2"
+            ;;
     esac
 
     if test ! -t 0; then
@@ -1680,6 +1709,7 @@ _cli_wc() {
 	echo $#
 }
 
+# todo: replace shell word splitting
 _cli_is_one_word() {
 	[ "$#" -eq "1" ]
 }
@@ -1691,7 +1721,7 @@ _cli_yes_no_prompt() {
 	else
 		read -p "$@" user_input
 	fi
-	if [ -z "$user_input" ]; then
+	if [ "$user_input" = "" ]; then
 		return 0
 	fi
 	_cli_is_positive_bool "$user_input"
@@ -1737,7 +1767,7 @@ _cli_execute_command() {
 	cmd_expanded="n"
 	args_expanded="n"
 
-	if [ -z "$cmdline" ]; then
+	if [ "$cmdline" = "" ]; then
 		_cli_print_usage "no command supplied"
 		exit_code=50
 		_cli_exit_if_not_sourced $exit_code
@@ -1793,7 +1823,7 @@ _cli_execute_command() {
 		if _cli_args_are_complete "$cmd" ${args[@]}; then
 			# fetch the command to execute from the config
 			cmd_expr="$(_cli_get_command_expr "$cmd")"
-			if [ -n "$cmd_expr" ]; then
+			if [ "$cmd_expr" != "" ]; then
 				_cli_log 4 "cmdline: '$cmdline'"
 				_cli_log 4 "cmd_expr: '$cmd_expr'"
 
@@ -1925,7 +1955,7 @@ _cli_complete_arg() {
 
 	# command has no args
 	_cli_load_completion_vars "$cmd"
-	if [ -z "$__CMD_EXEC" ]; then
+	if [ "$__CMD_EXEC" = ""]; then
 		return
 	fi
 
@@ -1948,7 +1978,7 @@ _cli_complete_arg() {
 	_cli_log 4 "arg_type0: ${__CMD_ARG_TYPE[0]}"
 	_cli_log 4 "arg_type1: ${__CMD_ARG_TYPE[1]}"
 
-	[ -z "$arg_type" ] && return
+	[ "$arg_type" = "" ] && return
 	
 	# parse special argument types 'list' and 'int_range'
 	if [ "$arg_type" = "list" ]; then
@@ -1965,7 +1995,7 @@ _cli_complete_arg() {
 	_cli_log 4 "arg list: $arg_list"
 	case "$arg_type" in
 		STRING) 
-			if [ -n "$word" ];  then
+			if [ "$word" != "" ];  then
 				echo "$word"
 			fi
 			description="string argument"
@@ -2002,12 +2032,12 @@ _cli_complete_arg() {
 			;;
 		int_range)
 			_cli_log 4 "int_range word: $word, $arg_min, $arg_max"
-			if [ -n "$word" ] && _cli_is_integer $word; then
+			if [ "$word" != "" ] && _cli_is_integer $word; then
 				
 				if [ "$word" -ge "$arg_min" ] && [ "$word" -le "$arg_max" ]; then
 					echo "$word"
 				fi
-			elif [ -z "$word" ]; then
+			elif [ "$word" = "" ]; then
 				len=$((arg_max - arg_min + 1))
 				if [ "$len" -lt 20 ]; then
 					seq $arg_min $arg_max
@@ -2016,29 +2046,29 @@ _cli_complete_arg() {
 			description="integer between $arg_min and $arg_max (inclusive)"
 			;;
 		eval)
-			arg_list=$(eval $eval_cmd)
+			arg_list=$(eval "$eval_cmd")
 			compgen -W "$arg_list" "$word"
 			;;	
 		IP) ;;
 		MAC) ;;
 	    FILE)
-    		compgen -f -- "${word}"
+			compgen -f -- "$word"
 			description="file"
 			;;
         DIR)
-    		compgen -d -- "${word}"
+			compgen -d -- "$word"
 			description="directory"
 			;;
 		ENVVAR)
-    		compgen -e -- "${word}"
+			compgen -e -- "$word"
 			description="environment variable"
 			;;
 		USER)
-    		compgen -u -- "${word}"
+			compgen -u -- "$word"
 			description="system user"
 			;;
 		GROUP)
-    		compgen -g -- "${word}"
+			compgen -g -- "$word"
 			description="system group"
 			;;
 		SSH_HOST)
@@ -2061,7 +2091,7 @@ _cli_complete_arg() {
 			;;
 	esac
 
-	if [ -n "$__CLI_DESC" ]; then
+	if [ "$__CLI_DESC" != "" ]; then
 		description="$__CLI_DESC"
 	fi
 
@@ -2098,11 +2128,11 @@ _cli_complete_()
 
 	if _cli_shell_is_zsh; then
 		if [ ! -z "${COMP_WORDS[1]}" ]; then
-			__CLI_PROGNAME="$(basename ${COMP_WORDS[1]})"
+			__CLI_PROGNAME="$(basename "${COMP_WORDS[1]}")"
 		fi
 	else 
 		if [ ! -z "${COMP_WORDS[0]}" ]; then
-			__CLI_PROGNAME="$(basename ${COMP_WORDS[0]})"
+			__CLI_PROGNAME="$(basename "${COMP_WORDS[0]}")"
 		fi
 	fi
 		
@@ -2145,14 +2175,14 @@ _cli_complete_()
 		
 	_cli_log 4 "line: '${a_line[*]}'"
 
-	if [ -z "$word" ]; then
+	if [ "$word" = "" ]; then
 		word="empty"
 	fi
 	
-	if [ "$COMP_CWORD" -eq 1 ] && [ -n "$word" ]; then
+	if [ "$COMP_CWORD" -eq 1 ] && [ "$word" != "" ]; then
 		# first word can be handled more efficiently
 		COMPREPLY=($(_cli_getfirstwords "$word"))
-	elif [ "$COMP_CWORD" -gt 1 ] || [ -n "$word" ]; then
+	elif [ "$COMP_CWORD" -gt 1 ] || [ "$word" != "" ]; then
 		local -a a_complete_cmd
 		local cmd_word_count
 		local line_word_count
@@ -2181,11 +2211,11 @@ _cli_complete_()
 		else
 			# complete next command word
 			_cli_log 4 "completing command"
-			_cli_complete_command $COMP_CWORD "${a_line[*]}"
+			_cli_complete_command "$COMP_CWORD" "${a_line[*]}"
 		fi
 	fi
 
-	if [ -n "$COMPREPLY" ] && _cli_shell_is_zsh; then
+	if [ "$COMPREPLY" != "" ] && _cli_shell_is_zsh; then
 		#COMPREPLY+=("value_with_description[the description]")
 		_values "$description" "${COMPREPLY[@]}"
 	fi
@@ -2202,7 +2232,7 @@ _cli_get_last_word() {
 		last_word=$1
 		shift
 	done
-	echo $last_word
+	echo "$last_word"
 }
 
 # tries to expand command words
@@ -2213,7 +2243,7 @@ _cli_expand_abbreviated_command() {
 	_cli_log 4 "command: '$*'"
 	matched_words=""
 	while [ $# -gt 0 ]; do
-		if [ -z "$matched_words" ]; then
+		if [ "$matched_words" = "" ]; then
 			query="$1"
 		else
 			# return if complete
@@ -2228,13 +2258,13 @@ _cli_expand_abbreviated_command() {
 		fi
 		# check whether the word we are at in the loop can be completed unabigously
 		_cli_log 4 "query: $query"
-		commands=($(_cli_getmatchingcommands "$query" | cut -f$i -d' ' | uniq))
+		commands=("$(_cli_getmatchingcommands "$query" | cut -f"$i" -d' ' | uniq)")
 		_cli_log 4 "commands: '${commands[*]}'"
 		#_cli_log 4 "command: $i, $commands, current_word: '$1'"
 		if _cli_is_one_word ${commands[*]}; then
 			#matched_word=$(_cli_cut $i space "$commands")
 			matched_word=$(echo "$commands" | cut -f$i -d' ')
-			if [ -z "$matched_words" ]; then
+			if [ "$matched_words" = "" ]; then
 				matched_words="$matched_word"
 			else
 				matched_words="$matched_words $matched_word"
@@ -2250,7 +2280,7 @@ _cli_expand_abbreviated_command() {
 		shift
 	done
 
-	if [ -z "$matched_words" ]; then
+	if [ "$matched_words" = "" ]; then
 		return 2
 	fi
 
@@ -2272,14 +2302,14 @@ _cli_expand_abbreviated_args() {
 		_cli_log 4 "\$1: $1, arg: $arg, expanded: $expanded_arg, ${#expanded_arg[@]}"
 
 		if [ "${#expanded_arg[@]}" -eq 1 ]; then
-			if [ -z "$expanded_args" ]; then
+			if [ "$expanded_args" = "" ]; then
 				expanded_args="$expanded_arg"
 			else
 				expanded_args="$expanded_args $expanded_arg"
 			fi
 		elif [ "${#expanded_arg[@]}" -eq 0 ]; then
 			if ! _cli_global_is_negative_bool CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY; then
-				if [ -z "$expanded_args" ]; then
+				if [ "$expanded_args" = "" ]; then
 					expanded_args="$1"
 				else
 					expanded_args="$expanded_args $1"
@@ -2306,7 +2336,7 @@ _cli_expand_abbreviated_args() {
 }
 
 _cli_get_first_word() {
-	echo $1
+	echo "$1"
 }
 
 # arg1 word to compare
@@ -2317,10 +2347,10 @@ _cli_first_word_equals() {
 
 _cli_load_command_word_functions() {
 	local fun
-	for fun in $(_awk output=command_word_functions); do
+	for fun in "$(_awk output=command_word_functions)"; do
 		_cli_log 4 "mapping function $fun results to environment"
-		if declare -f -p $fun 1>/dev/null 2>/dev/null; then
-			_cli_map_function_output_to_env_var $fun
+		if declare -f -p "$fun" 1>/dev/null 2>/dev/null; then
+			_cli_map_function_output_to_env_var "$fun"
 		else
 			_cli_error
 			_cli_error "CLI warning: command word function '$fun' used in configuration, but is not available"
@@ -2331,11 +2361,11 @@ _cli_load_command_word_functions() {
 _cli_execute() {
 	if _cli_shell_is_zsh; then
 		if [ ! -z "${COMP_WORDS[1]}" ]; then
-			__CLI_PROGNAME="$(basename ${COMP_WORDS[1]})"
+			__CLI_PROGNAME="$(basename "${COMP_WORDS[1]}")"
 		fi
 	else 
 		if [ ! -z "${COMP_WORDS[0]}" ]; then
-			__CLI_PROGNAME="$(basename ${COMP_WORDS[0]})"
+			__CLI_PROGNAME="$(basename "${COMP_WORDS[0]}")"
 		fi
 	fi
 
@@ -2368,7 +2398,7 @@ _cli_execute() {
 	# 143ms after removing some subshell calls in loading code
 	# 106ms after removing more subshell calls
 	# 20ms after removing even more
-	_cli_load_config_environment $batch_mode
+	_cli_load_config_environment "$batch_mode"
 	# 36ms
 	# 30ms
 	# 12ms
@@ -2392,7 +2422,7 @@ _cli_execute() {
 			# already processed earlier
 			;;
 		--cli-print-awk-script)
-			echo -E "${__CLI_AWK_SCRIPT}"
+			echo -E "$__CLI_AWK_SCRIPT"
 			return 0
 			;;
 		--cli-print-env)
@@ -2405,11 +2435,11 @@ _cli_execute() {
 			return 0
 			;;
 		--version)
-			echo $__CLI_VERSION
+			echo "$__CLI_VERSION"
 			return 0
 			;;
 		*)
-			if [ -z "$cmd_args" ]; then
+			if [ "$cmd_args" = "" ]; then
 				cmd_args="$1"
 			else
 				cmd_args="$cmd_args $1"
@@ -2424,7 +2454,7 @@ _cli_execute() {
 	else
 		read -a a_cmd_args <<<"$cmd_args"
 	fi
-	for arg in ${a_cmd_args[@]}; do
+	for arg in "${a_cmd_args[@]}"; do
 		last_arg=$arg
 	done
 
@@ -2463,7 +2493,7 @@ _cli_execute() {
 # execute command, if not sourced
 # load completions if sourced
 if ! _cli_is_sourced; then
-	if [ "audogombleed.sh" = "$(basename $0)" ]; then
+	if [ "audogombleed.sh" = "$(basename "$0")" ]; then
 		echo "This script is not intended to be called directly."
 		echo "Create a link and an alias with the same name as"
 		echo "the link to the global _cli_execute function"
