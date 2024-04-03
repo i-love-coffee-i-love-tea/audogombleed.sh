@@ -1,8 +1,8 @@
-name: "Automated Bash Tests"
+name: "Automated Tests"
 on: [push, pull_request]
 jobs:
   build:
-    name: build
+    name: BATS tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
