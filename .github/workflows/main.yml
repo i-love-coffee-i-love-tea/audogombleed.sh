@@ -19,6 +19,8 @@ jobs:
       
       - name: Test
         run: test/bats/bin/bats test/*.bats --formatter junit > report.xml
+      - name: Output report file
+        run: cat report.xml
       - name: Report
         uses: dorny/test-reporter@v1
         if: always()
