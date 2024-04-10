@@ -18,4 +18,12 @@ jobs:
       - run: echo "This job's status is ${{ job.status }}."
       
       - name: Test
-        run: test/bats/bin/bats test/*.bats
+        run: test/bats/bin/bats test/*.bats --formatter junit > report.xml
+      - name: Report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Maven Tests
+          path: report.xml
+          reporter: java-junit
+          fail-on-error: true
