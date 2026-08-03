@@ -1,3 +1,5 @@
+# vim:et:ts=2:sw=2
+
 # configure cli option
 _set_option() {
 	local option value

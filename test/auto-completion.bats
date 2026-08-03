@@ -1,3 +1,5 @@
+# vim:et:ts=4:sw=4
+
 setup_file() {
   	echo "# setup_file" >&3
     load 'common-setup'
@@ -64,6 +66,18 @@ setup() {
     load 'auto-completion-mock-setup'
 	result="$(test_completion 3 "testcli" "list-argument" "from-variable")"
 	assert_equal "$result" 'option1 option2 option3' 
+}
+
+# commands without args (tests the space fix in _cli_complete_arg)
+@test "returns empty completion for command without args: false" {
+    load 'auto-completion-mock-setup'
+	result="$(test_completion 2 "testcli" "false")"
+	assert_equal "$result" ''
+}
+@test "returns empty completion for command without args: return2" {
+    load 'auto-completion-mock-setup'
+	result="$(test_completion 2 "testcli" "return2")"
+	assert_equal "$result" ''
 }
 
 # install

@@ -15,7 +15,7 @@ arguments they require, this might be of interest to you.
 
 Or maybe you want to create a descriptive CLI for the program or script you are developing.
 
-#### But why don't you just use shell autocompletion? Bash and ZSH both have support for it?!
+### But why don't you just use shell autocompletion? Bash and ZSH both have support for it?!
 
 This script of course makes use of bash and zsh completion features. My problem with it was,
 that it is not declarative. This means, if you want to use auto completion with 20 scripts, you
@@ -25,9 +25,42 @@ scripts. This would get you very much in the direction this script took.
 The next problem is that it is all hard coded. If you change a script parameter name or add or remove a parameter,
 you need to also change code in the auto completion function to keep it in sync with the implementation.
 
-**This script implements a delarative approach to autocompletion.**
+**This script implements a declarative approach to autocompletion.**
 You can add or remove words in auto completions for commands and restructure the completion
 tree by copying and pasting and changing indentation, etc.
+
+## Quick Start
+
+1. **Create a symlink** — the filename becomes the CLI name, determines the
+   config file path, and is used to register tab completion. Using a symlink
+   (instead of copying the script) means all your CLIs share one source file —
+   update `audogombleed.sh` once and every CLI picks up the new version:
+
+       ln -s ~/bin/audogombleed.sh ~/bin/mycli
+
+2. **Create a config file** — must match the symlink name (`~/$NAME.conf`).
+   A `[commands]` section is the minimum:
+
+       cat > ~/.mycli.conf <<'EOF'
+       [commands]
+       hello: echo "hello world"
+       EOF
+
+3. **Source the symlink** — this registers the tab-completion function with
+   your shell (`complete` in bash, `compdef` in zsh):
+
+       source ~/bin/mycli
+
+4. **Create an alias** — sourcing only registers completions. The alias makes
+   the command name invoke `_cli_execute` in the current shell (so commands
+   can export variables, cd into directories, etc.):
+
+       alias mycli='_cli_execute'
+
+5. **Try it** — press TAB to see completions, then execute:
+
+       mycli <TAB><TAB>
+       mycli hello
 
 # Configuration
 
@@ -41,7 +74,7 @@ The default configuration filename is ~/.${0}.conf. So the script can be used to
 create multi CLI trees with different names and configs. The config name is
 derived from the program/alias name.
 
-## comments
+## Comments
 
 Lines beginning with # are comment lines. Comments always
 are related to the following command or tree element.
@@ -80,7 +113,7 @@ Where it really starts to get useful is when the hierarchical command tree struc
 
 Let's look at a more complex command tree now, with a demonstration of using variables.
 Since autocompletion scripts are sourced, you can create directory bookmarks with this configuration.
-The indentation ca be freely chosen. The identation of the first indented line after the binning of a
+The indentation can be freely chosen. The indentation of the first indented line after the beginning of a
 command tree decides how the rest of the file must be indented (meaning which indentation depth is one level
 in tree depth).
 
@@ -101,22 +134,52 @@ in tree depth).
 
 It will create these commands with full autocompletion support:
 
-    cd git-projects projects1
-    cd git-projects projects2
-    cd git-projects projects3
-    cd app1 projects
-    cd app2 projects1
-    cd app3 projects1
+    cd git-projects project1
+    cd git-projects project2
+    cd git-projects project3
+    cd app-instances app1
+    cd app-instances app2
+    cd app-instances app3
     
 
 Defined variables can be used in command expressions.
 `\0` will be replaced by the last command word. 
 
-See [docs/03-advanced-command-configuration.md](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/blob/main/docs/03-advanced-command-configuration.md).
+See [docs/03-advanced-command-configuration.md](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/blob/main/docs/03-advanced-command-configuration.md)
 for more info about command definition possibilities.
+
+### Argument types
+
+Arguments are defined with `:name:type:source` syntax:
+
+| Type | Syntax | Description |
+|------|--------|-------------|
+| Static list | `:arg:list:val1\|val2\|val3` | Complete from a fixed set of values |
+| Variable list | `:arg:list:$VAR` | Complete from a shell variable (words separated by spaces or newlines) |
+| Function list | `:arg:eval:function_name` | Complete from the output of a shell function |
+| Default value | `:arg:value:default` | Use a default value (not a completion list) |
+| File | `:arg:FILE` | Complete file paths |
+| Directory | `:arg:DIRECTORY` | Complete directory paths |
 
 
 ## optional [env] section
+
+### Configuration options
+
+Set these in the `[env]` section of your config file:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `__CLI_CFG_EXEC_SILENT` | `"n"` | Suppress all CLI output (for script use) |
+| `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS` | `"y"` | Allow abbreviated command words |
+| `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS` | `"n"` | Allow abbreviated argument values |
+| `__CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS` | `"y"` | Ask user to confirm expanded commands |
+| `__CLI_CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS` | `"y"` | Print help when not all arguments are supplied |
+| `__CLI_CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY` | `"n"` | Only allow values from completion lists |
+| `__CLI_CFG_EXEC_ALWAYS_RETURN_0` | `"n"` | Always return exit code 0 (useful for shell history) |
+| `__CLI_CFG_LOG_LEVEL` | `0` | Log level (0=off, 4=debug, writes to `/tmp/cli-bash.log`) |
+
+See [docs/02-configuration-options.md](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/blob/main/docs/02-configuration-options.md) for details.
 
 ### setting configuration options in the [env] section
 
@@ -152,7 +215,7 @@ Multiline function example.
         echo "bar"
     }
 
-# CLI command line arguments
+## CLI command line arguments
 
 ## -b | --batch
 
@@ -174,12 +237,15 @@ Prints the embedded AWK script
 Runs the embedded AWK config parser script. Only there for development purposes.
 
 
-# Builtin Help Output
+## Builtin Help Output
 
 If the CLI is executed with '?' as sole argument, it will print the help for
 all configured commands.
 
 '?' can also be append to complete or incomplete commands.
+
+> **Note**: If `?` doesn't work, it may be expanded by the shell as a glob pattern.
+> Use `-h` or `\?` instead. See [FAQ](docs/10-FAQ.md).
 
 Example configuration:
 
@@ -207,13 +273,13 @@ When appended to a command, it will print detailed command help, if available
          
 
 Can be used to print help texts if there are any in the configuration file.
-Displays the optinal parts of command words in square brackets.
+Displays the optional parts of command words in square brackets.
 
 Example help output:
 
     $ cli logs ?
 
-      | output tomcat logs
+      output tomcat logs
 
         lo[gs] w[ebapp]                                            view webapp logs
         lo[gs] o[sgi-framework]                                    view osgi framework logs
@@ -221,9 +287,7 @@ Example help output:
 
 
 
-
-
-# Abbreviated Commands
+## Abbreviated Commands
 
 Commands can be submitted in an abbreviated form as long as all command words resolve unambiguously.
 
@@ -242,12 +306,12 @@ Example config mimicking the docker cli for demonstration:
             containers: docker list containers
             images: docker list images
 
-Considering the configuration above, you could execute `cluster-cli d l c` and it would expand to `cluster-cli docker list containers`
+Considering the configuration above, you could execute `cli d l c` and it would expand to `cli docker list containers`
 
-    $ cluster-cli 
+    $ cli d l c
 
 
-# Exit status
+## Exit status
 
 In case of failed command execution the script uses the exit status to indicate
 the reason
@@ -260,11 +324,12 @@ the reason
 - 127 the command in the resolved command expression was not found by the shell
 
 
-# Zsh support with bashcompinit
-.zshrc:
+## Zsh support with bashcompinit
+
+To enable tab completion in zsh, add the following to your `.zshrc`:
 
     autoload bashcompinit
     bashcompinit
 
-	# if you want to use completion with an alias you need to set this	
+    # if you want to use completion with an alias you need to set this
     setopt completealiases
