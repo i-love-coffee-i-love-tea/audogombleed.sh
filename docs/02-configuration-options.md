@@ -81,7 +81,7 @@ effects to persist after execution.
 |--|-----------------|-------|
 | **Execution method** | `eval` in current shell | `bash -c` in subprocess |
 | **Command output** | displayed | displayed |
-| **Exit code** | propagated | propagated |
+| **Command exit code** | propagated | propagated |
 | **`[env]` variables** | available | available (re-sourced) |
 | **`[env]` functions** | available | available (re-sourced) |
 | **Working directory change** | persists in your shell | gone when subprocess exits |
