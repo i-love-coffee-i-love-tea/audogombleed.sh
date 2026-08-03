@@ -75,6 +75,21 @@ When set to "n" (default), commands run in the current shell via `eval`,
 which allows `cd`, `export`, variable assignments, and other shell side
 effects to persist after execution.
 
+### What works where
+
+| Feature | `"n"` (default, eval) | `"y"` (subprocess, bash -c) |
+|---------|----------------------|----------------------------|
+| Run shell commands | yes | yes |
+| Exit code propagation | yes | yes |
+| `[env]` variables (`$VAR`) | yes | yes (re-sourced in subprocess) |
+| `[env]` functions (`func()`) | yes | yes (re-sourced in subprocess) |
+| `cd` / `pushd` / `popd` | affects shell | lost after subprocess exits |
+| `export VAR=val` | persists in shell | lost |
+| Variable assignments (`VAR=val`) | persists | lost |
+| `source` / virtualenvs | affects shell | lost |
+| Shell aliases | available | not available |
+| Performance | fast (no fork) | slightly slower (fork) |
+
 
 ## __CLI_CFG_EXEC_SILENT (default: "n")
 
