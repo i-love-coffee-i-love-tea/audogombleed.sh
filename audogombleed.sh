@@ -64,7 +64,7 @@
 #	debug logs to /tmp/cli-bash.log or /tmp/cli-zsh.log depending
 #   on the shell you are using
 #
-# 	Documention is available here: https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
+# 	Documentation is available here: https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
 #	
 __CLI_VERSION="1"
 
@@ -249,7 +249,7 @@ _cli_log() {
 	if ! _cli_global_is_set LOG_OPENED; then
 		return
 	fi
-	# log file is not open
+	# log file is closed
 	if _cli_global_equals LOG_OPENED "1"; then
 		return
 	fi
@@ -839,7 +839,7 @@ END {
 								line_length=wl
 							} else {
 								line = line " " unformatted_help_line[word_idx]
-								line_lenght+=wl+1
+								line_length+=wl+1
 							}
 						}						
 						#printf "    %-" col_width "s %s\n", "", v_cmd_details_help[unformatted_command, help_idx]
@@ -1156,9 +1156,9 @@ function cache_command_names() {
 	}
 }
 
-# The when the logic got more complex I moved most of the printing 
+# When the logic got more complex I moved most of the printing 
 # to the END block. The only printing still happening here is
-# for output=commands without command filter 
+# for output=commands without command filter
 function print_command() {
 	
 	# remove trailing colon
@@ -1818,7 +1818,7 @@ _cli_execute_command() {
 			_cli_exit_if_not_sourced $exit_code
 			return "$exit_code"
 		fi
-		_cli_log 4 "cmd after expanson: $expanded_cmdline"
+		_cli_log 4 "cmd after expansion: $expanded_cmdline"
 	fi
 
 	if _cli_is_command_complete "$cmdline"; then
@@ -2287,7 +2287,7 @@ _cli_expand_abbreviated_command() {
 			fi
 			query="$matched_words $1"
 		fi
-		# check whether the word we are at in the loop can be completed unabigously
+		# check whether the word we are at in the loop can be completed unambiguously
 		_cli_log 4 "query: $query"
 		commands=("$(_cli_getmatchingcommands "$query" | cut -f"$i" -d' ' | uniq)")
 		_cli_log 4 "commands: '${commands[*]}'"
@@ -2346,13 +2346,13 @@ _cli_expand_abbreviated_args() {
 					expanded_args="$expanded_args $1"
 				fi
 			elif ! [[ "$arg" =~ \?$ ]]; then
-				_cli_error "command arg $i of type $arg can't be completed, because it's ambigous: $1"
+				_cli_error "command arg $i of type $arg can't be completed, because it's ambiguous: $1"
 				_cli_error "set CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY=n in config to allow this command"
 				return 2
 			fi
 		else
 			# ambiguous - can't execute	
-			_cli_error "command arg $i of type $arg can't be completed, because it's ambigous: $1"
+			_cli_error "command arg $i of type $arg can't be completed, because it's ambiguous: $1"
 			return 2
 		fi
 		

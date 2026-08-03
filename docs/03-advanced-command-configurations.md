@@ -1,4 +1,4 @@
-# Advanced command configurations
+# Advanced Command Configurations
 
 There are three ways to write commands to expand them to multiple commands.
 
@@ -6,7 +6,7 @@ There are three ways to write commands to expand them to multiple commands.
 - function expansion
 - list expansion
 
-This may be desireable when you have a multiple commands in the same hierarchy with
+This may be desirable when you have multiple commands in the same hierarchy with
 the same arguments.
 
 For example, consider this configuration:
@@ -59,18 +59,18 @@ most simple way, with a static list
 
 ## Argument placeholders
 
-The default is to append all defined command arugments at the end of the line.
+The default is to append all defined command arguments at the end of the line.
 In cases where you need more flexibility, because the arguments need to be
 embedded in a command at the right places, you can use placeholders.
 
-Exmaple of placeholder usage. This config defines two static command args which can be completed
+Example of placeholder usage. This config defines two static command args which can be completed
    
 	[commands]
  	echo: echo \2 \1
   		:value:first
 		:value:second
 
-Upon hitting tab serveral times, this command will complete to
+Upon hitting tab several times, this command will complete to
 
 	$ cli echo first second
 

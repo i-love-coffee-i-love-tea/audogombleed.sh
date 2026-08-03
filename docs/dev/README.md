@@ -5,7 +5,7 @@ In zsh the autocompletions can additionally use description labels, which
 aren't supported in bash.
 
 The core of the script is a config parser developed in AWK.
-It is embedded in the shell script and can be exported for delepment purposes as described below.
+It is embedded in the shell script and can be exported for development purposes as described below.
 
 ## global variables 
 
@@ -73,7 +73,7 @@ The script parameters are described in the comments in the script header.
 
 ## Linting
 
-I use shellcheck to find sources of uninteded errors.
+I use shellcheck to find sources of unintended errors.
 
 
    `$ shellcheck cli.sh`
@@ -85,7 +85,7 @@ I use shellcheck to find sources of uninteded errors.
 Latency is important. It makes your computer feel slow or quick.
 It may sound obvious, but it's very very important for a good user experience.
 
-Therefore, in auto completion functons, do not, unless absolutely necessary
+Therefore, in auto completion functions, do not, unless absolutely necessary
 
 - use subshells
 - call external programs 

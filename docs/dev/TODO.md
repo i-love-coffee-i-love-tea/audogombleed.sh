@@ -15,7 +15,7 @@
 - [x] Modify `_cli_execute_command()` to use `bash -c` when subprocess mode is active
 - [x] Store env script in `__CLI_ENV_SCRIPT` for subprocess use
 - [x] Update README.md config options table
-- [x] Update docs/02-configuration-options.md
+- [x] Update docs/02-configuration.md
 - [x] Update example.conf
 - [x] Add subprocess mode tests to test/config-options.bats
 - [x] Run full test suite, verify no regressions

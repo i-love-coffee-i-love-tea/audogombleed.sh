@@ -4,7 +4,7 @@
 	DEV-0001 done
 		- commands and command tree words can now be documented in the command tree config file
 		- comment lines must start with (optional whitespace and then) a # character
-		- comment lines followin after other comment lines are read as one comment
+		- comment lines following after other comment lines are read as one comment
 		- comments describe the first non comment line, describing a tree item or command, right after them
 		- appending a ? after the command now outputs the comment
 
@@ -46,7 +46,7 @@
 	
 	New Ideas:
 		DEV-0005:
-		- It shold be possible to supply a custom completion function that returns elements for completion of command arguments
+		- It should be possible to supply a custom completion function that returns elements for completion of command arguments
 
 	DEV-0005 done, It is now possible to use the 'eval' argument to specify a command that will be executed to find completable argument values
 
@@ -257,7 +257,7 @@
 
 			A better idea:
 
-				Command tree nodes, previously had to be exactly one word per line, optionally prefixed and/or suffixed with withspace.
+				Command tree nodes, previously had to be exactly one word per line, optionally prefixed and/or suffixed with whitespace.
 				To expand them to multiple commands, a list of constants, a variable or a function should be supplied
 			
 				=> One example for each
@@ -437,7 +437,7 @@
 			DEV-0029 variable namespace
 			DEV-0031 robust formatting
 
-		Decliend
+		Declined
 			DEV-0009
 			DEV-0030
 
@@ -476,7 +476,7 @@
 				 Why always 0? On Ubuntu bash is configured to only keep succeeding commands in the history.
 				 I didn't want to change this globally, but sometimes, when i'm developing new scripts for example i want to try execution and repeat it, without having to type the failed command again. So I made 0 the default.
 
-				 Introdude a new config option for the user to configure the desired behavior.
+				 Introduce a new config option for the user to configure the desired behavior.
 				 CFG_EXEC_ALWAYS_RETURN_0="n"
 				 
 
@@ -513,7 +513,7 @@
 				
 		DEV-0040 fix help output: tomcat manager ? does not print the comments, full help does
 
-		DEV-0041 fix \1 \2 palceholder replacement
+		DEV-0041 fix \1 \2 placeholder replacement
 
 			executes, but should not
 				tomcat echo 
@@ -566,7 +566,7 @@
 			now it is around 100ms
 			felt snappy from <150ms
 			now it feels really snappy 
-			let's see how muhc faster we can make it
+			let's see how much faster we can make it
 
 	DEV-0038 done
 
@@ -706,9 +706,9 @@
 						    i[nstall] w[ar] f[rom] m[aven] <mvn-coords>
 
 					 Here install and from are the same for all commands.
-					 The i in install is correct, be cause there are other commands (not displayed)
+					 The i in install is correct, because there are other commands (not displayed)
 					 The f in from does not have to be typed. I don't know how to format it differently
-					 to make any sense. No brackets would inidicate the whole word must be typed.
+					 to make any sense. No brackets would indicate the whole word must be typed.
 					 Brackets around the whole word semantically indicate that the whole word is optional,
 					 which also isn't correct. -> keep it as it is. It's the best option of the three and good enough.
 
