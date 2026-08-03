@@ -1,0 +1,29 @@
+name: Bash Version Compatibility
+on:
+  push:
+    branches: [bash-compat]
+  workflow_dispatch:
+
+jobs:
+  compat:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        bash-version:
+          - "4.2.53"
+          - "4.3.30"
+          - "4.4.18"
+          - "5.0"
+          - "5.1.16"
+          - "5.2.37"
+          - "5.3"
+    name: "bash ${{ matrix.bash-version }}"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential libncurses-dev
+      - name: "Build & test bash ${{ matrix.bash-version }}"
+        run: bash test/bash-compat.sh "${{ matrix.bash-version }}"
