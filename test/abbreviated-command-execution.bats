@@ -1,10 +1,12 @@
+# vim:et:ts=4:sw=4
+
 setup_file() {
-  	echo "# setup_file" >&3
+        echo "# setup_file" >&3
     load 'common-setup'
     _common_setup __CLI_CFG_EXEC_SILENT="n" __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS="n"
 }
 teardown_file() {
-  	echo "# teardown_file" >&3
+        echo "# teardown_file" >&3
     load 'common-teardown'
     _common_teardown
 }
@@ -21,7 +23,7 @@ setup() {
 }
 
 @test "command is expanded correctly: i w f m -> install war from maven, execution of missing program fails" {
-	# fixed warning about minimum required version 1.5.0 for 'run' command with parameters
+    # fixed warning about minimum required version 1.5.0 for 'run' command with parameters
 	bats_require_minimum_version 1.5.0
 	# -127 disables a bats warning when the command it tests fails with exit code 127
     run -127 ./testcli i w f m

@@ -1,3 +1,5 @@
+# vim:et:ts=4:sw=4
+
 setup_file() {
   	echo "# setup_file" >&3
     load 'common-setup'

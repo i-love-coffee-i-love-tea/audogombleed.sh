@@ -1,3 +1,5 @@
+# vim:et:ts=4:sw=4
+
 #
 #	Tests all possible command definition variations
 #   in silent mode	

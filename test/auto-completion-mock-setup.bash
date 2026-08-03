@@ -1,3 +1,5 @@
+# vim:et:ts=2:sw=2
+
 # first parameter COMP_CWORD value for simulation
 # rest of the arguments must be separate command words 
 test_completion() {

@@ -1,6 +1,7 @@
 #!/bin/bash
 #!/usr/bin/zsh
 # -*- coding: utf-8 -*-
+# vim:et:ts=4:sw=4
 #
 # BSD 2-Clause License
 #
@@ -65,7 +66,7 @@
 #
 # 	Documention is available here: https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
 #	
-__CLI_VERSION="1.0"
+__CLI_VERSION="1"
 
 _cli_remove_last_word() {
 	local ret
@@ -103,6 +104,7 @@ _cli_global_is_negative_bool() {
 	local value
 	var_name=__CLI_${__CLI_PROGNAME}_${var_name}
 	if _cli_shell_is_zsh; then
+	  # shellcheck disable=SC2296
 		value="${(P)var_name}"
 	else
 		value="${!var_name}"
@@ -119,6 +121,7 @@ _cli_global_is_positive_bool() {
 	local var_name="$1"
 	var_name=__CLI_${__CLI_PROGNAME}_${var_name}
 	if _cli_shell_is_zsh; then
+	  # shellcheck disable=SC2296
 		_cli_is_positive_bool "${(P)var_name}"
 	else
 		_cli_is_positive_bool "${!var_name}"
@@ -395,7 +398,7 @@ BEGIN {
 	detected_indentation_width=-1
 	prev_cmd_group_node_indentation=-1
 	cmd_help_index=0
-	cmd_details_help_index=1
+	cmd_details_help_index=0
 	output_type=gensub("output=(.*)", "\\1", "g", ARGV[2])
 	command_filter=gensub("command_filter=(.*)", "\\1", "g", ARGV[3])
 	do_format=gensub("do_format=(.*)", "\\1", "g", ARGV[4])
@@ -415,6 +418,8 @@ BEGIN {
 	delete command_names
 	delete arr
 	delete format_command_names
+	delete section_headings
+	pending_section_heading=""
 
 	#PROCINFO["sorted_in"]="@val_str_asc"
 	PROCINFO["sorted_in"]="@ind_num_asc"
@@ -460,6 +465,12 @@ BEGIN {
 		#printf "setting type=command_group: '%s', indentation: %s, prev indentdation: %s\n", $0, cmd_group_indentation, prev_cmd_group_node_indentation
 		#printf "length: %s %s, %s\n", prev_cmd_group_node_indentation, indentation, $0
 		type="command_group"
+
+		# associate pending section heading with this top-level group
+		if (pending_section_heading != "" && cmd_group_indentation == 0) {
+			section_headings[$1] = pending_section_heading
+			pending_section_heading = ""
+		}
 
 		if (cmd_group_indentation < prev_cmd_group_node_indentation) {
 			if (length(cmd) > 0) {
@@ -521,20 +532,23 @@ BEGIN {
 	}
 }
 # command group and command help for "all help" output (when filter is not set)
-#/^[ \t]{0,}#[^#][ \t]{0,}.*$/ {
-/^[ \t]{0,}#.*$/ {
+/^[ \t]{0,}#[^#].*$/ {
 
 	if (cfg_section == "commands" && output_type == "help") {
-		type="cmd_help"
-		cmd_help[cmd_help_index]=gensub("[ \\t]{0,}#[ \\t]{0,}([^:]{1,})[ \\t]{0,}", "\\1", "1", $0) 
-		cmd_help_index++
+		# top-level # (no indentation) = section heading
+		if ($0 ~ /^#[^#]/ && $0 !~ /^[ \t]/) {
+			pending_section_heading=gensub("^[ \\t]{0,}#[ \\t]{0,}(.*)$", "\\1", "1", $0)
+		} else if ($0 !~ /^[ \t]{0,}##/) {
+			type="cmd_help"
+			cmd_help[cmd_help_index]=gensub("[ \\t]{0,}#[ \\t]{0,}([^:]{1,})[ \\t]{0,}", "\\1", "1", $0)
+			cmd_help_index++
+		}
 	}
 }
 # command detail help
 /^[ \t]{0,}##.*$/ {
 	if (cfg_section == "commands" && output_type == "help") {
 		type="cmd_details_help"
-		#printf "setting type=cmd_details_help: '%s', %s\n", $0, cmd_details_help_index
 		cmd_details_help[cmd_details_help_index]=gensub("[ \\t]{0,}##[ \\t]{0,}([^:]{1,})[ \\t]{0,}", "\\1", "1", $0) 
 		cmd_details_help_index++
 	}
@@ -565,8 +579,8 @@ BEGIN {
 				for (i in cmd_details_help) {
 					v_cmd_details_help[gensub(":", "", 1, fullcmd), i]=cmd_details_help[i]
 				}
-			#	cmd_details_help[cmd_details_help_index]=gensub(":", "", 1, $1)
-			#	cmd_details_help_index++
+				delete cmd_details_help
+				cmd_details_help_index=0
 			}
 			$1=""
 			cmd_exec=$0
@@ -657,8 +671,13 @@ END {
 				
 				# print all help texts in the hierarchy of this command from the first command word on
 				if (first_word != prev_first_word) {
-					# new command tree; print separating line
-					printf "\n"
+					# new command tree; print section heading if present
+					if (section_headings[first_word] != "") {
+						printf "\n  %s\n\n", section_headings[first_word]
+					} else {
+						# no section heading; print separating line
+						printf "\n"
+					}
 					if (length(cmd_words) > 1) {
 						# in fact only print the first two - not sure if that is good
 						for (j=0; j<2; j++) {
@@ -805,7 +824,7 @@ END {
 						}
 						help_idx++
 					}
-					help_idx=1
+					help_idx=0
 					while ("" != v_cmd_details_help[unformatted_command, help_idx]) {
 						split(v_cmd_details_help[unformatted_command, help_idx], unformatted_help_line, " ")
 						for (word_idx in unformatted_help_line) {
@@ -825,6 +844,7 @@ END {
 						#printf "    %-" col_width "s %s\n", "", v_cmd_details_help[unformatted_command, help_idx]
 						if (line != "") {
 							printf prefix_spaces "  %-" help_width "s %s\n", "", line
+							line=""
 						}
 						help_idx++
 					}
@@ -1189,7 +1209,6 @@ function clear_command_vars_for_next_command() {
 	delete cmd_argtype
 	delete cmd_argvalue
 	delete cmd_argdesc
-	delete cmd_details_help
 	argind=0
 	fullcmd=""
 	cmd_exec=""
@@ -1213,7 +1232,8 @@ function cache_cmd_help(cmd) {
 		cmd=gensub("[ \\t]{0,}(.*?):", "\\1", "g", cmd) 
 		if (command_filter == cmd) {
 			for (i in cmd_help) {
-				cmd_help_by_cmd[cmd, i] = gensub("[ \\t]{0,}#[ \\t]{0,}(.*)", "\\1", "1", cmd_help[i]) 
+				# skip ## detail lines (stored as "# text" after gensub) — they belong in cmd_details_help
+				cmd_help_by_cmd[cmd, i] = gensub("[ \\t]{0,}#[ \\t]{0,}(.*)", "\\1", "1", cmd_help[i])
 			}
 		} 
 		else if (command_filter == "") {
@@ -1234,22 +1254,16 @@ function cache_cmd_details_help(cmd) {
 		# find longest command length, for output formatting
 		len=10
 		for (i in cmd_details_help) {
-			if (i % 2 != 0) {
-				continue
-			}
 			if (length(cmd_details_help[i]) > len) {
-				len=length(cmd_details_help[i+1])
+				len=length(cmd_details_help[i])
 			}	
 		}
 		for (i in cmd_details_help) {
-			if (i % 2 != 0) {
-				continue
-			}
 			cmd_help_by_cmd[cmd, i] = gensub("[ \\t]{0,}#[ \\t]{0,}(.*)", "\\1", "1", cmd_details_help[i]) 
 		}
+		cmd_details_help_index=0
+		delete cmd_details_help
 	}
-	cmd_details_help_index=0
-	delete cmd_details_help
 }
 
 AWK_EOF
@@ -1500,10 +1514,12 @@ _cli_is_command_complete() {
                 words=0
 
                 if _cli_shell_is_zsh; then
+                    # shellcheck disable=SC2296
                     for w in ${(z)line}; do
                         words=$((words + 1))
                     done
                     i=1
+                    # shellcheck disable=SC2296
                     for w in ${(z)line}; do
                         if [ "$i" = "$words" ]; then
                             break
@@ -1687,6 +1703,7 @@ _cli_getfirstwords() {
 	_cli_log 4 "word: '$word'"
 	_awk output=command_names command_filter="$word" | while read cmd; do
 		if _cli_shell_is_zsh; then
+		  # shellcheck disable=SC2296
 			a_cmd=("${(z)cmd}")
 		else
 			read -a a_cmd <<<"$cmd"
@@ -1776,6 +1793,7 @@ _cli_execute_command() {
 
 	if _cli_global_equals CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS "y"; then
 		if _cli_shell_is_zsh; then
+		  # shellcheck disable=SC2296
 			expanded_cmdline=$(_cli_expand_abbreviated_command ${(z)cmdline})
 		else
 			expanded_cmdline=$(_cli_expand_abbreviated_command $cmdline)
@@ -1803,6 +1821,7 @@ _cli_execute_command() {
 		cmd="$__CLI_CMD_WORDS"
 		# remove command words from command line, to get args
 		if _cli_shell_is_zsh; then
+		  # shellcheck disable=SC2296
 			args=(${(z)cmdline#$cmd})
 		else
 			args=(${cmdline#$cmd})
@@ -1927,6 +1946,7 @@ _cli_complete_command() {
 	while read cmd; do
 		# create array to extract word at position
 		if _cli_shell_is_zsh; then
+		  # shellcheck disable=SC2296
 			a_cmd=("${(z)cmd}")	
 		else
 			read -a a_cmd <<<"$cmd"
@@ -1955,7 +1975,7 @@ _cli_complete_arg() {
 
 	# command has no args
 	_cli_load_completion_vars "$cmd"
-	if [ "$__CMD_EXEC" = ""]; then
+	if [ "$__CMD_EXEC" = "" ]; then
 		return
 	fi
 
@@ -2166,6 +2186,7 @@ _cli_complete_()
 	
 	# remove first word
 	if _cli_shell_is_zsh; then
+	  # shellcheck disable=SC2296
 		a_line=("${(z)line}")
 	else
 		read -a a_line <<<"$line"
@@ -2189,6 +2210,7 @@ _cli_complete_()
 
 		if _cli_is_command_complete "${a_line[*]}"; then
 			if _cli_shell_is_zsh; then
+			  # shellcheck disable=SC2296
 				a_complete_cmd=("${(z)__CLI_CMD_WORDS}")
 			else
 				read -a a_complete_cmd <<<"$__CLI_CMD_WORDS"
@@ -2347,15 +2369,19 @@ _cli_first_word_equals() {
 
 _cli_load_command_word_functions() {
 	local fun
-	for fun in "$(_awk output=command_word_functions)"; do
+	local funcs
+	funcs="$(_awk output=command_word_functions)"
+	[ -z "$funcs" ] && return
+	while IFS= read -r fun; do
+		[ -z "$fun" ] && continue
 		_cli_log 4 "mapping function $fun results to environment"
 		if declare -f -p "$fun" 1>/dev/null 2>/dev/null; then
 			_cli_map_function_output_to_env_var "$fun"
 		else
 			_cli_error
 			_cli_error "CLI warning: command word function '$fun' used in configuration, but is not available"
-		fi	
-	done
+		fi
+	done <<< "$funcs"
 }
 
 _cli_execute() {
@@ -2450,6 +2476,7 @@ _cli_execute() {
 	done
 
 	if _cli_shell_is_zsh; then
+	  # shellcheck disable=SC2296
 		a_cmd_args=("${(z)cmd_args}")
 	else
 		read -a a_cmd_args <<<"$cmd_args"
