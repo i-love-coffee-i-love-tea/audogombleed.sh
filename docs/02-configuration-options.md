@@ -62,6 +62,20 @@ Of course when you want to use CLI commands in scripts you most likey want to
 be able to access the real command exit code, so this is disable by default.
 
 
+## __CLI_CFG_EXEC_SUBPROCESS (default: "n")
+
+Execute commands in a subprocess (`bash -c`) instead of the current shell.
+
+When set to "y", each command runs in an isolated `bash -c` process. This
+prevents commands from modifying the user's shell state (variables, working
+directory, etc.). The `[env]` section's variables and functions are made
+available inside the subprocess.
+
+When set to "n" (default), commands run in the current shell via `eval`,
+which allows `cd`, `export`, variable assignments, and other shell side
+effects to persist after execution.
+
+
 ## __CLI_CFG_EXEC_SILENT (default: "n")
 
 The CLI itself does not output anything on stdout and stderr, if set to "y"

@@ -159,7 +159,7 @@ Arguments are defined with `:name:type:source` syntax:
 | Function list | `:arg:eval:function_name` | Complete from the output of a shell function |
 | Default value | `:arg:value:default` | Use a default value (not a completion list) |
 | File | `:arg:FILE` | Complete file paths |
-| Directory | `:arg:DIRECTORY` | Complete directory paths |
+| Directory | `:arg:DIR` | Complete directory paths |
 
 
 ## optional [env] section
@@ -177,6 +177,7 @@ Set these in the `[env]` section of your config file:
 | `__CLI_CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS` | `"y"` | Print help when not all arguments are supplied |
 | `__CLI_CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY` | `"n"` | Only allow values from completion lists |
 | `__CLI_CFG_EXEC_ALWAYS_RETURN_0` | `"n"` | Always return exit code 0 (useful for shell history) |
+| `__CLI_CFG_EXEC_SUBPROCESS` | `"n"` | Execute commands in a subprocess (`bash -c`) instead of the current shell |
 | `__CLI_CFG_LOG_LEVEL` | `0` | Log level (0=off, 4=debug, writes to `/tmp/cli-bash.log`) |
 
 See [docs/02-configuration-options.md](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/blob/main/docs/02-configuration-options.md) for details.
