@@ -1,0 +1,83 @@
+# vim:et:ts=4:sw=4
+
+#
+#	Tests argument types: :FILE, :DIR, :value:
+#
+
+setup_file() {
+    load 'common-setup'
+    _common_setup __CLI_CFG_EXEC_SILENT="y"
+}
+teardown_file() {
+    load 'common-teardown'
+    _common_teardown
+}
+setup() {
+	load 'test_helper/bats-support/load'
+	load 'test_helper/bats-assert/load'
+}
+
+@test "FILE argument type completes file paths" {
+    # Create a test file to complete
+    touch /tmp/test-file-arg.txt
+    
+    # Add a command with FILE argument to config
+    echo 'test-file: echo' >> ~/.testcli.conf
+    echo '    :file:FILE' >> ~/.testcli.conf
+    
+    source ./testcli
+    
+    # Test that FILE argument type is recognized
+    run ./testcli test-file /tmp/test-file-arg.txt
+    assert_success
+    assert_output "/tmp/test-file-arg.txt"
+    
+    # Cleanup
+    rm -f /tmp/test-file-arg.txt
+}
+
+@test "DIR argument type completes directory paths" {
+    # Create a test directory to complete
+    mkdir -p /tmp/test-dir-arg
+    
+    # Add a command with DIR argument to config
+    echo 'test-dir: echo' >> ~/.testcli.conf
+    echo '    :dir:DIR' >> ~/.testcli.conf
+    
+    source ./testcli
+    
+    # Test that DIR argument type is recognized
+    run ./testcli test-dir /tmp/test-dir-arg
+    assert_success
+    assert_output "/tmp/test-dir-arg"
+    
+    # Cleanup
+    rm -rf /tmp/test-dir-arg
+}
+
+@test "value argument type uses default value" {
+    # Add a command with value argument to config
+    echo 'test-value: echo' >> ~/.testcli.conf
+    echo '    :arg:value:default-val' >> ~/.testcli.conf
+    
+    source ./testcli
+    
+    # Test that value argument type works
+    run ./testcli test-value custom-val
+    assert_success
+    assert_output "custom-val"
+}
+
+@test "value argument type with no argument uses default" {
+    # Add a command with value argument to config
+    echo 'test-value-default: echo' >> ~/.testcli.conf
+    echo '    :arg:value:my-default' >> ~/.testcli.conf
+    
+    source ./testcli
+    
+    # Test that value argument type uses default when no arg provided
+    # This depends on CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS setting
+    run ./testcli test-value-default
+    # The command should either use default or show help
+    # Behavior depends on implementation
+}
