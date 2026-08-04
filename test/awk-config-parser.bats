@@ -17,14 +17,14 @@ setup() {
 
 @test "output=command_names finds expected number of commands" {
     run ./testcli --cli-run-awk-command output=command_names
-	assert_equal "16" "${#lines[@]}"
+	assert_equal "23" "${#lines[@]}"
 	assert_line "install war from maven"
 }
 
 @test "output=commands finds expected number of commands" {
     run ./testcli --cli-run-awk-command output=commands
 	assert_success
-	assert_equal "16" "${#lines[@]}"
+	assert_equal "23" "${#lines[@]}"
 	assert_line "install war from maven        , list,  ~/bin/install-maven-war.sh"
 }
 

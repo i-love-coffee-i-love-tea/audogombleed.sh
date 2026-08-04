@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.4.0
         with:
           submodules: 'true'
       - run: echo "The ${{ github.repository }} repository has been cloned to the runner."
@@ -26,7 +26,7 @@ jobs:
       - name: Output report file
         run: cat report.xml
       - name: Report
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: BATS Test Report
