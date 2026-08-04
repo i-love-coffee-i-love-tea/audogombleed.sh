@@ -9,27 +9,32 @@ command abbreviation, and help output all come for free.
 
 ### :mag: What it looks like
 
-Config (`~/.mycli.conf`):
+Config (`~/.tf.conf`):
 
     [commands]
-    docker
-        list
-            containers: docker ps
-            images: docker images
-        stop: docker stop \1
-            :container:list:$CONTAINERS
+    plan
+        staging: terraform plan -var-file=staging.tfvars
+        prod: terraform plan -var-file=prod.tfvars
+    apply
+        staging: terraform apply -var-file=staging.tfvars
+        prod: terraform apply -var-file=prod.tfvars
+    destroy
+        staging: terraform destroy -var-file=staging.tfvars
+        prod: terraform destroy -var-file=prod.tfvars
 
 Shell session:
 
-    $ mycli <TAB><TAB>
-    docker
-    $ mycli d l <TAB><TAB>
-    containers  images
-    $ mycli docker list containers
-    >> executes: docker ps
+    $ tf <TAB><TAB>
+    plan  apply  destroy
+    $ tf p<TAB>
+    plan
+    $ tf plan st<TAB>
+    staging
+    $ tf plan staging
+    >> executes: terraform plan -var-file=staging.tfvars
 
-Commands can be abbreviated as long as they are unambiguous — `mycli d l c`
-expands to `mycli docker list containers`.
+Commands can be abbreviated as long as they are unambiguous — `tf p st`
+expands to `tf plan staging`.
 
 ### :question: Why not just use shell autocompletion?
 
@@ -55,6 +60,22 @@ functions to maintain.
 - :rocket: **Scales from trivial to complex** — a one-command CLI needs 3 lines of
   config. A multi-level command tree with dynamic arguments and included
   modules needs more, but the same mechanism.
+
+### :dart: Use cases
+
+- **Kubernetes admins** — `kubectl` commands are long and hard to remember.
+  Wrap `kubectl get pods`, `kubectl logs -f`, `kubectl rollout restart` in a
+  CLI with tab completion for namespaces, deployments, and pods.
+- **DevOps / infrastructure** — shorten `terraform plan -var-file=staging.tfvars`
+  to `tf p st`. Add tab completion for environments, workspaces, and targets.
+- **Internal tools** — your team's shell scripts, deploy scripts, and one-off
+  utilities don't ship with tab completion. Give them a discoverable CLI
+  without writing any completion code.
+- **Shell script collections** — unify a folder of scripts under one command
+  tree with help output and abbreviation. No need to remember script names
+  or flags.
+- **Docker / Podman** — wrap complex `docker compose` or `podman` commands
+  with environment-specific arguments and service name completion.
 
 ## :zap: Quick Start
 
