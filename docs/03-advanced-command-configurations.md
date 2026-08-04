@@ -96,3 +96,53 @@ For example, `kubectl exec` requires the pod name before the command to run:
 
 Without placeholders, the arguments would be appended at the end, producing
 an invalid command.
+
+
+## Spring Shell integration
+
+Spring Shell applications don't come with bash autocompletion out of the box.
+You can wrap any Spring Shell CLI with audogombleed.sh to add tab completion.
+
+### Quick setup
+
+Use the included wrapper script to auto-generate a config:
+
+    ./demo/spring-shell-wrap.sh ~/lib/mycli.jar
+
+This will:
+1. Run the JAR's `help` command to discover commands
+2. Generate `~/.mycli.conf` with discovered commands
+3. Print setup instructions
+
+Then edit the config to add argument completion for each command.
+
+### Manual setup
+
+Create a wrapper script (`~/bin/mycli`):
+
+    #!/bin/bash
+    java -jar ~/lib/mycli.jar "$@"
+
+Then create `~/.mycli.conf`:
+
+    [commands]
+    greet: mycli greet \1
+        :name:list:alice|bob|charlie
+    user
+        create: mycli user create \1 \2
+            :username:list:alice|bob|charlie
+            :role:list:admin|editor|viewer
+        list: mycli user list
+
+Set it up:
+
+    source ~/bin/mycli
+
+Now you get tab completion:
+
+    $ mycli <TAB><TAB>
+    greet  user
+    $ mycli user <TAB><TAB>
+    create  list
+    $ mycli user create alice <TAB><TAB>
+    admin  editor  viewer

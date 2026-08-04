@@ -1,0 +1,6 @@
+com/example/demo/DemoApplication.class
+com/example/demo/UserCommand.class
+com/example/demo/EnvCommand.class
+com/example/demo/GreetCommand.class
+com/example/demo/DeployCommand.class
+com/example/demo/FileCommand.class
