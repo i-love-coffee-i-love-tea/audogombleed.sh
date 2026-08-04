@@ -90,15 +90,11 @@ functions to maintain.
        hello: echo "hello world"
        EOF
 
-3. **Source the symlink** — registers tab completion:
+3. **Source the symlink** — registers tab completion and makes the command executable:
 
        source ~/bin/mycli
 
-4. **Create an alias** — makes the command invoke execution in the current shell:
-
-       alias mycli='_cli_execute'
-
-5. **Try it**:
+4. **Try it**:
 
        mycli <TAB><TAB>
        mycli hello

@@ -1,0 +1,9 @@
+# Spring Shell test application
+test/spring-shell-test/
+spring-shell.log
+
+# Vim swap files
+*.swp
+
+# AI session artifacts
+.mimocode/
