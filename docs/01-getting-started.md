@@ -44,25 +44,34 @@ Press TAB to see completions, then execute:
 
 ## A more complete example
 
-Here is a config with a hierarchical command tree, argument types, and
-variables:
+Here is a config with a hierarchical command tree, dynamic argument
+completion, and function expansion — wrapping kubectl commands that a
+Kubernetes admin runs daily:
 
     [env]
-    GIT_ROOT="~/git/some/deep/directory"
-    PROJECTS_DIR="/var/server/projects"
-    [commands]
-    cd
-        git-projects
-            project1: cd $GIT_ROOT/\0
-            project2: cd $GIT_ROOT/\0
-            project3: cd $GIT_ROOT/\0
-        app-instances
-            app1: cd $PROJECTS_DIR/\0
-            app2: cd $PROJECTS_DIR/\0
-            app3: cd $PROJECTS_DIR/\0
+    function get_deployments() {
+        kubectl get deployments -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n'
+    }
 
-`\0` is replaced by the last command word. So `cd git-projects project1`
-executes `cd ~/git/some/deep/directory/project1`.
+    [commands]
+    pods
+        restart: kubectl rollout restart deployment/\1
+            :deployment:eval:get_deployments
+        logs: kubectl logs -f deployment/\1 --tail=50
+            :deployment:eval:get_deployments
+        shell: kubectl exec -it deployment/\1 -- /bin/sh
+            :deployment:eval:get_deployments
+
+`\1` is replaced by the first argument. The `get_deployments` function
+runs `kubectl` at completion time, so the list stays current as you
+deploy new services.
+
+    $ mycli pods <TAB><TAB>
+    restart  logs  shell
+    $ mycli pods restart <TAB>
+    api-gateway  auth-service  web-frontend
+    $ mycli pods restart web-frontend
+    >> executes: kubectl rollout restart deployment/web-frontend
 
 See [03-advanced-command-configurations.md](03-advanced-command-configurations.md)
 for variable, function, and list expansion, and

@@ -56,12 +56,12 @@ Commands can be submitted in abbreviated form as long as all command words
 resolve unambiguously. For example, with this config:
 
     [commands]
-    docker
-        list
-            containers: docker list containers
-            images: docker list images
+    get
+        pods: kubectl get pods
+        services: kubectl get svc
+        deployments: kubectl get deploy
 
-You can execute `cli d l c` and it expands to `cli docker list containers`.
+You can execute `cli g p` and it expands to `cli get pods`.
 
 By default, the CLI asks for confirmation before executing expanded commands
 (`CFG_EXEC_ACK_EXPANDED_COMMANDS="y"`). If you want to keep this safety net
