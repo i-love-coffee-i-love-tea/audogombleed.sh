@@ -5,34 +5,6 @@ permissions:
   contents: read
   checks: write
 jobs:
-  build:
-    name: BATS Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v5
-        with:
-          submodules: 'true'
-      - run: echo "The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}/test/
-          ls ${{ github.workspace }}/test/test_helper
-      - run: echo "This job's status is ${{ job.status }}."
-      
-      - name: Test
-        run: test/bats/bin/bats test/*.bats --formatter junit > report.xml
-      - name: Output report file
-        run: cat report.xml
-      - name: Report
-        uses: dorny/test-reporter@v3
-        if: always()
-        with:
-          name: BATS Test Report
-          path: report.xml
-          reporter: java-junit
-          fail-on-error: true
   bash-compat:
     name: "bash ${{ matrix.bash-version }}"
     runs-on: ubuntu-latest
