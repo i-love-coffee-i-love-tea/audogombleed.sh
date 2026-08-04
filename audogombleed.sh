@@ -82,7 +82,7 @@ _cli_remove_last_word() {
 }
 _cli_remove_first_word() {
 	shift
-	echo $@
+	echo "$@"
 }
 
 _cli_shell_is_bash() {
@@ -313,7 +313,10 @@ _cli_open_logfile() {
 		return
 	fi
 
-	if exec 3>"/tmp/cli$(_cli_get_shell_name).log";  then
+	local logfile
+	logfile=$(mktemp "/tmp/cli-XXXXXX$(_cli_get_shell_name).log")
+	chmod 600 "$logfile" 2>/dev/null
+	if exec 3>"$logfile";  then
 		_cli_global LOG_OPENED "0"
 		_cli_log 1 ">>>>>>>>>>>>>> file opened $(date +'%X %S.%N' ) >>>>>>>>>>>>>>>>"
 		_cli_log 1 "cli script: $__CLI_PROGNAME"
@@ -1287,9 +1290,11 @@ _awk() {
 		# merge main config and include config files before parsing
 
 		# write main config file to fifo
-		local tmpname=$(mktemp -u)
-		mkfifo "$tmpname".main_config
-		cat "$(_cli_global CONFIG_FILE)" > "$tmpname".main_config &
+		local tmpdir
+		tmpdir=$(mktemp -d)
+		trap "rm -rf '$tmpdir'" EXIT
+		mkfifo "$tmpdir/main_config"
+		cat "$(_cli_global CONFIG_FILE)" > "$tmpdir/main_config" &
 
 		# write include files to fifos
 		for file in ${include_files[@]}; do
@@ -1300,30 +1305,28 @@ _awk() {
 			_cli_log 4 "creating fifo for file: $include_file" 
 			include_parent_command="${file##*|}" 
 			include_filenames+=("$include_file")
-			mkfifo "$tmpname".include_file_${fifo_idx}
-			include_fifos+=("${tmpname}.include_file_${fifo_idx}")
+			mkfifo "$tmpdir/include_file_${fifo_idx}"
+			include_fifos+=("$tmpdir/include_file_${fifo_idx}")
 			# write the [commands] content to the fifo
 			# the section is expected to be the last in the file
 			if [ "$include_parent_command" = "ROOT" ]; then
-				awk '$1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print $0}}' $include_file > "$tmpname".include_file_${fifo_idx} &
+				awk '$1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print $0}}' "$include_file" > "$tmpdir/include_file_${fifo_idx}" &
 			else
-				awk 'BEGIN {print gensub("parent=(.*)","\\1", 1, ARGV[2])}; $1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print "    " $0}}' $include_file parent="$include_parent_command" > "$tmpname".include_file_${fifo_idx} &
+				awk 'BEGIN {print gensub("parent=(.*)","\\1", 1, ARGV[2])}; $1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print "    " $0}}' "$include_file" parent="$include_parent_command" > "$tmpdir/include_file_${fifo_idx}" &
 			fi
 			fifo_idx=$((fifo_idx + 1))
 		done
 
 		# merge fifos
-		mkfifo "$tmpname".merged_config
+		mkfifo "$tmpdir/merged_config"
 		_cli_log 4 "include fifos: ${include_fifos[@]}"
-		cat "$tmpname".main_config ${include_fifos[@]} > "$tmpname".merged_config &
+		cat "$tmpdir/main_config" ${include_fifos[@]} > "$tmpdir/merged_config" &
 
 		# parse merged_config
 		export COLUMNS
-		echo -E "$__CLI_AWK_SCRIPT" | awk -f - "$tmpname".merged_config "$@"
+		echo -E "$__CLI_AWK_SCRIPT" | awk -f - "$tmpdir/merged_config" "$@"
 
-		rm -rf "$tmpname".main_config 2>/dev/null
-		rm -rf "$tmpname".include_file* 2>/dev/null
-		rm -rf "$tmpname".merged_config 2>/dev/null
+		rm -rf "$tmpdir" 2>/dev/null
 	fi
 
 }
@@ -1398,8 +1401,9 @@ _cli_load_config_environment() {
 		fi
 
 		if [ "source" = "$first_word" ]; then
-			# eval to expand '~'  and variables in path 
-			src_file=$(eval echo ${env_line##* })
+			# expand '~' and environment variables in path without eval
+			src_file="${env_line#* }"
+			src_file="${src_file/#\~/$HOME}"
 			if [ -f "$src_file" ]; then	
 				source "$src_file"
 			else
@@ -1414,7 +1418,8 @@ _cli_load_config_environment() {
 			# expecting exactly three words
 			# include_commands_from <file> <parent_command>
 			env_line="$(_cli_remove_first_word $env_line)"
-			include_file=$(_cli_get_first_word $(eval echo $env_line))
+			include_file=$(_cli_get_first_word $env_line)
+			include_file="${include_file/#\~/$HOME}"
 			include_parent_command=$(_cli_get_last_word $env_line)
 			include_files+=("$include_file|$include_parent_command")
 			_cli_log 4 "include_file: '$include_file'"
@@ -1427,9 +1432,19 @@ _cli_load_config_environment() {
 					varname="${env_line%%=*}"
 					# remove __CLI_ prefix
 					varname="${varname##__CLI_}"
-					value="${env_line##*=}"
-					_cli_log 4 "eval \"__CLI_${__CLI_PROGNAME}_${varname}=$value\""
-					eval "__CLI_${__CLI_PROGNAME}_${varname}=$value"
+					# validate: only allow safe characters in variable names
+					if [[ ! "$varname" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+						_cli_error "config error: invalid variable name '$varname'"
+						continue
+					fi
+					value="${env_line#*=}"
+					# strip surrounding quotes (eval did this implicitly)
+					value="${value#\"}"
+					value="${value%\"}"
+					value="${value#\'}"
+					value="${value%\'}"
+					_cli_log 4 "assigning \"__CLI_${__CLI_PROGNAME}_${varname}=$value\""
+					printf -v "__CLI_${__CLI_PROGNAME}_${varname}" '%s' "$value"
 				else
 					script="${script} \n
 $env_line"
@@ -1738,9 +1753,9 @@ _cli_is_one_word() {
 _cli_yes_no_prompt() {
 	if _cli_shell_is_zsh; then
 		_cli_error "$@"
-		read user_input
+		read -r user_input
 	else
-		read -p "$@" user_input
+		read -r -p "$@" user_input
 	fi
 	if [ "$user_input" = "" ]; then
 		return 0
@@ -1843,7 +1858,7 @@ _cli_execute_command() {
 		args_length="${#args[@]}"
         _cli_log 4 "cmd: $cmd, args: $args, length: ${#args[@]}"
 		#if [ "${#args[@]}" -eq 0 ] || _cli_args_are_complete "$cmd" ${args[@]}; then
-		if _cli_args_are_complete "$cmd" ${args[@]}; then
+		if _cli_args_are_complete "$cmd" "${args[@]}"; then
 			# fetch the command to execute from the config
 			cmd_expr="$(_cli_get_command_expr "$cmd")"
 			if [ "$cmd_expr" != "" ]; then
@@ -1876,7 +1891,7 @@ _cli_execute_command() {
 						cmd_expr=${cmd_expr//\\$i/${arg}} 
 						_cli_log 4 "inserting arg: \\$i: $arg"
 							
-						args=(${args[@]:1:${#args[@]}-1})
+						args=("${args[@]:1:${#args[@]}-1}")
 					fi
 					i=$((i+1))
 				done
@@ -1900,11 +1915,13 @@ _cli_execute_command() {
 				# execute
 				_cli_log 1 "executing: $cmd_expr ${args[*]}"
 				if _cli_global_is_positive_bool CFG_EXEC_SUBPROCESS; then
-					bash -c "${__CLI_ENV_SCRIPT:+$(echo -e "$__CLI_ENV_SCRIPT"); }$cmd_expr ${args[*]}"
+					bash -c "set -o noglob; ${__CLI_ENV_SCRIPT:+$(echo -e "$__CLI_ENV_SCRIPT"); }$cmd_expr ${args[*]}"
 					exit_code=$?
 				else
+					set -o noglob
 					eval $cmd_expr ${args[*]}
 					exit_code=$?
+					set +o noglob
 				fi
 				_cli_log 1 "command exit code: $exit_code"
 			fi
@@ -2415,7 +2432,7 @@ _cli_execute() {
 	declare -a __CLI_CONFIG
 	_cli_global CONFIG_FILE "$HOME/.${__CLI_PROGNAME}.conf"
 
-	for arg in $@; do
+	for arg in "$@"; do
 		case $arg in
 		-b|--batch)
 			batch_mode="y"
@@ -2545,7 +2562,7 @@ if ! _cli_is_sourced; then
 		_cli_close_logfile
 		exit 49
 	fi
-	_cli_execute $@
+	_cli_execute "$@"
 else 
 	if _cli_shell_is_bash; then
 		complete -F _cli_complete_ "$__CLI_PROGNAME"
