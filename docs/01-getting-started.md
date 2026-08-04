@@ -22,24 +22,38 @@ minimum:
 ## 3. Source the symlink
 
 This registers the tab-completion function with your shell (`complete` in
-bash, `compdef` in zsh):
+bash, `compdef` in zsh) and makes the command executable:
 
     source ~/bin/mycli
 
-## 4. Create an alias
-
-Sourcing only registers completions. The alias makes the command name invoke
-`_cli_execute` in the current shell (so commands can export variables, cd
-into directories, etc.):
-
-    alias mycli='_cli_execute'
-
-## 5. Try it
+## 4. Try it
 
 Press TAB to see completions, then execute:
 
     mycli <TAB><TAB>
     mycli hello
+
+
+## Running commands in the current shell
+
+By default, commands run in a subprocess. This is fine for external programs
+(`kubectl`, `docker`, etc.), but won't work for commands that need to affect
+the current shell, like `cd` or `export`.
+
+To run commands in the current shell, use an alias:
+
+    alias mycli='_cli_execute'
+
+With this alias, `mycli cd /some/path` will actually change your directory.
+
+### Multiple CLIs
+
+If you have multiple CLIs, each `source` registers its own completion
+function. The last sourced CLI's completion will be active. To switch,
+source the one you want to use:
+
+    source ~/bin/cli1    # cli1 completions active
+    source ~/bin/cli2    # cli2 completions active
 
 
 ## A more complete example

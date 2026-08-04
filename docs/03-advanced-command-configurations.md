@@ -83,17 +83,16 @@ The default is to append all defined command arguments at the end of the line.
 In cases where you need more flexibility, because the arguments need to be
 embedded in a command at the right places, you can use placeholders.
 
-Example of placeholder usage. This config defines two static command args which can be completed:
+For example, `kubectl exec` requires the pod name before the command to run:
 
     [commands]
-    echo: echo \2 \1
-        :value:first
-        :value:second
+    exec: kubectl exec -n \1 -it \2 -- \3
+        :namespace:list:default|kube-system|monitoring
+        :pod:eval:get_pods \1
+        :shell:list:bash|sh
 
-Upon hitting tab several times, this command will complete to
+    $ mycli exec default my-pod bash
+    >> executes: kubectl exec -n default -it my-pod -- bash
 
-    $ cli echo first second
-
-The resulting command for execution will be
-
-    $ echo second first
+Without placeholders, the arguments would be appended at the end, producing
+an invalid command.
