@@ -27,3 +27,11 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y build-essential libncurses-dev
       - name: "Build & test bash ${{ matrix.bash-version }}"
         run: bash test/bash-compat.sh "${{ matrix.bash-version }}"
+      - name: Report
+        uses: dorny/test-reporter@v3
+        if: always()
+        with:
+          name: "BATS Test Report (bash ${{ matrix.bash-version }})"
+          path: report.xml
+          reporter: java-junit
+          fail-on-error: true
