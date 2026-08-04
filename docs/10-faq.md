@@ -15,7 +15,7 @@ Solutions:
 - Use `-h` or `-?` instead: `mycli -h`
 
 
-## Tab completion doesn't work
+## Why doesn't tab completion work?
 
 Make sure you sourced the symlink and created the alias:
 
@@ -27,7 +27,7 @@ completion function; the alias makes the command name invoke execution in the
 current shell.
 
 
-## Config changes not taking effect
+## Why aren't my config changes taking effect?
 
 The config file is re-read on every completion and execution. If changes
 don't appear:
@@ -38,7 +38,7 @@ don't appear:
   (`/tmp/cli-bash.log` or `/tmp/cli-zsh.log`)
 
 
-## Zsh completions not working
+## Why don't zsh completions work?
 
 Add these to your `.zshrc`:
 
@@ -48,6 +48,26 @@ Add these to your `.zshrc`:
 If you use an alias for the CLI command, also add:
 
     setopt completealiases
+
+
+## Why does zsh exit the shell on errors when sourced from `zsh -c`?
+
+The `_cli_is_sourced` function uses `$zsh_eval_context` to detect whether
+the script was sourced or executed. In zsh, this variable loses the `file`
+token after sourcing completes, so functions called afterwards see
+`cmdarg` instead of `cmdarg file`.
+
+This affects the `_cli_exit_if_not_sourced` error path: when a command
+fails (e.g. an unrecognized abbreviation), the script calls `exit`
+instead of `return` if invoked via `zsh -c 'source ./cli; ...'`.
+
+**Impact:** abbreviation expansion and other features that rely on
+`_cli_exit_if_not_sourced` returning (instead of exiting) will terminate
+the calling shell when an error occurs under `zsh -c`.
+
+**Workaround:** use the alias (`alias mycli='_cli_execute'`) or invoke
+the CLI directly (`zsh ./testcli cmd args`) instead of sourcing from
+`zsh -c`.
 
 
 ## How does command abbreviation work?
@@ -78,8 +98,11 @@ Set the log level in the `[env]` section:
     __CLI_CFG_LOG_LEVEL=4
 
 Then check the log file:
-- Bash: `/tmp/cli-bash.log`
-- Zsh: `/tmp/cli-zsh.log`
+- Bash: `/tmp/cli-XXXXXX-bash.log`
+- Zsh: `/tmp/cli-XXXXXX-zsh.log`
+
+The log filename uses `mktemp` so the `XXXXXX` portion is random. Check
+`ls /tmp/cli-*` to find it.
 
 NOTE: Debug output slows the CLI down noticeably.
 
