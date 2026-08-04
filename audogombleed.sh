@@ -334,7 +334,11 @@ _cli_close_logfile() {
 
 _cli_read_command_list() {
 	_cli_log 1 "config file: $(_cli_global CONFIG_FILE)"
-	__CLI_CONFIG=$(_awk "output=commands")
+	if _cli_shell_is_zsh; then
+		__CLI_CONFIG=("${(@f)$(_awk "output=commands")}")
+	else
+		mapfile -t __CLI_CONFIG < <(_awk "output=commands")
+	fi
 	for l in "${__CLI_CONFIG[@]}"; do
 		_cli_log 4 "cfg: $l"
 	done
@@ -1335,24 +1339,24 @@ _cli_getmatchingcommands() {
 	local cmdline="$1"
 	local l
 	_cli_log 4 "cmdline: $1"
-	while read l; do
+	for l in "${__CLI_CONFIG[@]}"; do
 		if [[ "$l" == "$cmdline"* ]]; then
 			_cli_log 4 "match: '$l'"
 			echo "$l"	
 		fi	
-	done <<<"${__CLI_CONFIG[@]}"
+	done
 }
 
 _cli_count_matching_commands() {
 	local cmdline="$1"
 	local n=0
 	local l
-   	while read l; do
+   	for l in "${__CLI_CONFIG[@]}"; do
 		if [[ "$l" =~ ^"$cmdline" ]]; then
 			n=$((n + 1))	
 			_cli_log 4 "matching command: $cmdline, $n" 
 		fi	
-	done <<< "${__CLI_CONFIG[@]}"
+	done
 	# misusing return code here, to avoid having
 	# to use a global variable or subshell to read it
 	# saved 60ms during command execution with development config
@@ -1587,15 +1591,14 @@ _cli_is_command_complete() {
 
 _cli_get_command_args() {
 	local cmd="$1"
-	local w
-	for w in $(while read l; do
+	local l w
+	for l in "${__CLI_CONFIG[@]}"; do
 		if [[ "$l" =~ ^"$cmd" ]]; then
-			echo -E "$l" | _cli_cut 2 ,  
-			#_cli_log 4 "cmd args: $(echo $l | _cli_cut 2 ,)"
+			for w in $(printf '%s\n' "$l" | _cli_cut 2 ,); do
+				printf '%s\n' "$w"
+			done
 		fi
 		break
-	done <<< "${__CLI_CONFIG[@]}"); do
-		 echo -E "$w"
 	done
 }
 
@@ -1609,7 +1612,7 @@ _cli_args_are_complete() {
 
 	_cli_get_command_args "$cmd" | while read arg; do
 		#_cli_log 4 "arg: $arg"
-		if [[ "$arg" =~ \?$ ]]; then
+		if [[ "$arg" =~ [?]$ ]]; then
 			#_cli_log 4 "arg is optional"
 			mandatory_argc=$((mandatory_argc - 1))
 		fi
@@ -1706,14 +1709,15 @@ _cli_uniq_col() {
 
 _cli_get_command_expr() {
 	local cmd="$1"
+	local l
 	_cli_log 4 "cmd: $cmd"
-	while read -r l; do
+	for l in "${__CLI_CONFIG[@]}"; do
 		if [[ "$l" =~ ^"$cmd" ]]; then
-			echo -E "$l" | cut -f3 -d,  
-			_cli_log 4 "cmd expr: $(echo $l | cut -f 3 -d,)"
+			printf '%s\n' "$l" | cut -f3 -d,  
+			_cli_log 4 "cmd expr: $(printf '%s\n' "$l" | cut -f 3 -d,)"
 			break
 		fi
-	done <<<"${__CLI_CONFIG[@]}"
+	done
 }
 
 _cli_getfirstwords() {
@@ -1866,7 +1870,7 @@ _cli_execute_command() {
 				_cli_log 4 "cmd_expr: '$cmd_expr'"
 
 				# replace positional arguments
-				last_word="$(_cli_get_last_word $cmd)"
+				last_word="${cmd##* }"
 				cmd_expr=${cmd_expr//\\0/$last_word}
 
 				_cli_log 4 "args0: ${args[0]}"

@@ -124,9 +124,8 @@ Set these in the `[env]` section:
 - 0 means off
 - 4 means debug
 
-If set to 4, a log file is created under `/tmp`:
-- Bash: `/tmp/cli-bash.log`
-- Zsh: `/tmp/cli-zsh.log`
+If set to 4, a log file is created under `/tmp` (filename uses `mktemp`, so
+the exact name varies — check `ls /tmp/cli-*` to find it).
 
 NOTE: Debug output slows the CLI down noticeably.
 
