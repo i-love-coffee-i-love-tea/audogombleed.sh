@@ -204,7 +204,6 @@ _cli_init_global_vars() {
 	_cli_global CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY "n"
 	_cli_global CFG_EXEC_ALWAYS_RETURN_0 "n"
 	_cli_global CFG_EXEC_SILENT "n"
-	_cli_global CFG_EXEC_SUBPROCESS "n"
 	_cli_global CFG_LOG_LEVEL 0
 }
 
@@ -1557,9 +1556,6 @@ $env_line"
 		source <(echo -e "$script")
 	fi
 
-	# store script for subprocess mode (bash -c needs it)
-	__CLI_ENV_SCRIPT="$script"
-
 	#
 	# apply changed config settings
 	#
@@ -2030,15 +2026,10 @@ _cli_execute_command() {
 				
 				# execute
 				_cli_log 1 "executing: $cmd_expr ${args[*]}"
-				if _cli_global_is_positive_bool CFG_EXEC_SUBPROCESS; then
-					bash -c "set -o noglob; ${__CLI_ENV_SCRIPT:+$(echo -e "$__CLI_ENV_SCRIPT"); }$cmd_expr ${args[*]}"
-					exit_code=$?
-				else
-					set -o noglob
-					eval $cmd_expr ${args[*]}
-					exit_code=$?
-					set +o noglob
-				fi
+				set -o noglob
+				eval $cmd_expr ${args[*]}
+				exit_code=$?
+				set +o noglob
 				_cli_log 1 "command exit code: $exit_code"
 			fi
 		else

@@ -86,7 +86,23 @@ Everything possible in a shell script is possible here.
 
 ### Source shell scripts
 
+Use `source` to load variables, functions, and CLI configuration from
+external files. This is the way to externalize your `[env]` section into
+a separate file:
+
+    source ~/.mycli-env.conf
+
+The sourced file can contain the same content as `[env]`: variable
+assignments, `__CLI_` options, function definitions, and exports. Paths
+with `~` are expanded to `$HOME`.
+
     source ~/bin/custom-cli-function.sh
+
+**Warning:** the `[env]` section (including `source` directives) runs in
+the current shell — this is necessary so that tab completion can access
+the defined variables and functions. This means sourced files can
+overwrite existing shell variables or functions. Use unique variable
+names or prefix them to avoid collisions.
 
 ### Define variables and functions
 
@@ -113,7 +129,6 @@ Set these in the `[env]` section:
 | `__CLI_CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS` | `"y"` | Print help when not all arguments are supplied |
 | `__CLI_CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY` | `"n"` | Only allow values from completion lists |
 | `__CLI_CFG_EXEC_ALWAYS_RETURN_0` | `"n"` | Always return exit code 0 (useful for shell history) |
-| `__CLI_CFG_EXEC_SUBPROCESS` | `"n"` | Execute commands in a subprocess (`bash -c`) instead of the current shell |
 | `__CLI_CFG_LOG_LEVEL` | `0` | Log level (0=off, 4=debug, writes to `/tmp/cli-bash.log`) |
 
 
@@ -159,18 +174,6 @@ has a completion list of `xxx, yyy`, you can still submit `zzz`.
 Always return exit code 0. Useful on Ubuntu where bash is configured to only
 keep succeeding commands in history. Disabled by default so scripts can access
 the real exit code.
-
-#### `__CLI_CFG_EXEC_SUBPROCESS` (default: "n")
-
-Execute commands in a subprocess (`bash -c`) instead of the current shell.
-
-| | `"n"` (default) | `"y"` |
-|--|-----------------|-------|
-| **Execution method** | `eval` in current shell | `bash -c` in subprocess |
-| **Working directory change** | persists | gone when subprocess exits |
-| **Exported variables** | persist | gone when subprocess exits |
-| **Shell aliases and functions** | available | not available |
-| **Performance** | no overhead | fork per command |
 
 #### `__CLI_CFG_EXEC_SILENT` (default: "n")
 

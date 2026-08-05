@@ -18,27 +18,13 @@ setup() {
 	load 'zsh-helpers'
 }
 
-# subprocess mode
-
-@test "zsh: subprocess executes command" {
-    load 'common-setup'
-    _set_option __CLI_CFG_EXEC_SUBPROCESS '"y"'
+@test "zsh: executes command" {
     run _zsh_run echo first second
     assert_success
     assert_output "second first"
 }
 
-@test "zsh: subprocess propagates exit code" {
-    load 'common-setup'
-    _set_option __CLI_CFG_EXEC_SUBPROCESS '"y"'
+@test "zsh: propagates exit code" {
     run _zsh_run return2
     assert_failure 2
-}
-
-@test "zsh: current-shell mode executes and retains side effects" {
-    load 'common-setup'
-    _set_option __CLI_CFG_EXEC_SUBPROCESS '"n"'
-    run _zsh_run echo first second
-    assert_success
-    assert_output "second first"
 }

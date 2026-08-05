@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1
+
+- Restructure test suite for dual bash/zsh coverage (257 tests, up from 121)
+- Add zsh counterparts for every test file (21 bash + 21 zsh test files)
+- Add CI job for zsh test suite
+- Document `source` as the way to externalize `[env]` configuration
+
 ## 1.2.0
 
 - Add full zsh compatibility: config loading, completion, command execution

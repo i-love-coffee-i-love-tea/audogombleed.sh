@@ -34,17 +34,42 @@ Press TAB to see completions, then execute:
     mycli hello
 
 
-## Running commands in the current shell
+## Execution modes
 
-By default, commands run in a subprocess. This is fine for external programs
-(`kubectl`, `docker`, etc.), but won't work for commands that need to affect
-the current shell, like `cd` or `export`.
+### Default: without alias
 
-To run commands in the current shell, use an alias:
+If you only `source` the symlink, running `mycli some-command` executes
+the script as a child process. Commands like `cd` and `export` have no
+effect on your shell. This is fine for external programs (`kubectl`,
+`docker`, etc.) and is the safe default.
+
+### With alias: current-shell execution
+
+Add an alias to make the command run in your current shell:
 
     alias mycli='_cli_execute'
 
-With this alias, `mycli cd /some/path` will actually change your directory.
+Now `mycli cd /some/path` actually changes your directory, and
+`mycli export FOO=bar` sets a variable in your shell. This also gives
+commands access to your shell functions and variables, and avoids the
+overhead of forking a subprocess per invocation.
+
+This is the recommended setup for interactive use when your commands
+need to affect the current shell.
+
+### Comparison
+
+| | No alias | Alias (`_cli_execute`) |
+|--|----------|----------------------|
+| `cd` / `export` | no effect on your shell | affects your shell |
+| Shell functions & variables | not available to commands | available to commands |
+| Functions from `[env]` | available | available |
+| Argument completion (`eval`) | works (runs in your shell) | works (runs in your shell) |
+| Performance | fork per invocation | no fork |
+
+Note: tab completion always runs in your shell regardless of mode.
+Argument types like `eval` and `list` with `$VARIABLE` always work
+because completion happens in the current shell context.
 
 ### Multiple CLIs
 
