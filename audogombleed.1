@@ -1,0 +1,525 @@
+.TH AUDOGOMBLED.SH 1 "2024" "1.1.1" "User Commands"
+.SH NAME
+audogombleed.sh \- create CLIs with auto\-completable command trees
+.SH SYNOPSIS
+.B Create a symlink (the filename becomes the CLI name):
+.RS
+ln \-s ~/bin/audogombleed.sh ~/bin/\fICLINAME\fR
+.RE
+.PP
+.B Create a config file (must match the symlink name):
+.RS
+~/.CLINAME.conf
+.RE
+.PP
+.B Source the symlink to activate tab completion:
+.RS
+source ~/bin/\fICLINAME\fR
+.RE
+.PP
+.B Execute commands:
+.RS
+\fICLINAME\fR [\fIOPTIONS\fR] [\fICOMMAND\fR ...]
+.RE
+.SH DESCRIPTION
+.B audogombleed.sh
+is a declarative framework for building shell CLIs with tab completion,
+command abbreviation, help output, and command execution\&. Commands and
+arguments are defined in a plain\-text config file; no coding is required\&.
+.PP
+The script works in both
+.B bash
+and
+.BR zsh .
+Runtime requirements are limited to bash (or zsh) and awk — both available
+on every Unix system\&.
+.PP
+The config file parser is an embedded AWK script\&. It reads the config
+and produces completion candidates, help text, and the command expression
+to execute\&.
+.SH GETTING STARTED
+.SS Step 1: Create a symlink
+The symlink filename becomes the CLI name, determines the config file
+path, and is used to register tab completion:
+.RS
+.nf
+ln \-s ~/bin/audogombleed.sh ~/bin/mycli
+.fi
+.RE
+.PP
+Using a symlink (instead of copying the script) means all your CLIs
+share one source file — update
+.B audogombleed.sh
+once and every CLI picks up the new version\&.
+.SS Step 2: Create a config file
+Must be named \fB~/\&.\fICLINAME\fR\fB\&.conf\fR:
+.RS
+.nf
+cat > ~/\&.mycli\&.conf <<'EOF'
+[commands]
+hello: echo "hello world"
+EOF
+.fi
+.RE
+.SS Step 3: Source the symlink
+This registers the tab\-completion function with your shell:
+.RS
+.nf
+source ~/bin/mycli
+.fi
+.RE
+.SS Step 4: Try it
+.RS
+.nf
+mycli <TAB><TAB>
+mycli hello
+.fi
+.RE
+.SS Running commands in the current shell
+By default, commands run in a subprocess\&. To run commands in the current
+shell (e.g., for
+.B cd
+or
+.BR export ),
+use an alias:
+.RS
+.nf
+alias mycli='_cli_execute'
+.fi
+.RE
+.SH CONFIGURATION
+A configuration file defines a command tree\&. Indentation and hierarchy
+determine where a command resides in the tree\&.
+.PP
+The config file must contain a
+.B [commands]
+section and can optionally contain an
+.B [env]
+section\&.
+.PP
+The default config filename is
+.B ~/\&.\fICLINAME\fR\&.conf\fR,
+where
+.I CLINAME
+is the symlink filename\&.
+.SH "CONFIG FILE FORMAT"
+.SS [commands] section
+.SS Simple command
+.RS
+.nf
+[commands]
+first\-word: echo
+.fi
+.RE
+.I first\-word
+is the command name,
+.I echo
+is what gets executed\&.
+.SS Command tree
+Indentation creates hierarchy\&. The indentation width of the first
+indented line sets the convention for the rest of the file:
+.RS
+.nf
+[commands]
+cd
+    git\-projects
+        project1: cd ~/git/project1
+        project2: cd ~/git/project2
+.fi
+.RE
+This creates commands like
+.BR "cd git\-projects project1" .
+.SS Comments
+Lines beginning with
+.B #
+are comments that document the next command or tree element:
+.RS
+.nf
+[commands]
+# deployment commands
+deploy
+    # deploy to production
+    prod: \&./deploy\&.sh prod
+    # deploy to staging
+    staging: \&./deploy\&.sh staging
+.fi
+.RE
+.PP
+Display help by appending
+.B ?
+or
+.B \-h
+to a command:
+.RS
+.nf
+$ mycli deploy ?
+deployment commands
+.fi
+.RE
+.SS Argument placeholders
+.B \e0
+is replaced by the last command word\&.
+.BR \e1 ", " \e2 ", ..."
+are replaced by positional arguments:
+.RS
+.nf
+[commands]
+echo: echo \e2 \e1
+    :first:list:one|two
+    :second:list:alpha|beta
+.fi
+.RE
+.RS
+.nf
+$ mycli echo one alpha
+>> executes: echo alpha one
+.fi
+.RE
+If not all placeholders are used, remaining arguments are appended to
+the end of the command\&.
+.SS Arguments
+Arguments are defined with
+.B :\fIname\fR:\fItype\fR:\fIsource\fR
+syntax after a command definition\&.
+.SS Argument types
+.PP
+Arguments are defined as \fB:\fIname\fB:\fItype\fR lines below a command\&.
+The following types are supported:
+.TP
+.B :arg:list:\fIval1\fR|\fIval2\fR|\fIval3\fR
+Complete from a fixed set of values\&.
+.TP
+.B :arg:list:$\fIVAR\fR
+Complete from a shell variable\&.
+.TP
+.B :arg:eval:\fIfunc\fR
+Complete from function output\&.
+.TP
+.B :arg:value:\fIdefault\fR
+Use a default value (not a completion list)\&.
+.TP
+.B :arg:STRING
+Free\-form string argument\&.
+.TP
+.B :arg:INTEGER
+Integer value\&.
+.TP
+.B :arg:int_range:\fImin\fR\-\fImax\fR
+Integer within a range (inclusive)\&.
+.TP
+.B :arg:FILE
+Complete file paths\&.
+.TP
+.B :arg:DIR
+Complete directory paths\&.
+.TP
+.B :arg:ENVVAR
+Complete environment variable names\&.
+.TP
+.B :arg:USER
+Complete system usernames\&.
+.TP
+.B :arg:GROUP
+Complete system group names\&.
+.TP
+.B :arg:SSH_HOST
+Complete from ~/\&.ssh/config host entries\&.
+.TP
+.B :arg:BLKDEV
+Complete block device names\&.
+.TP
+.B :arg:SERVICE
+Complete systemd service names\&.
+.PP
+Arguments can be made optional by appending
+.B ?
+to the type (e.g.,
+.BR :arg:list?:val1|val2 ).
+.SS [env] section
+All lines in the
+.B [env]
+section are sourced before each completion and command execution\&.
+.PP
+Supported uses:
+.IP \(bu 2
+Set CLI configuration options
+.IP \(bu 2
+Define variables or functions for argument completion lists
+.IP \(bu 2
+Source other shell scripts
+.IP \(bu 2
+Include other config files with
+.B include_commands_from
+.PP
+Example:
+.RS
+.nf
+[env]
+MY_OPTIONS="opt1 opt2 opt3"
+function get_items { echo "foo"; echo "bar"; }
+source ~/bin/custom\-cli\-function\&.sh
+.fi
+.RE
+.SS Variable expansion
+A command word beginning with
+.B $
+expands to one command per word in the variable:
+.RS
+.nf
+[env]
+NAMESPACES="default kube\-system monitoring"
+
+[commands]
+ns\-logs
+    $NAMESPACES: kubectl logs \-f \-n \e0
+.fi
+.RE
+.SS Function expansion
+A command word beginning with
+.B &
+expands using the output of a function:
+.RS
+.nf
+[env]
+function get_names { echo "alice bob"; }
+
+[commands]
+greet
+    &get_names: echo "Hello \e0"
+.fi
+.RE
+.SS List expansion
+A command word containing
+.B |
+expands to one command per pipe\-delimited value:
+.RS
+.nf
+[commands]
+ctx
+    prod|staging|dev: kubectl config use\-context \e0
+.fi
+.RE
+.SS Hierarchical configuration
+Split command trees across multiple files with
+.B include_commands_from
+in the
+.B [env]
+section:
+.RS
+.nf
+[env]
+include_commands_from ~/\&.cli\-module\&.conf parent\-word
+.fi
+.RE
+The included file's
+.B [commands]
+section is merged under
+.I parent\-word
+in the main config\&. Use
+.B ROOT
+as the parent to merge at the top level\&.
+.SH OPTIONS
+.TP
+.BR \-b ", " \-\-batch
+Run in script/batch mode\&. Disables all output on stdout and stderr and
+features that require interactive input\&. Equivalent to setting:
+.RS
+.IP \(bu 2
+.B __CLI_CFG_EXEC_SILENT="y"
+.IP \(bu 2
+.B __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS="n"
+.IP \(bu 2
+.B __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS="n"
+.RE
+.TP
+.B \-\-version
+Print the script version and exit\&.
+.TP
+.B \-\-cli\-print\-awk\-script
+Print the embedded AWK config parser script (for development)\&.
+.TP
+.B \-\-cli\-print\-env
+Print the parsed
+.B [env]
+section (for development)\&.
+.TP
+.B \-\-cli\-run\-awk\-command \fIARGS\fR
+Run the embedded AWK config parser with the given arguments (for development)\&.
+.TP
+.BR ? ", " \-h
+Display help for the current command or all available commands\&.
+.SH "CONFIGURATION OPTIONS"
+Set these in the
+.B [env]
+section of the config file\&.
+All option names are prefixed with
+.B __CLI_CFG_
+in the config file\&.
+.TP
+.B __CLI_CFG_LOG_LEVEL
+Default: 0\&. 0 means off, 4 means debug\&. When set to 4, a log file is
+created under
+.B /tmp
+(filename uses mktemp)\&. Debug output slows the CLI noticeably\&.
+.TP
+.B __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS
+Default: "y"\&. Allow abbreviated commands\&. For example, with commands
+.I docker list containers
+and
+.IR "docker list images" ,
+typing
+.B d l c
+expands to
+.B docker list containers
+— as long as the abbreviation is unambiguous\&.
+.TP
+.B __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS
+Default: "n"\&. Allow abbreviated argument values\&. Disabled by default
+because it can be risky\&.
+.TP
+.B __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS
+Default: "y"\&. When command expansion changes the submitted command, the
+user is asked to confirm before execution\&.
+.TP
+.B __CLI_CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS
+Default: "y"\&. Print help output for the command if not all required
+arguments were supplied\&.
+.TP
+.B __CLI_CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY
+Default: "n"\&. Only allow values from the auto\-complete list\&. By default,
+even if an argument has a completion list, arbitrary values are accepted\&.
+.TP
+.B __CLI_CFG_EXEC_ALWAYS_RETURN_0
+Default: "n"\&. Always return exit code 0\&. Useful on Ubuntu where bash is
+configured to only keep succeeding commands in history\&.
+.TP
+.B __CLI_CFG_EXEC_SUBPROCESS
+Default: "n"\&. Execute commands in a subprocess (\fBbash \-c\fR) instead
+of the current shell\&. When disabled, commands run via
+.B eval
+in the current shell, preserving directory changes and exported variables\&.
+.TP
+.B __CLI_CFG_EXEC_SILENT
+Default: "n"\&. Suppress all CLI output on stdout and stderr\&. When set to
+.BR "y" ,
+the following are also overridden:
+.RS
+.IP \(bu 2
+.B __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS="n"
+.IP \(bu 2
+.B __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS="n"
+.RE
+.SH "EXIT STATUS"
+.TP
+.B 49
+Script called with wrong name — create a symlink\&.
+.TP
+.B 50
+No command supplied\&.
+.TP
+.B 51
+Abbreviated command expansion failed\&.
+.TP
+.B 52
+Not all positional arguments could be resolved\&.
+.TP
+.B 53
+Not enough arguments provided\&.
+.TP
+.B 127
+Command not found by the shell\&.
+.SH EXAMPLES
+.SS Simple CLI
+.RS
+.nf
+[commands]
+hello: echo "hello world"
+.fi
+.RE
+.SS Kubernetes admin CLI
+.RS
+.nf
+[env]
+function get_deployments() {
+    kubectl get deployments \-o jsonpath='{\&.items[*]\&.metadata\&.name}' | tr ' ' '\en'
+}
+
+[commands]
+pods
+    restart: kubectl rollout restart deployment/\e1
+        :deployment:eval:get_deployments
+    logs: kubectl logs \-f deployment/\e1 \-\-tail=50
+        :deployment:eval:get_deployments
+    shell: kubectl exec \-it deployment/\e1 \-\- /bin/sh
+        :deployment:eval:get_deployments
+.fi
+.RE
+.SS Terraform wrapper
+.RS
+.nf
+[commands]
+plan
+    staging: terraform plan \-var\-file=staging\&.tfvars
+    prod: terraform plan \-var\-file=prod\&.tfvars
+apply
+    staging: terraform apply \-var\-file=staging\&.tfvars
+    prod: terraform apply \-var\-file=prod\&.tfvars
+.fi
+.RE
+.SS Abbreviated commands
+With the above config, abbreviated commands work:
+.RS
+.nf
+$ tf p s
+>> expands to: terraform plan \-var\-file=staging\&.tfvars
+.fi
+.RE
+.SH FILES
+.TP
+.I ~/\&.\fICLINAME\fR\&.conf
+Default configuration file\&. The filename must match the symlink name\&.
+.TP
+.I /tmp/cli\-bash\&.log
+Debug log file (bash)\&. Created when
+.B __CLI_CFG_LOG_LEVEL
+is set to 4\&.
+.TP
+.I /tmp/cli\-zsh\&.log
+Debug log file (zsh)\&. Created when
+.B __CLI_CFG_LOG_LEVEL
+is set to 4\&.
+.SH ZSH SUPPORT
+To enable tab completion in zsh, add the following to your
+.BR \&.zshrc :
+.RS
+.nf
+autoload bashcompinit
+bashcompinit
+
+# if you want to use completion with an alias
+setopt completealiases
+.fi
+.RE
+.SH NOTES
+.IP \(bu 2
+The script is not intended to be called directly\&. Always create a
+symlink with the desired CLI name\&.
+.IP \(bu 2
+Tab completion is registered on
+.BR source .
+The last sourced CLI's completion will be active\&.
+.IP \(bu 2
+Command abbreviation requires the abbreviation to be unambiguous among
+all defined commands at that level\&.
+.SH AUTHORS
+Steffen Kremsler
+.SH LICENSE
+BSD 2\-Clause License
+.SH SEE ALSO
+.BR bash (1),
+.BR zsh (1),
+.BR awk (1)
+.PP
+Full documentation and source code:
+.UR https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
+.UE
