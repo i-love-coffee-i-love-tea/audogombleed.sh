@@ -33,7 +33,7 @@ Shell session:
     $ tf plan staging
     >> executes: terraform plan -var-file=staging.tfvars
 
-Commands can be abbreviated as long as they are unambiguous — `tf p st`
+Commands can be abbreviated as long as they are unambiguous — `tf p s`
 expands to `tf plan staging`.
 
 ### :question: Why not just use shell autocompletion?
