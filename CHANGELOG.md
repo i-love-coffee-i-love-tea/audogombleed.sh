@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.2.0
+
+- Add full zsh compatibility: config loading, completion, command execution
+- Add zsh completion descriptions: commands show help text and arguments show type descriptions in zsh `_values` format
+- Rewrite embedded AWK script to be POSIX compatible (no gensub, no PROCINFO) — now works with gawk, mawk, and nawk
+- Add manpage (`audogombleed.1`)
+- Add argument type completion tests for FILE, DIR, STRING, INTEGER, int_range, ENVVAR, USER, GROUP, SSH_HOST, BLKDEV, SERVICE
+- Add zsh test suite (`test/zsh.bats`, `test/zsh-completion-descriptions.bats`)
+- Add zsh test helpers (`test/zsh-helpers.bash`, `test/common-setup-zsh.bash`)
+- Add `release.sh` script for version bump and tagging
+
+## 1.1.1
+
+- Replace eval with printf -v for config variable assignments (eliminates code injection risk)
+- Replace eval echo with parameter expansion for source/include paths
+- Add noglob around eval and bash -c execution to prevent glob expansion
+- Quote $@ and ${args[@]} to prevent word splitting and injection
+- Use mktemp -d for FIFO temp directory (fixes race condition with mktemp -u)
+- Use mktemp for log file creation with chmod 600 (prevents predictable tmpfile collisions)
+- Add cleanup trap for temp directory removal
+- Validate __CLI_ variable names against safe character set `[A-Za-z_][A-Za-z0-9_]*`
+- Add -r to read in yes/no prompt to prevent backslash interpretation
+
 ## 1.1
 
 - Add `CFG_EXEC_SUBPROCESS` option to run commands in a `bash -c` subprocess instead of `eval` in the current shell
