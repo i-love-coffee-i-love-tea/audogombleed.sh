@@ -1,5 +1,4 @@
-#!/bin/bash
-#!/usr/bin/zsh
+#!/usr/bin/env bash
 # -*- coding: utf-8 -*-
 # vim:et:ts=4:sw=4
 #
@@ -407,9 +406,9 @@ BEGIN {
 	prev_cmd_group_node_indentation=-1
 	cmd_help_index=0
 	cmd_details_help_index=0
-	output_type=gensub("output=(.*)", "\\1", "g", ARGV[2])
-	command_filter=gensub("command_filter=(.*)", "\\1", "g", ARGV[3])
-	do_format=gensub("do_format=(.*)", "\\1", "g", ARGV[4])
+	output_type=_extract_after(ARGV[2], "output=")
+	command_filter=_extract_after(ARGV[3], "command_filter=")
+	do_format=_extract_after(ARGV[4], "do_format=")
 	command_names_index=0
 	cfg_color_enabled=0
 	color_term=0
@@ -429,8 +428,7 @@ BEGIN {
 	delete section_headings
 	pending_section_heading=""
 
-	#PROCINFO["sorted_in"]="@val_str_asc"
-	PROCINFO["sorted_in"]="@ind_num_asc"
+	# POSIX: no PROCINFO; ordered iteration via _for_seq helper
 
 	cols=120
 	col_width=60
@@ -527,7 +525,10 @@ BEGIN {
 		if (output_type == "command_word_functions") {
 			if (type == "command") {
 				if (is_function_command($1)) {
-					print gensub("&(.*?):", "\\1", "g", $1) 
+					_cwf = $1
+					sub(/^&/, "", _cwf)
+					sub(/:.*/, "", _cwf)
+					print _cwf
 				}
 			}	
 		}
@@ -545,10 +546,12 @@ BEGIN {
 	if (cfg_section == "commands" && output_type == "help") {
 		# top-level # (no indentation) = section heading
 		if ($0 ~ /^#[^#]/ && $0 !~ /^[ \t]/) {
-			pending_section_heading=gensub("^[ \\t]{0,}#[ \\t]{0,}(.*)$", "\\1", "1", $0)
+			pending_section_heading=$0
+			sub(/^[ \t]*#[ \t]*/, "", pending_section_heading)
 		} else if ($0 !~ /^[ \t]{0,}##/) {
 			type="cmd_help"
-			cmd_help[cmd_help_index]=gensub("[ \\t]{0,}#[ \\t]{0,}([^:]{1,})[ \\t]{0,}", "\\1", "1", $0)
+			_ch=$0; sub(/^[ \t]*#[ \t]*/, "", _ch); sub(/[ \t]*:.*/, "", _ch)
+			cmd_help[cmd_help_index]=_ch
 			cmd_help_index++
 		}
 	}
@@ -557,7 +560,8 @@ BEGIN {
 /^[ \t]{0,}##.*$/ {
 	if (cfg_section == "commands" && output_type == "help") {
 		type="cmd_details_help"
-		cmd_details_help[cmd_details_help_index]=gensub("[ \\t]{0,}##[ \\t]{0,}([^:]{1,})[ \\t]{0,}", "\\1", "1", $0) 
+		_cdh=$0; sub(/^[ \t]*##[ \t]*/, "", _cdh); sub(/[ \t]*:.*/, "", _cdh)
+		cmd_details_help[cmd_details_help_index]=_cdh
 		cmd_details_help_index++
 	}
 }
@@ -584,8 +588,11 @@ BEGIN {
 			}
 			cache_cmd_help(fullcmd)
 			if (length(cmd_details_help) > 0) {
-				for (i in cmd_details_help) {
-					v_cmd_details_help[gensub(":", "", 1, fullcmd), i]=cmd_details_help[i]
+				_fck=fullcmd; gsub(/:/, "", _fck)
+				i=0
+				while (i in cmd_details_help) {
+					v_cmd_details_help[_fck, i]=cmd_details_help[i]
+					i++
 				}
 				delete cmd_details_help
 				cmd_details_help_index=0
@@ -608,10 +615,11 @@ BEGIN {
 			} else {
 				cmd_argdesc[argind]=cmd_arg[4]
 			}	
+			_fck=fullcmd; gsub(/:/, "", _fck)
 			if (argtype ~ "\\?") {
-				v_argnames[gensub(":", "", "g", fullcmd), argind]="[" cmd_arg[2] "]"
+				v_argnames[_fck, argind]="[" cmd_arg[2] "]"
 			} else {
-				v_argnames[gensub(":", "", "g", fullcmd), argind]="<" cmd_arg[2] ">"
+				v_argnames[_fck, argind]="<" cmd_arg[2] ">"
 			}
 			argind++
    		} else if (NF==1) {
@@ -637,29 +645,35 @@ END {
 
 		# enrich with marking for optional characters
 		if (do_format_command_names != 1) {
-			for (i in command_names) {
+			i=1; while (i in command_names) {
 				if (command_filter == "" || (command_names[i] ~ "^" command_filter)) {
-					printf "%s\n", command_names[i]		
+					printf "%s\n", command_names[i]
 				}
+				i++
 			}
 		} else {
 			delete format_command_names
 			# prepare function input arrays
 			if (command_filter != "") {
 				format_command_names_index=0
-				for (i in command_names) {
+				i=1; while (i in command_names) {
 					if (command_names[i] ~ "^" command_filter) {
 						format_command_names[format_command_names_index]=command_names[i]
 						format_command_names_index++
 					}
+					i++
 				}
 			} else {
-				for (i in command_names) {
-					format_command_names[i]=command_names[i]
+				format_command_names_index=0
+				i=1; while (i in command_names) {
+					format_command_names[format_command_names_index]=command_names[i]
+					format_command_names_index++
+					i++
 				}
 			}
-			for (i in command_names) {
+			i=1; while (i in command_names) {
 				all_command_names[i]=command_names[i]
+				i++
 			}
 			# format
 			format_commands()
@@ -672,8 +686,9 @@ END {
 			prefix_spaces="  "
 			#}
 			help_width=col_width-2
-			for (i in formatted_commands) {
-				unformatted_command=gensub("[\\[\\]]", "", "g", formatted_commands[i])
+			i=0; while (i in formatted_commands) {
+				unformatted_command=formatted_commands[i]
+				gsub(/[\[\]]/, "", unformatted_command)
 				split(unformatted_command, cmd_words, " ")
 				first_word=cmd_words[1]
 				
@@ -700,7 +715,7 @@ END {
 								# not yet broken or joined to col_width
 								# split to words and append to line up to col_width
 								split(cmd_help_by_cmd[cmd_tree_path, grp_help_idx], unformatted_help_line, " ")
-								for (word_idx in unformatted_help_line) {
+								word_idx=1; while (word_idx in unformatted_help_line) {
 									wl=length(unformatted_help_line[word_idx])
 									# -2 because of 4 indentation spaces at line start.
 									# print line and start a new one if the word doesn't fit
@@ -715,6 +730,7 @@ END {
 									} else {
 										line = line " " unformatted_help_line[word_idx]
 									}
+									word_idx++
 								}
 							
 								# print line if it has content - this is to assure line breaks in help
@@ -769,7 +785,7 @@ END {
 
 						# append words from help text to line up to length=col_width
 						split(cmd_help_by_cmd[unformatted_command, 0], unformatted_help_line, " ")
-						for (word_idx in unformatted_help_line) {
+						word_idx=1; while (word_idx in unformatted_help_line) {
 							wl=length(unformatted_help_line[word_idx])
 							if (length(line) + wl >= help_width) {
 								if (line_no == 0) {
@@ -791,6 +807,7 @@ END {
 							} else {
 								line = line " " unformatted_help_line[word_idx]
 							}
+							word_idx++
 						}
 						# print 
 						if (line != "") {
@@ -813,9 +830,9 @@ END {
 					while ("" != cmd_help_by_cmd[unformatted_command, help_idx]) {
 						# printf "    %-" col_width "s %s\n", "", cmd_help_by_cmd[unformatted_command, help_idx]
 						split(cmd_help_by_cmd[unformatted_command, help_idx], unformatted_help_line, " ")
-						for (word_idx in unformatted_help_line) {
+						word_idx=1; while (word_idx in unformatted_help_line) {
 							wl=length(unformatted_help_line[word_idx])
-							
+
 							if (length(line) + wl >= help_width) {
 								printf prefix_spaces "  %-" help_width "s %s\n", "", line
 								line=""
@@ -825,7 +842,8 @@ END {
 							} else {
 								line = line " " unformatted_help_line[word_idx]
 							}
-						}						
+							word_idx++
+						}
 						if (line != "") {
 							printf prefix_spaces "  %-" help_width "s %s\n", "", line
 							line=""
@@ -835,7 +853,7 @@ END {
 					help_idx=0
 					while ("" != v_cmd_details_help[unformatted_command, help_idx]) {
 						split(v_cmd_details_help[unformatted_command, help_idx], unformatted_help_line, " ")
-						for (word_idx in unformatted_help_line) {
+						word_idx=1; while (word_idx in unformatted_help_line) {
 							wl=length(unformatted_help_line[word_idx])
 							if (line_length + wl >= help_width) {
 								printf prefix_spaces "  %-" help_width "s %s\n", "", line
@@ -848,7 +866,8 @@ END {
 								line = line " " unformatted_help_line[word_idx]
 								line_length+=wl+1
 							}
-						}						
+							word_idx++
+						}
 						#printf "    %-" col_width "s %s\n", "", v_cmd_details_help[unformatted_command, help_idx]
 						if (line != "") {
 							printf prefix_spaces "  %-" help_width "s %s\n", "", line
@@ -858,6 +877,7 @@ END {
 					}
 				}
 				prev_first_word=first_word
+				i++
 			}
 		}
 	}
@@ -891,15 +911,19 @@ function format_commands() {
 	if (length(format_command_names) == 0) {
 		return
 	}
-	for (i in all_command_names) {
+	i=1
+	while (i in all_command_names) {
 		split(all_command_names[i], parts, " ")
 		words=0
-		for (j in parts) {
+		j=1
+		while (j in parts) {
 			commands[i, j]=parts[j]
 			words++
 			if (words > max_words) max_words=words
+			j++
 		}
 		cmd_count++
+		i++
 	}
 	# for each possible command word position
 	prev_word=""
@@ -985,13 +1009,15 @@ function format_word_at_position(word, pos, prefix_words) {
 			# check prefix_words
 			split(prefix_words, prefix, " ")
 			prefix_match = 1
-			for (prefix_idx in prefix) {
+			prefix_idx=1
+			while (prefix_idx in prefix) {
 				prefix_word_pos=pos-length(prefix)
 				if (commands[cmp_word_idx, pos-1] != prefix[prefix_idx]) {
 					#printf "word: %s, '%s' != '%s, %s %s'\n", word, commands[cmp_word_idx, pos-1], prefix[prefix_idx], prefix_idx, length(prefix)
 					#printf "pos: %s, command: %s\n", pos,  all_command_names[cmp_word_idx]
 					prefix_match = 0
 				}
+				prefix_idx++
 			}
 			if (prefix_match == 0) {
 				# skip if not all prefix words match
@@ -1027,7 +1053,9 @@ function format_word_at_position(word, pos, prefix_words) {
 	return formatted_word
 }
 function trim(str) {
-	return gensub("^[ \\t]{0,}(.*)$", "\\1", "1", str) 
+	sub(/^[ \t]+/, "", str)
+	sub(/[ \t]+$/, "", str)
+	return str
 }
 function get_first_n_words(words, n) {
 	sep=" "
@@ -1073,13 +1101,14 @@ function expand_dynamic_commands(fullcmd, placeholder) {
 	delete dyn_cmds
 	delete completion_words
 	if (placeholder ~ "^\\$.*") {
-		placeholder=gensub("^\\$(.*)", "\\1", "1", placeholder)
+		sub(/^\$/, "", placeholder)
 		if (ENVIRON[placeholder] != "") {
 			split(ENVIRON[placeholder], completion_words, " ")
 		}
 	}
 	else if (placeholder ~ "^&") {
-		funcname=gensub("^&(.*)", "\\1", "1", placeholder)
+		funcname=placeholder
+		sub(/^&/, "", funcname)
 		#function_call_command=sprintf("bash -c '_cli_%s_0=foo echo $_cli_%s_0'", last_word)
 		#split(system(function_call_command), words, " ")
 		varname="_cli_" funcname "_result"
@@ -1090,15 +1119,17 @@ function expand_dynamic_commands(fullcmd, placeholder) {
 	else if (placeholder ~ "\\|") {
 		split(placeholder, completion_words, "|")
 	}
-	for (w in completion_words) {
-		fullcmd=trim(fullcmd)	
+	w=1
+	while (w in completion_words) {
+		fullcmd=trim(fullcmd)
 		if (fullcmd ~ " ") {
 			dyncmd=remove_last_word(fullcmd)" "completion_words[w]
         } else {
 			dyncmd=completion_words[w]
 		}
 		dyn_cmds[dyn_cmd_idx]=dyncmd
-		dyn_cmd_idx++	
+		dyn_cmd_idx++
+		w++
 	}
 }	
 
@@ -1112,11 +1143,15 @@ function is_function_command(cmd) {
 function print_command_environment_vars(fullcmd, cmd_exec) {
 	# if a filter was given, print command info as variables, for sourcing
 	print "declare -g -A __CMD_ARG __CMD_ARG_TYPE __CMD_ARG_VALUE __CMD_ARG_DESC __CMD_ARG_NAME"
-	printf "__CMD=\"%s\"\n", gensub("(.*?):", "\\1", "g", fullcmd) 
-	printf "__CMD_EXEC=\"%s\"\n", gensub("(.*?):", "\\1", "g", cmd_exec) 
-	for (arg in cmd_args) {
+	_pcev_fc=fullcmd; sub(/:.*$/, "", _pcev_fc)
+	_pcev_ce=cmd_exec; sub(/:.*$/, "", _pcev_ce)
+	printf "__CMD=\"%s\"\n", _pcev_fc
+	printf "__CMD_EXEC=\"%s\"\n", _pcev_ce
+	arg=0
+	while (arg in cmd_args) {
 		# remove leading and trailing whitespace and trailing colon
-		printf "__CMD_ARG[%s]=\"%s\"\n", arg, gensub("[ \\t]{0,}:([^:]{1,})[ \\t]{0,}", "\\1", "1", cmd_args[arg]) 
+		_pcev_ca=cmd_args[arg]; sub(/^[ \t]+/, "", _pcev_ca); sub(/[ \t]*:.*/, "", _pcev_ca)
+		printf "__CMD_ARG[%s]=\"%s\"\n", arg, _pcev_ca
 		printf "__CMD_ARG_NAME[%s]=\"%s\"\n", arg, cmd_argname[arg]
 		printf "__CMD_ARG_TYPE[%s]=\"%s\"\n", arg, cmd_argtype[arg]
 		printf "__CMD_ARG_DESC[%s]=\"%s\"\n", arg, cmd_argdesc[arg]
@@ -1125,6 +1160,7 @@ function print_command_environment_vars(fullcmd, cmd_exec) {
 		} else {
 		printf "__CMD_ARG_VALUE[%s]=\"%s\"\n", arg, cmd_argvalue[arg]
 		}
+		arg++
 	}
 	if (length(cmd_args) == 0) {
 		printf "__CMD_ARG=\"\"\n", arg
@@ -1137,8 +1173,9 @@ function print_command_environment_vars(fullcmd, cmd_exec) {
 
 
 function cache_command_names() {
-	# remove trailing colon
-	fullcmd=gensub("[ \\t]{0,}(.*?):", "\\1", "g", fullcmd) 
+	# remove leading whitespace and trailing colon
+	sub(/^[ \t]+/, "", fullcmd)
+	sub(/:$/, "", fullcmd)
 	if (output_type == "command_names" || output_type == "help") {
 	    # create a list of all commands
 	    split(fullcmd, cmdparts, " ")
@@ -1146,19 +1183,21 @@ function cache_command_names() {
 	    if (is_dynamic_command(last_word)) {
 	        # expand commands with dynamic parts in the command part
 	        expand_dynamic_commands(fullcmd, last_word)
-	        for (c in dyn_cmds) {
+	        c=0
+	        while (c in dyn_cmds) {
 	            command_names_index++;
 	            command_names[command_names_index]=dyn_cmds[c]
-	            #args=v_argnames[fullcmd,   
+	            #args=v_argnames[fullcmd,
 	            arg_idx=0
 	            while ("" != v_argnames[fullcmd, arg_idx]) {
 	                v_argnames[dyn_cmds[c], arg_idx]=v_argnames[fullcmd, arg_idx]
 	                arg_idx++
 	            }
+	            c++
 	        }
 	    } else {
 	        command_names_index++;
-	        command_names[command_names_index]=gensub("(.*?):", "\\1", "g", fullcmd) 
+	        command_names[command_names_index]=fullcmd
 	    }
 	}
 }
@@ -1167,9 +1206,9 @@ function cache_command_names() {
 # to the END block. The only printing still happening here is
 # for output=commands without command filter
 function print_command() {
-	
+
 	# remove trailing colon
-	fullcmd=gensub("[ \\t]{0,}(.*?):", "\\1", "g", fullcmd) 
+	fullcmd=_strip_to_first_colon(fullcmd)
 
 
 	if (output_type == "commands") {
@@ -1179,36 +1218,46 @@ function print_command() {
 			# print each command on a single line, with arguments
 			if (is_dynamic_command(last_word)) {
 				expand_dynamic_commands(fullcmd, last_word)
-				for (c in dyn_cmds) {
-					printf "%-30s,", dyn_cmds[c] 
-					for (arg in cmd_args) {
+				c=0
+				while (c in dyn_cmds) {
+					printf "%-30s,", dyn_cmds[c]
+					arg=0
+					while (arg in cmd_args) {
 						# remove leading and trailing whitespace and trailing colon
-						printf " %s", gensub("[ \\t]{0,}:([^:]{1,})[ \\t]{0,}", "\\1", "1", cmd_args[arg]) 
+						_pc_arg=cmd_args[arg]; sub(/^[ \t]+/, "", _pc_arg); sub(/[ \t]*:.*/, "", _pc_arg)
+						printf " %s", _pc_arg
+						arg++
 					}
 					printf ", %s\n", cmd_exec
+					c++
 				}
 			} else {
-				printf "%-30s,", gensub("(.*?):", "\\1,", "g", fullcmd) 
-				for (arg in cmd_args) {
+				printf "%-30s,", fullcmd
+				arg=0
+				while (arg in cmd_args) {
 					# remove leading and trailing whitespace and trailing colon
-					printf " %s", gensub("[ \\t]{0,}:([^:]{1,})[ \\t]{0,}", "\\1", "1", cmd_args[arg]) 
+					_pc_arg=cmd_args[arg]; sub(/^[ \t]+/, "", _pc_arg); sub(/[ \t]*:.*/, "", _pc_arg)
+					printf " %s", _pc_arg
+					arg++
 				}
 				printf ", %s\n", cmd_exec
 			}
 		} else if (is_dynamic_command(last_word)) {
-			# test if one of the expanded commands matches the command_filter	
+			# test if one of the expanded commands matches the command_filter
 			expand_dynamic_commands(fullcmd, last_word)
-			for (c in dyn_cmds) {
+			c=0
+			while (c in dyn_cmds) {
 				if (dyn_cmds[c] == command_filter) {
-					command_found=0			
+					command_found=0
 					print_command_environment_vars(dyn_cmds[c], cmd_exec)
 				}
+				c++
 			}
 		} else if (command_filter == fullcmd) {
-			command_found=0			
+			command_found=0
 			print_command_environment_vars(fullcmd, cmd_exec)
 		}
-	} 
+	}
 }
 
 function clear_command_vars_for_next_command() {
@@ -1224,11 +1273,11 @@ function clear_command_vars_for_next_command() {
 
 # not more than one call per line!
 function get_indentation() {
-	tabs=length(gensub("^([\\t]{0,}).*", "\\1", 1, $0)) 
-	spaces=length(gensub("^([ ]{0,}).*", "\\1", 1, $0)) 
-	indentation=spaces + ( 4 * tabs )
-
-	return indentation
+	match($0, /^[\t]*/)
+	tabs = RLENGTH
+	match($0, /^[ ]*/)
+	spaces = RLENGTH
+	return spaces + ( 4 * tabs )
 }
 
 function cache_cmd_help(cmd) {
@@ -1236,17 +1285,24 @@ function cache_cmd_help(cmd) {
 		return
 	}
 	if (output_type == "help") {
-		# remove trailing colon
-		cmd=gensub("[ \\t]{0,}(.*?):", "\\1", "g", cmd) 
+		# remove leading whitespace and trailing colon
+		sub(/^[ \t]+/, "", cmd)
+		sub(/:.*$/, "", cmd)
 		if (command_filter == cmd) {
-			for (i in cmd_help) {
+			i=0
+			while (i in cmd_help) {
 				# skip ## detail lines (stored as "# text" after gensub) — they belong in cmd_details_help
-				cmd_help_by_cmd[cmd, i] = gensub("[ \\t]{0,}#[ \\t]{0,}(.*)", "\\1", "1", cmd_help[i])
+				cmd_help_by_cmd[cmd, i] = cmd_help[i]
+				sub(/^[ \t]*#[ \t]*/, "", cmd_help_by_cmd[cmd, i])
+				i++
 			}
-		} 
+		}
 		else if (command_filter == "") {
-			for (i in cmd_help) {
-				cmd_help_by_cmd[cmd, i] = gensub("[ \\t]{0,}#[ \\t]{0,}(.*)", "\\1", "1", cmd_help[i]) 
+			i=0
+			while (i in cmd_help) {
+				cmd_help_by_cmd[cmd, i] = cmd_help[i]
+				sub(/^[ \t]*#[ \t]*/, "", cmd_help_by_cmd[cmd, i])
+				i++
 			}
 		}
 	}
@@ -1261,17 +1317,51 @@ function cache_cmd_details_help(cmd) {
 	if (output_type == "help" && prev_cmd_group == command_filter) {
 		# find longest command length, for output formatting
 		len=10
-		for (i in cmd_details_help) {
+		i=0
+		while (i in cmd_details_help) {
 			if (length(cmd_details_help[i]) > len) {
 				len=length(cmd_details_help[i])
-			}	
+			}
+			i++
 		}
-		for (i in cmd_details_help) {
-			cmd_help_by_cmd[cmd, i] = gensub("[ \\t]{0,}#[ \\t]{0,}(.*)", "\\1", "1", cmd_details_help[i]) 
+		i=0
+		while (i in cmd_details_help) {
+			cmd_help_by_cmd[cmd, i] = cmd_details_help[i]
+			sub(/^[ \t]*#[ \t]*/, "", cmd_help_by_cmd[cmd, i])
+			i++
 		}
 		cmd_details_help_index=0
 		delete cmd_details_help
 	}
+}
+
+# POSIX-compatible helpers (no gensub, no PROCINFO)
+# Check if numeric index exists in array (1-based for i in array)
+function _in(idx, arr) {
+	return (idx in arr)
+}
+# Iterate array by numeric index in order
+# Extract value after "key=" prefix: match("output=foo", "output=") -> "foo"
+function _extract_after(s, prefix,    _p) {
+	_p = index(s, prefix)
+	if (_p > 0) return substr(s, _p + length(prefix))
+	return ""
+}
+# Strip leading whitespace + first colon and everything after: "  foo:bar" -> "foo"
+function _strip_to_first_colon(s) {
+	sub(/^[ \t]+/, "", s)
+	sub(/:.*/, "", s)
+	return s
+}
+# Strip a single trailing colon: "foo:" -> "foo"
+function _strip_trailing_colon(s) {
+	sub(/:$/, "", s)
+	return s
+}
+# Strip leading whitespace + everything from last colon: "  foo bar: baz" -> "  foo bar"
+function _strip_from_last_colon(s) {
+	sub(/[ \t]*:[^:]*$/, "", s)
+	return s
 }
 
 AWK_EOF
@@ -1316,7 +1406,7 @@ _awk() {
 			if [ "$include_parent_command" = "ROOT" ]; then
 				awk '$1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print $0}}' "$include_file" > "$tmpdir/include_file_${fifo_idx}" &
 			else
-				awk 'BEGIN {print gensub("parent=(.*)","\\1", 1, ARGV[2])}; $1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print "    " $0}}' "$include_file" parent="$include_parent_command" > "$tmpdir/include_file_${fifo_idx}" &
+				awk 'BEGIN {p=index(ARGV[2],"parent="); if(p>0) print substr(ARGV[2],p+7)}; $1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print "    " $0}}' "$include_file" parent="$include_parent_command" > "$tmpdir/include_file_${fifo_idx}" &
 			fi
 			fifo_idx=$((fifo_idx + 1))
 		done
