@@ -1814,18 +1814,40 @@ _cli_getfirstwords() {
 	local w word=$1
 	[ "$word" = "empty" ] && word=""
 	_cli_log 4 "word: '$word'"
-	_awk output=command_names command_filter="$word" | while read cmd; do
-		if _cli_shell_is_zsh; then
-		  # shellcheck disable=SC2296
+
+	if _cli_shell_is_zsh; then
+		local _help_lines
+		_help_lines=$(_cli_get_command_help_texts "$word")
+		local -a _zsh_results=()
+		local -A _zsh_seen=()
+		local _cmd_desc
+		while read cmd; do
+			# shellcheck disable=SC2296
 			a_cmd=("${(z)cmd}")
-		else
+			for w in "${a_cmd[@]}"; do
+				if [ -n "${_zsh_seen[$w]}" ]; then
+					break
+				fi
+				_zsh_seen[$w]=1
+				_cmd_desc=$(_cli_lookup_command_desc "$w" "$_help_lines")
+				if [ -n "$_cmd_desc" ]; then
+					_zsh_results+=("${w}[${_cmd_desc}]")
+				else
+					_zsh_results+=("$w")
+				fi
+				break
+			done
+		done < <(_awk output=command_names command_filter="$word" | sort | uniq)
+		printf '%s\n' "${_zsh_results[@]}"
+	else
+		_awk output=command_names command_filter="$word" | while read cmd; do
 			read -a a_cmd <<<"$cmd"
-		fi
-		for w in "${a_cmd[@]}"; do
-			echo "$w"
-            break
-		done
-    done | sort | uniq
+			for w in "${a_cmd[@]}"; do
+				echo "$w"
+				break
+			done
+		done | sort | uniq
+	fi
 }
 
 _cli_trim() {
@@ -2079,6 +2101,75 @@ _cli_complete_command() {
 			fi
 		fi
 	done < <(_awk output=command_names command_filter="$line")
+
+	# add help text as descriptions for zsh
+	if _cli_shell_is_zsh && [ "${#COMPREPLY[@]}" -gt 0 ]; then
+		local _help_lines
+		_help_lines=$(_cli_get_command_help_texts "$line")
+		local -a _zsh_compreply=()
+		local _cmd_desc
+		for _entry in "${COMPREPLY[@]}"; do
+			_cmd_desc=$(_cli_lookup_command_desc "$_entry" "$_help_lines")
+			if [ -n "$_cmd_desc" ]; then
+				_zsh_compreply+=("${_entry}[${_cmd_desc}]")
+			else
+				_zsh_compreply+=("$_entry")
+			fi
+		done
+		COMPREPLY=("${_zsh_compreply[@]}")
+	fi
+}
+
+# Returns help-text lines for commands matching a filter.
+# Output: one line per first-word command — "command<TAB>description"
+#
+# Help output format:
+#   <group heading>          (2-space indent, no brackets)
+#       c[ommand] <args>     (4-space indent, with brackets)
+#       c[ommand2] <args>    help text   (inline help after extra spaces)
+#
+# Pairs each command's first word with its preceding group heading.
+# Deduplicates by first word.
+_cli_get_command_help_texts() {
+	local filter="$1"
+	_awk output=help command_filter="$filter" do_format=1 2>/dev/null \
+		| awk '
+		BEGIN { heading="" ; group_first_word="" }
+		/^  [^ ]/ {
+			heading=$0
+			sub(/^[[:space:]]+/, "", heading)
+			group_first_word=""
+			next
+		}
+		/^    / {
+			cmd=$1
+			gsub(/[\[\]]/, "", cmd)
+			if (cmd in seen) next
+			seen[cmd]=1
+			# track which first word the group heading applies to
+			if (group_first_word == "") {
+				group_first_word=cmd
+			}
+			if (cmd != group_first_word) {
+				heading=""
+			}
+			desc=""
+			if (heading != "") {
+				desc=heading
+			}
+			if (desc != "") {
+				print cmd "\t" desc
+			}
+		}
+	'
+}
+
+# Looks up a single command in help-lines output.
+# Args: $1 = command name, $2 = help lines (newline-separated)
+_cli_lookup_command_desc() {
+	local cmd="$1"
+	local help_lines="$2"
+	echo "$help_lines" | grep -m1 "^${cmd}	" | cut -f2
 }
 
 _cli_complete_arg() {
@@ -2347,8 +2438,39 @@ _cli_complete_()
 			if [ "$line_word_count" -ge "$cmd_word_count" ]; then
 				# else: we are completing arguments now
 				local arg_pos=$((line_word_count - cmd_word_count))
+				_cli_load_completion_vars "$__CLI_CMD_WORDS"
 				__CLI_DESC="${__CMD_ARG_DESC[$arg_pos]}"
 				COMPREPLY=($(_cli_complete_arg "$arg_pos" "$word" "$__CLI_CMD_WORDS"))
+				# append [description] to arg completions for zsh
+				if _cli_shell_is_zsh && [ "${#COMPREPLY[@]}" -gt 0 ]; then
+					local _arg_desc="$__CLI_DESC"
+					if [ -z "$_arg_desc" ]; then
+						local _arg_type="${__CMD_ARG_TYPE[$arg_pos]%%\?}"
+						case "$_arg_type" in
+							STRING) _arg_desc="string" ;;
+							list) _arg_desc="one of the following" ;;
+							INTEGER) _arg_desc="integer" ;;
+							int_range) _arg_desc="integer range" ;;
+							eval) _arg_desc="" ;;
+							FILE) _arg_desc="file" ;;
+							DIR) _arg_desc="directory" ;;
+							ENVVAR) _arg_desc="environment variable" ;;
+							USER) _arg_desc="system user" ;;
+							GROUP) _arg_desc="system group" ;;
+							SSH_HOST) _arg_desc="SSH host" ;;
+							BLKDEV) _arg_desc="block device" ;;
+							SERVICE) _arg_desc="systemd service" ;;
+						esac
+					fi
+					if [ -n "$_arg_desc" ]; then
+						local -a _zsh_arg_compreply=()
+						local _arg_entry
+						for _arg_entry in "${COMPREPLY[@]}"; do
+							_zsh_arg_compreply+=("${_arg_entry}[${_arg_desc}]")
+						done
+						COMPREPLY=("${_zsh_arg_compreply[@]}")
+					fi
+				fi
 			fi	
 		else
 			# complete next command word
