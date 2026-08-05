@@ -393,12 +393,6 @@ even if an argument has a completion list, arbitrary values are accepted\&.
 Default: "n"\&. Always return exit code 0\&. Useful on Ubuntu where bash is
 configured to only keep succeeding commands in history\&.
 .TP
-.B __CLI_CFG_EXEC_SUBPROCESS
-Default: "n"\&. Execute commands in a subprocess (\fBbash \-c\fR) instead
-of the current shell\&. When disabled, commands run via
-.B eval
-in the current shell, preserving directory changes and exported variables\&.
-.TP
 .B __CLI_CFG_EXEC_SILENT
 Default: "n"\&. Suppress all CLI output on stdout and stderr\&. When set to
 .BR "y" ,

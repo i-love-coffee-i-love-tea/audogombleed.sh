@@ -49,10 +49,34 @@ This gives you a completion list scoped to the selected namespace.
 
 ## Function expansion
 
-Works the same way as variable expansion, but with a function. Useful when
-the list changes frequently (deployments, pods, branches):
+Works the same way as variable expansion, but the words come from a
+function's output. Prefix the function name with `&`:
 
     [env]
+    function get_namespaces() {
+        kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n'
+    }
+
+    [commands]
+    ns-logs
+        &get_namespaces: kubectl logs -f -n \0
+
+The function is called once during config loading and its output (one word
+per line) is used as the command words. Useful when the list is derived
+from runtime state.
+
+Note: `&` expands command words. To complete *arguments* from a function,
+use `:argname:eval:function_name` instead — see Argument placeholders below.
+
+### Combining command-word expansion with argument completion
+
+You can combine any command-word expansion (`$`, `&`, or `|`) with
+argument types. For example, variable expansion for namespaces and
+`eval` for dynamic argument completion:
+
+    [env]
+    NAMESPACES="default kube-system monitoring"
+
     function get_deployments() {
         kubectl get deployments -n "$1" -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n'
     }
@@ -61,8 +85,6 @@ the list changes frequently (deployments, pods, branches):
     restart
         $NAMESPACES: kubectl rollout restart deployment/\1 -n \0
             :deployment:eval:get_deployments \0
-
-The function runs at completion time, so the list stays current:
 
     $ mycli restart monitoring <TAB>
     grafana  prometheus  alertmanager

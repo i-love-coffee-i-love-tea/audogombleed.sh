@@ -104,8 +104,11 @@ example with command trees and argument types.
 
 ## :books: Documentation
 
-- [Getting Started](docs/01-getting-started.md) — tutorial: create a CLI, define commands, test completions
-- [Configuration Reference](docs/02-configuration.md) — all config options, argument types, CLI flags, exit codes
-- [Advanced Commands](docs/03-advanced-command-configurations.md) — expand one definition into multiple commands with variables, functions, or lists
-- [Hierarchical Configuration](docs/04-hierarchical-configuration.md) — split your config across multiple files
-- [FAQ](docs/10-faq.md) — common issues and solutions
+| Doc | What it covers |
+|-----|---------------|
+| [Getting Started](docs/01-getting-started.md) | Install, first CLI, source vs alias, testing completions |
+| [Configuration Reference](docs/02-configuration.md) | `[commands]` and `[env]` sections, argument types (`:list:`, `:eval:`, `:FILE`, etc.), config options, CLI flags, exit codes, zsh setup |
+| [Advanced Commands](docs/03-advanced-command-configurations.md) | Expand one definition into multiple commands with `$variable`, `&function`, or `val1\|val2` lists; argument placeholders (`\0`, `\1`, `\2`) |
+| [Hierarchical Configuration](docs/04-hierarchical-configuration.md) | `include_commands_from` — split your config across multiple files, merge at runtime |
+| [Shell Compatibility](docs/05-shell-compatibility.md) | Bash/zsh differences, execution model, `SH_WORD_SPLIT` requirement, known limitations |
+| [FAQ](docs/10-faq.md) | Common issues: globbing `?`, zsh setup, config debugging, multiple CLIs |

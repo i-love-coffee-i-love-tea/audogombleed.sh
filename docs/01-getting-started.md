@@ -130,16 +130,16 @@ including commands from other config files.
 
 ### Hierarchical commands
 
-Given the config above:
+Given the kubectl config above:
 
-    $ mycli cd <tab><tab>
-    git-projects    app-instances
+    $ mycli pods <tab><tab>
+    restart  logs  shell
 
-    $ mycli cd git-projects <tab><tab>
-    project1  project2  project3
+    $ mycli pods restart <tab><tab>
+    api-gateway  auth-service  web-frontend
 
-    $ mycli cd git-projects p<tab>
-    >> completes to: mycli cd git-projects project1
+    $ mycli pods restart a<tab>
+    >> completes to: mycli pods restart api-gateway
 
 ### Arguments
 

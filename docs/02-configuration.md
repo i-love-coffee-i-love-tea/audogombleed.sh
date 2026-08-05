@@ -183,6 +183,10 @@ following are also overridden:
     __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS="n"
     __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS="n"
 
+This is because abbreviated command expansion normally asks the user to
+confirm before execution — that prompt is impossible when output is
+suppressed. The same overrides are applied by `-b` / `--batch`.
+
 
 ## CLI command line arguments
 
@@ -191,7 +195,7 @@ following are also overridden:
 Run in script mode. Disables all output on stdout and stderr and features
 that require interactive input (command expansion).
 
-- Sets `__CLI_CFG_SILENT="y"`
+- Sets `__CLI_CFG_EXEC_SILENT="y"`
 - Sets `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS="n"`
 - Sets `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS="n"`
 

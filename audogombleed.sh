@@ -1510,10 +1510,14 @@ _cli_load_config_environment() {
 		elif [ "$first_word" = "include_commands_from" ]; then
 			# expecting exactly three words
 			# include_commands_from <file> <parent_command>
+			# zsh does not word-split unquoted variables by default
+			local _had_shwordsplit=false
+			_cli_shell_is_zsh && { [[ -o SH_WORD_SPLIT ]] && _had_shwordsplit=true || setopt SH_WORD_SPLIT; }
 			env_line="$(_cli_remove_first_word $env_line)"
 			include_file=$(_cli_get_first_word $env_line)
 			include_file="${include_file/#\~/$HOME}"
 			include_parent_command=$(_cli_get_last_word $env_line)
+			_cli_shell_is_zsh && { $_had_shwordsplit || unsetopt SH_WORD_SPLIT; }
 			include_files+=("$include_file|$include_parent_command")
 			_cli_log 4 "include_file: '$include_file'"
 			_cli_log 4 "include_parent_command: '$include_parent_command'"
@@ -2727,7 +2731,10 @@ _cli_execute() {
 			_awk output=help command_filter="" do_format=1  
 			echo
 		else
+			local _had_shwordsplit=false
+			_cli_shell_is_zsh && { [[ -o SH_WORD_SPLIT ]] && _had_shwordsplit=true || setopt SH_WORD_SPLIT; }
 			CMD=$(_cli_remove_last_word $cmd_args)
+			_cli_shell_is_zsh && { $_had_shwordsplit || unsetopt SH_WORD_SPLIT; }
 			_awk output=help command_filter="$CMD" do_format=1
 			echo
 		fi

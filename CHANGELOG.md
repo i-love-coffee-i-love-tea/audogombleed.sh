@@ -5,6 +5,14 @@
 - Restructure test suite for dual bash/zsh coverage (257 tests, up from 121)
 - Add zsh counterparts for every test file (21 bash + 21 zsh test files)
 - Add CI job for zsh test suite
+- Remove `CFG_EXEC_SUBPROCESS` option — redundant with the existing alias mode (`alias mycli='_cli_execute'`)
+- Fix `include_commands_from` under zsh (word splitting via `SH_WORD_SPLIT`)
+- Fix wrong variable name `__CLI_CFG_SILENT` in batch mode docs
+- Document `&` prefix for function expansion of command words
+- Add shell compatibility doc (execution model, bash/zsh differences)
+- Add command-word expansion tests for `&function` (14 tests, bash + zsh)
+- Unskip zsh include-config tests (5 tests)
+- Fix hierarchical commands example in getting-started doc
 - Document `source` as the way to externalize `[env]` configuration
 
 ## 1.2.0
