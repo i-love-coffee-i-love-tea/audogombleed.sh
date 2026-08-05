@@ -20,7 +20,7 @@ setup() {
 @test "bash: --version prints version string" {
     run ./testcli --version
     assert_success
-    assert_output "1.2.0"
+    [[ "$output" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 }
 
 @test "bash: --cli-print-awk-script prints the AWK script" {

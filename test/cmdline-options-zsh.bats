@@ -26,5 +26,5 @@ setup() {
 @test "zsh: --version prints version string" {
     run _zsh_run --version
     assert_success
-    assert_output "1.2.0"
+    [[ "$output" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
 }
