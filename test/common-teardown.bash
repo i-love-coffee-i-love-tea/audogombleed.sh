@@ -1,7 +1,7 @@
 # vim:et:ts=2:sw=2
 
-# teardown testcli
+# teardown testcli — idempotent, no errors if files are already gone
 _common_teardown() {
-  rm -rf ./testcli
-  rm ~/.testcli.conf
+  rm -f ./testcli
+  rm -f ~/.testcli.conf
 }

@@ -68,16 +68,15 @@ setup() {
     assert_output "custom-val"
 }
 
-@test "value argument type with no argument uses default" {
+@test "value argument type with no argument succeeds (args are appended)" {
     # Add a command with value argument to config
     echo 'test-value-default: echo' >> ~/.testcli.conf
     echo '    :arg:value:my-default' >> ~/.testcli.conf
-    
+
     source ./testcli
-    
-    # Test that value argument type uses default when no arg provided
-    # This depends on CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS setting
+
+    # The value type argument is appended when present, but missing args
+    # don't cause failure due to how _cli_args_are_complete works
     run ./testcli test-value-default
-    # The command should either use default or show help
-    # Behavior depends on implementation
+    assert_success
 }

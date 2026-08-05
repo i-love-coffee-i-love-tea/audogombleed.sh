@@ -1,8 +1,7 @@
 # vim:et:ts=4:sw=4
 
 #
-# Runs core CLI tests under zsh to exercise zsh-specific code paths
-# (ZSH_VERSION detection, ${(z)...} word splitting, zsh regex, etc.)
+# Tests all possible command definition variations under zsh
 #
 
 setup_file() {
@@ -34,24 +33,34 @@ setup() {
     assert_output 'second first third'
 }
 
-@test "zsh: can run command with variable expansion" {
+@test "zsh: can run command with variable expansion in command" {
     run _zsh_run var-expansion first
     assert_output 'first'
 }
 
-@test "zsh: can run command with function expansion" {
+@test "zsh: can run command with function expansion in command" {
     run _zsh_run function-expansion thievery --additional args
     assert_output 'thievery --additional args'
 }
 
-@test "zsh: can run command with list expansion" {
+@test "zsh: can run command with list expansion in command" {
     run _zsh_run list-expansion corporation --additional args
     assert_output 'corporation --additional args'
 }
 
 @test "zsh: can run command with static list argument" {
-    run _zsh_run list-argument static option1
-    assert_output 'option1'
+    run _zsh_run list-argument static option1 more args
+    assert_output 'option1 more args'
+}
+
+@test "zsh: can run command with variable list argument" {
+    run _zsh_run list-argument from-variable option1 more args
+    assert_output 'option1 more args'
+}
+
+@test "zsh: can run command with function list argument" {
+    run _zsh_run list-argument from-function option1 more args
+    assert_output 'option1 more args'
 }
 
 @test "zsh: failing command returns correct exit status" {
@@ -64,13 +73,23 @@ setup() {
     assert_failure 2
 }
 
-@test "zsh: complex tree structure - 1" {
+@test "zsh: complex tree structure commands are parsed correctly - 1" {
     run _zsh_run install jar from file /some/file
     assert_output '/some/file'
 }
 
-@test "zsh: complex tree structure - 2" {
+@test "zsh: complex tree structure commands are parsed correctly - 2" {
     run _zsh_run install jar from maven _coords_
+    assert_output '_coords_'
+}
+
+@test "zsh: complex tree structure commands are parsed correctly - 3" {
+    run _zsh_run install war from file /some/file
+    assert_output '/some/file'
+}
+
+@test "zsh: complex tree structure commands are parsed correctly - 4" {
+    run _zsh_run install war from file _coords_
     assert_output '_coords_'
 }
 
@@ -79,19 +98,9 @@ setup() {
     assert_failure 51
 }
 
-@test "zsh: echo command works via direct zsh execution" {
-    # Note: abbreviation expansion (e -> echo) fails under zsh -c because
-    # _cli_is_sourced checks zsh_eval_context which loses 'file' after
-    # sourcing completes. The expansion logic itself works — tested via
-    # 'echo' command here.
-    run _zsh_run echo first second third
-    assert_output 'second first third'
-}
-
 @test "zsh: help trigger shows commands" {
     run _zsh_run ?
     assert_success
-    # zsh help output uses abbreviated format: e[cho], i[nstall]
     assert_line --partial '[cho]'
     assert_line --partial '[nstall]'
 }

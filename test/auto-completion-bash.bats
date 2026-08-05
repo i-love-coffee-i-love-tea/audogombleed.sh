@@ -93,8 +93,8 @@ setup() {
 }
 @test "returns correct completion list: install war		-> from" {
     load 'auto-completion-mock-setup'
-	result="$(test_completion 3 "testcli" "install")"
-	assert_equal "$result" 'from' 
+	result="$(test_completion 3 "testcli" "install" "war")"
+	assert_equal "$result" 'from'
 }
 @test "returns correct completion list: install jar from	-> file maven" {
     load 'auto-completion-mock-setup'

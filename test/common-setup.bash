@@ -12,8 +12,9 @@ _set_option() {
 _common_setup() {
 	local optname
 	local optvalue
-	
-	# install test files
+
+	# install test files (remove if exists to avoid 'ln: Already exists')
+	rm -f ./testcli
 	ln -s ./audogombleed.sh ./testcli
 	if [ ! -e "~/.testcli.conf" ]; then
 		cp example.conf ~/.testcli.conf
