@@ -59,3 +59,59 @@ setup() {
 #	assert_line '__CMD_ARG_VALUE[0]=""'
 #	assert_success
 #}
+
+@test "custom argument descriptions are parsed for list type" {
+	# Append a command with descriptions to the config
+	cat >> ~/.testcli.conf <<'EOF'
+
+test-desc-list: echo
+	:env:list:staging|prod:target environment
+EOF
+	run ./testcli --cli-run-awk-command output=commands command_filter="test-desc-list"
+	assert_success
+	assert_line '__CMD_ARG_NAME[0]="env"'
+	assert_line '__CMD_ARG_TYPE[0]="list"'
+	assert_line '__CMD_ARG_VALUE[0]="staging|prod"'
+	assert_line '__CMD_ARG_DESC[0]="target environment"'
+}
+
+@test "custom argument descriptions are parsed for non-value types" {
+	cat >> ~/.testcli.conf <<'EOF'
+
+test-desc-file: echo
+	:path:FILE:path to input
+EOF
+	run ./testcli --cli-run-awk-command output=commands command_filter="test-desc-file"
+	assert_success
+	assert_line '__CMD_ARG_NAME[0]="path"'
+	assert_line '__CMD_ARG_TYPE[0]="FILE"'
+	assert_line '__CMD_ARG_DESC[0]="path to input"'
+}
+
+@test "custom argument descriptions are parsed for int_range type" {
+	cat >> ~/.testcli.conf <<'EOF'
+
+test-desc-range: echo
+	:port:int_range:1-65535:TCP port number
+EOF
+	run ./testcli --cli-run-awk-command output=commands command_filter="test-desc-range"
+	assert_success
+	assert_line '__CMD_ARG_NAME[0]="port"'
+	assert_line '__CMD_ARG_TYPE[0]="int_range"'
+	assert_line '__CMD_ARG_VALUE[0]="1-65535"'
+	assert_line '__CMD_ARG_DESC[0]="TCP port number"'
+}
+
+@test "custom argument descriptions are parsed for eval type" {
+	cat >> ~/.testcli.conf <<'EOF'
+
+test-desc-eval: echo
+	:deployment:eval:get_deployments:target deployment
+EOF
+	run ./testcli --cli-run-awk-command output=commands command_filter="test-desc-eval"
+	assert_success
+	assert_line '__CMD_ARG_NAME[0]="deployment"'
+	assert_line '__CMD_ARG_TYPE[0]="eval"'
+	assert_line '__CMD_ARG_VALUE[0]="get_deployments"'
+	assert_line '__CMD_ARG_DESC[0]="target deployment"'
+}

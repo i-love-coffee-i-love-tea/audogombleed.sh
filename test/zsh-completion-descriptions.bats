@@ -121,3 +121,28 @@ setup() {
     # list type arg gets "one of the following" description
     assert_line --partial "[one of the following]"
 }
+
+@test "zsh completions: custom argument description appears in completion" {
+    # Add a command with a custom description
+    cat >> ~/.testcli.conf <<'EOF'
+
+test-custom-desc: echo
+    :env:list:staging|prod:target environment
+EOF
+    run zsh -c '
+        autoload -Uz compinit bashcompinit
+        compinit -u
+        bashcompinit
+        source ./testcli
+        # Override _values to capture its arguments instead of calling the real one
+        _values() {
+            shift  # skip description
+            printf "%s\n" "$@"
+        }
+        words=(testcli test-custom-desc "")
+        CURRENT=3
+        _cli_complete_
+    '
+    assert_success
+    assert_line --partial "[target environment]"
+}

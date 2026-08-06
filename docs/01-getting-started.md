@@ -168,7 +168,8 @@ Given the kubectl config above:
 
 ### Arguments
 
-Arguments are defined with `:name:type:source` syntax:
+Arguments are defined with `:name:type:source` syntax. An optional
+description can be appended as the last field:
 
 | Type | Syntax | Description |
 |------|--------|-------------|
@@ -183,11 +184,14 @@ Example with arguments:
 
     [commands]
     echo: echo \2 \1
-        :first-arg:list:one|two|three
-        :second-arg:list:alpha|beta|gamma
+        :first-arg:list:one|two|three:first positional argument
+        :second-arg:list:alpha|beta|gamma:second positional argument
 
     $ mycli echo <tab><tab>
     one  two  three
 
     $ mycli echo one <tab><tab>
     alpha  beta  gamma
+
+See [Configuration Reference](02-configuration.md) for the full list of
+argument types and optional arguments.
