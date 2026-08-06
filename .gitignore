@@ -5,5 +5,12 @@ spring-shell.log
 # Vim swap files
 *.swp
 
+# Debian build artifacts
+debian/files
+debian/*.substvars
+debian/*.debhelper
+debian/audogombleed/
+debian/debhelper-build-stamp
+
 # AI session artifacts
 .mimocode/

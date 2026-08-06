@@ -1,0 +1,24 @@
+Source: audogombleed
+Section: utils
+Priority: optional
+Maintainer: Steffen Kremsler <steffen@example.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: audogombleed
+Architecture: all
+Depends: ${misc:Depends}, bash (>= 4.2) | zsh, gawk | mawk, coreutils (>= 8.30)
+Description: Create CLIs with auto-completable command trees
+ Audogombleed generates shell CLIs from a plain text config file.
+ Define commands and arguments declaratively — tab completion,
+ command abbreviation, and help output all come for free.
+ .
+ Works in both bash and zsh. No dependencies beyond awk and the shell.
+ .
+ Features:
+  * Tab completion for commands and arguments
+  * Command abbreviation (shortest unambiguous prefix)
+  * Help output (--help, ?)
+  * Argument types: FILE, DIR, STRING, INTEGER, list, eval, and more
+  * Hierarchical config with include_commands_from
+  * Dynamic command words from variables, functions, or static lists
