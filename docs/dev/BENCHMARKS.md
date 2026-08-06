@@ -67,23 +67,23 @@ sourcing cost.
 
 | Test | bash | zsh |
 |------|------|-----|
-| Simple command exec | 43ms | 62ms |
-| Hierarchical command exec | 50ms | 64ms |
-| First-word completion | 52ms | 61ms |
-| Second-word completion | 66ms | 59ms |
-| Argument list completion | 63ms | 61ms |
-| Hierarchical completion | 55ms | 58ms |
-| Large config — first-word | 77ms | 57ms |
-| Large config — deep nesting | 88ms | 119ms |
-| Large config — argument | 98ms | 80ms |
-| Large config — 8-level deep | 88ms | 81ms |
+| Simple command exec | 44ms | 55ms |
+| Hierarchical command exec | 47ms | 64ms |
+| First-word completion | 53ms | 59ms |
+| Second-word completion | 58ms | 61ms |
+| Argument list completion | 64ms | 59ms |
+| Hierarchical completion | 54ms | 60ms |
+| Large config — first-word | 74ms | 61ms |
+| Large config — deep nesting | 85ms | 71ms |
+| Large config — argument | 98ms | 78ms |
+| Large config — 8-level deep | 87ms | 66ms |
 
 All results are within the "good" threshold (<100ms) for simple configs.
 Large config results are within the "OK" threshold (<200ms).
 
-The zsh large config first-word is faster than bash because the zsh fast path
-avoids the full command-completion logic. The zsh deep nesting is slower due to
-the extra help-text lookup in `_cli_complete_command` for descriptions.
+zsh is now faster than bash for all large config benchmarks after removing the
+expensive help-text lookup (`_awk output=help` + `grep | cut` per word) from
+`_cli_getfirstwords` and `_cli_complete_command`.
 
 ## Profiling breakdown (bash, simple config)
 
