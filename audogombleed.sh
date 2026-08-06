@@ -65,7 +65,7 @@
 #
 # 	Documentation is available here: https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
 #	
-__CLI_VERSION="1.2.0"
+__CLI_VERSION="1.3.0"
 
 _cli_remove_last_word() {
 	local ret
