@@ -219,6 +219,22 @@ Optional arguments must come after all required arguments.
 
 Any type can be made optional by appending `?` (e.g., `:arg:list?:val1|val2`).
 
+An optional description can be appended as the last field. In types
+with a value field (list, int_range, eval) it comes after the value;
+in all other types it comes directly after the type:
+
+    :name:type:description              (STRING, INTEGER, FILE, etc.)
+    :name:type:value:description        (list, int_range, eval)
+
+Descriptions appear as `[description]` suffixes in zsh tab completions.
+They are ignored in bash.
+
+    [commands]
+    deploy: ./deploy.sh \1
+        :env:list:staging|prod:target environment
+        :tag:list?:v1|v2|v3:release tag
+        :port:int_range:1-65535:TCP port number
+
 
 ## [env] section
 
