@@ -1,0 +1,192 @@
+# vim:et:ts=4:sw=4
+
+#
+# Comprehensive tests for all help text types (bash)
+#
+# Tests:
+#   - Global help (? / -h) shows section headings and all commands
+#   - Section headings (# at top level before command groups)
+#   - Command group help (command ?)
+#   - Command help (# indented before a command)
+#   - Standalone command help (# at top level before a leaf command)
+#   - Detail help (## comments) — shown in both global and filtered help
+#   - Bracket notation for minimum unambiguous prefix
+#   - Argument placeholders in help output
+#
+
+setup_file() {
+    load 'common-setup'
+    _common_setup __CLI_CFG_EXEC_SILENT="y"
+
+    # install a dedicated test config with all help text types
+    cp test/help-test-config.conf ~/.testcli.conf
+}
+teardown_file() {
+    load 'common-teardown'
+    _common_teardown
+}
+setup() {
+    load 'test_helper/bats-support/load'
+    load 'test_helper/bats-assert/load'
+}
+
+# --- global help ---
+
+@test "bash: global help shows section headings" {
+    run ./testcli ?
+    assert_success
+    # section headings appear with 2-space indent
+    assert_line "  section alpha"
+    assert_line "  section beta"
+}
+
+@test "bash: global help shows all commands with bracket notation" {
+    run ./testcli ?
+    assert_success
+    assert_line --partial "a[lpha]"
+    assert_line --partial "b[eta]"
+    assert_line --partial "g[amma]"
+    assert_line --partial "d[elta]"
+}
+
+@test "bash: global help shows standalone command with inline help" {
+    run ./testcli ?
+    assert_success
+    # standalone command: help is inline on the command line
+    assert_line --partial "s[tandalone]"
+    assert_line --partial "standalone command help"
+    # NOT as a section heading (2-space prefix, separate line)
+    refute_line "  standalone command help"
+}
+
+@test "bash: global help shows sub-command help text inline" {
+    run ./testcli ?
+    assert_success
+    # sub-command help appears inline with the command
+    assert_line --partial "o[ne]"
+    assert_line --partial "command under alpha"
+    assert_line --partial "t[wo]"
+    assert_line --partial "another command under alpha"
+}
+
+@test "bash: global help shows detail comments below their command" {
+    run ./testcli ?
+    assert_success
+    # ## detail comments appear in global help, after the command line
+    assert_line --partial "detail line one for gamma four"
+    assert_line --partial "detail line two for gamma four"
+}
+
+@test "bash: global help shows group-level detail comments" {
+    run ./testcli ?
+    assert_success
+    # ## group-level detail appears above the group's commands
+    assert_line --partial "group detail line"
+}
+
+# --- section headings ---
+
+@test "bash: section heading appears above its command group in global help" {
+    run ./testcli ?
+    assert_success
+    # section heading must appear before its group's commands
+    local heading_line command_line
+    heading_line=$(echo "$output" | grep -n "section alpha" | head -1 | cut -d: -f1)
+    command_line=$(echo "$output" | grep -n "a\[lpha\]" | head -1 | cut -d: -f1)
+    [ -n "$heading_line" ]
+    [ -n "$command_line" ]
+    [ "$heading_line" -lt "$command_line" ]
+}
+
+@test "bash: section heading has 2-space indent (not inline with commands)" {
+    run ./testcli ?
+    assert_success
+    # section headings are on their own line with "  " prefix
+    assert_line "  section alpha"
+    # commands have 6-space indent ("      ")
+    refute_line "  section alpha o[ne]"
+}
+
+# --- command group help ---
+
+@test "bash: command group help shows sub-commands" {
+    run ./testcli alpha ?
+    assert_success
+    assert_line --partial "o[ne]"
+    assert_line --partial "t[wo]"
+}
+
+@test "bash: command group help shows sub-commands with bracket notation" {
+    run ./testcli alpha ?
+    assert_success
+    assert_line --partial "o[ne]"
+    assert_line --partial "t[wo]"
+}
+
+# --- standalone command help ---
+
+@test "bash: standalone command shows its own help when filtered" {
+    run ./testcli standalone ?
+    assert_success
+    assert_line --partial "standalone command help"
+}
+
+# --- detail help (## comments) ---
+
+@test "bash: detail help shows for specific command" {
+    run ./testcli gamma four ?
+    assert_success
+    assert_line --partial "detail line one for gamma four"
+    assert_line --partial "detail line two for gamma four"
+}
+
+@test "bash: detail help shows command help text" {
+    run ./testcli gamma four ?
+    assert_success
+    assert_line --partial "command under gamma with details"
+}
+
+@test "bash: command without details has no detail lines" {
+    run ./testcli gamma five ?
+    assert_success
+    assert_line --partial "command under gamma without details"
+    refute_line --partial "detail line"
+}
+
+@test "bash: group-level ## detail shows in group help" {
+    run ./testcli delta ?
+    assert_success
+    assert_line --partial "group detail line"
+}
+
+# --- bracket notation ---
+
+@test "bash: bracket notation marks minimum unambiguous prefix" {
+    run ./testcli ?
+    assert_success
+    # 'a' is unique for alpha (no other top-level starts with 'a')
+    assert_line --partial "a[lpha]"
+    # 's' is unique for standalone
+    assert_line --partial "s[tandalone]"
+}
+
+@test "bash: sub-command bracket notation uses minimum prefix within group" {
+    run ./testcli alpha ?
+    assert_success
+    # 'o' is unique for one (only sub-command starting with 'o')
+    assert_line --partial "o[ne]"
+    # 't' is unique for two (only sub-command starting with 't')
+    assert_line --partial "t[wo]"
+}
+
+# --- argument placeholders ---
+
+@test "bash: help shows argument placeholders for commands with args" {
+    # use the default example.conf for this test
+    cp example.conf ~/.testcli.conf
+    run ./testcli install -?
+    assert_success
+    assert_line --partial "<jar-file>"
+    assert_line --partial "<mvn-coords>"
+    assert_line --partial "<war-file>"
+}

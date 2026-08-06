@@ -500,6 +500,8 @@ BEGIN {
 	delete format_command_names
 	delete section_headings
 	pending_section_heading=""
+	global_help_header=""
+	global_header_closed=0
 
 	# POSIX: no PROCINFO; ordered iteration via _for_seq helper
 
@@ -530,6 +532,8 @@ BEGIN {
 			cache_command_names()
 			clear_command_vars_for_next_command()
 		}
+		# blank line closes global header accumulation
+		global_header_closed = 1
 	}
 	next
 }
@@ -544,6 +548,14 @@ BEGIN {
 		#printf "setting type=command_group: '%s', indentation: %s, prev indentdation: %s\n", $0, cmd_group_indentation, prev_cmd_group_node_indentation
 		#printf "length: %s %s, %s\n", prev_cmd_group_node_indentation, indentation, $0
 		type="command_group"
+
+		# if global header not closed by blank line, accumulated # lines
+		# are section headings for this first group, not global header
+		if (global_header_closed == 0 && global_help_header != "") {
+			pending_section_heading = global_help_header
+			global_help_header = ""
+		}
+		global_header_closed = 1
 
 		# associate pending section heading with this top-level group
 		if (pending_section_heading != "" && cmd_group_indentation == 0) {
@@ -581,6 +593,14 @@ BEGIN {
 		#printf "setting type=command: '%s'\n", $0
 		type="command"
 		indentation=get_indentation()
+
+		# if global header not closed by blank line, accumulated # lines
+		# are section headings for this first command, not global header
+		if (global_header_closed == 0 && global_help_header != "") {
+			pending_section_heading = global_help_header
+			global_help_header = ""
+		}
+		global_header_closed = 1
 
 		# associate pending section heading with top-level standalone commands
 		if (pending_section_heading != "" && indentation == 0) {
@@ -624,10 +644,21 @@ BEGIN {
 /^[ \t]{0,}#[^#].*$/ {
 
 	if (cfg_section == "commands" && output_type == "help") {
-		# top-level # (no indentation) = section heading
+		# top-level # (no indentation)
 		if ($0 ~ /^#[^#]/ && $0 !~ /^[ \t]/) {
-			pending_section_heading=$0
-			sub(/^[ \t]*#[ \t]*/, "", pending_section_heading)
+			if (global_header_closed == 0) {
+				# consecutive # lines at top of [commands] = global header
+				_ch=$0; sub(/^[ \t]*#[ \t]?/, "", _ch)
+				if (global_help_header == "") {
+					global_help_header=_ch
+				} else {
+					global_help_header=global_help_header "\n" _ch
+				}
+			} else {
+				# after first command: section heading
+				pending_section_heading=$0
+				sub(/^[ \t]*#[ \t]*/, "", pending_section_heading)
+			}
 		} else if ($0 !~ /^[ \t]{0,}##/) {
 			type="cmd_help"
 			_ch=$0; sub(/^[ \t]*#[ \t]*/, "", _ch); sub(/[ \t]*:.*/, "", _ch)
@@ -766,6 +797,15 @@ END {
 			prefix_spaces="  "
 			#}
 			help_width=col_width-2
+
+			# print global help header if present
+			if (global_help_header != "" && command_filter == "") {
+				n=split(global_help_header, header_lines, "\n")
+				for (h=1; h<=n; h++) {
+					printf "  %s\n", header_lines[h]
+				}
+			}
+
 			i=0; while (i in formatted_commands) {
 				unformatted_command=formatted_commands[i]
 				gsub(/[\[\]]/, "", unformatted_command)
