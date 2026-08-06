@@ -1,19 +1,49 @@
 # Changelog
 
-## 1.2.1
+## 1.3.0
 
-- Restructure test suite for dual bash/zsh coverage (257 tests, up from 121)
+### Features
+
+- Add help system enhancements: global header (`#` lines at top of `[commands]`), section headings, standalone command help, `##` detail comments
+- Add argument description syntax (`:name:type:description` and `:name:type:value:description`), shown as `[description]` suffixes in zsh completions
+- Add file permission checks before sourcing config, source, and include files (rejects world-writable files, files owned by other users, and symlinks to unsafe targets)
+- Add CLI name validation (only letters, digits, and underscores allowed)
+- Add config caching (mtime-based, skips re-parsing unchanged config files)
+- Add macOS support (portable file modification time, Homebrew distribution)
+- Add `.deb` packaging (`build-deb.sh`, `debian/` directory)
+- Add `release.sh` for version bump (updates `audogombleed.sh`, `audogombleed.1`, `debian/changelog`), commit, and tagging
+- Remove `CFG_EXEC_SUBPROCESS` option — redundant with the existing alias mode (`alias mycli='_cli_execute'`)
+
+### Fixes
+
+- Fix exit codes 52 and 53 (placeholder mismatch and missing required args now work correctly)
+- Fix eval quoting bug in completion
+- Fix `include_commands_from` under zsh (word splitting via `SH_WORD_SPLIT`)
+- Fix tilde-in-quotes bug in test setup
+- Optimize exit 53 check (pure bash, no sed/grep)
+- Optimize zsh deep nesting completion
+
+### Documentation
+
+- Rewrite manpage: add installation, security, shell compatibility, and troubleshooting sections
+- Add security documentation (trust model, `eval` implications, file permission checks, recommendations)
+- Add shell compatibility documentation (execution model, OS support, known limitations)
+- Document argument description syntax in configuration reference and getting started guide
+- Document `&` prefix for function expansion of command words
+- Document `source` as the way to externalize `[env]` configuration
+- Add execution modes and multiple CLI sections to getting started guide
+- Expand hierarchical configuration docs with error handling
+
+### Tests
+
+- Restructure test suite for dual bash/zsh coverage (358 tests, up from ~120)
 - Add zsh counterparts for every test file (21 bash + 21 zsh test files)
 - Add CI job for zsh test suite
-- Remove `CFG_EXEC_SUBPROCESS` option — redundant with the existing alias mode (`alias mycli='_cli_execute'`)
-- Fix `include_commands_from` under zsh (word splitting via `SH_WORD_SPLIT`)
-- Fix wrong variable name `__CLI_CFG_SILENT` in batch mode docs
-- Document `&` prefix for function expansion of command words
-- Add shell compatibility doc (execution model, bash/zsh differences)
-- Add command-word expansion tests for `&function` (14 tests, bash + zsh)
-- Unskip zsh include-config tests (5 tests)
-- Fix hierarchical commands example in getting-started doc
-- Document `source` as the way to externalize `[env]` configuration
+- Add comprehensive help tests (global header, sections, standalone commands, detail comments)
+- Add argument description tests (AWK parser + zsh completion descriptions)
+- Add benchmark tests
+- Add exit code 52/53 tests
+- Add command-word expansion tests for `&function`
 
 ## 1.2.0
 
