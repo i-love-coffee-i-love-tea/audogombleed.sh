@@ -16,7 +16,7 @@ _common_setup() {
 	# install test files (remove if exists to avoid 'ln: Already exists')
 	rm -f ./testcli
 	ln -s ./audogombleed.sh ./testcli
-	if [ ! -e "~/.testcli.conf" ]; then
+	if [ ! -e "$HOME/.testcli.conf" ]; then
 		cp example.conf ~/.testcli.conf
 	fi
 

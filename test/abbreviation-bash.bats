@@ -27,7 +27,7 @@ setup() {
 }
 
 @test "bash: multi-word abbreviation expands: i j f m -> install jar from maven" {
-    run ./testcli i j f m
+    run ./testcli i j f m coord123
     # Command expands and executes — the maven command runs ~/bin/install-maven-war.sh
     # which may or may not exist. The key assertion is that expansion happened.
     assert_line --partial 'Executing command "install jar from maven"'

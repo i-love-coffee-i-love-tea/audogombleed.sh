@@ -50,9 +50,9 @@ setup() {
     assert_failure 51
 }
 
-@test "exit code 52: unresolved placeholders left in output" {
-    # When command expression has more placeholders than args,
-    # the unresolved placeholder literal stays in the output (not an error).
+@test "exit code 52: more placeholders than args" {
+    # When command expression has more placeholders than args provided,
+    # exit code 52 should be returned.
     echo 'test-placeholders: echo \1 \2 \3' >> ~/.testcli.conf
     echo '    :arg1:list:one|two' >> ~/.testcli.conf
     echo '    :arg2:list:alpha|beta' >> ~/.testcli.conf
@@ -60,20 +60,18 @@ setup() {
 
     source ./testcli
 
-    # Supply only 2 args when 3 placeholders exist — command still runs
+    # Supply only 2 args when 3 placeholders exist
     run ./testcli test-placeholders one alpha
-    assert_success
-    assert_line --partial "one alpha"
+    assert_failure 52
 }
 
-@test "exit code 53: command with missing args still runs" {
-    # Due to _cli_args_are_complete subshell behavior, missing args
-    # don't trigger exit 53 — the command executes anyway.
+@test "exit code 53: command with missing required args" {
+    # When required args are missing, exit code 53 should be returned.
     load 'common-setup'
     _set_option __CLI_CFG_EXEC_SILENT '"n"'
     source ./testcli
     run ./testcli echo
-    assert_success
+    assert_failure 53
 }
 
 @test "exit code 0: successful command execution" {

@@ -1683,12 +1683,12 @@ _cli_get_command_args() {
 	local cmd="$1"
 	local l w
 	for l in "${__CLI_CONFIG[@]}"; do
-		if [[ "$l" =~ ^"$cmd" ]]; then
+		if [[ "$l" =~ ^${cmd} ]]; then
 			for w in $(printf '%s\n' "$l" | _cli_cut 2 ,); do
 				printf '%s\n' "$w"
 			done
+			break
 		fi
-		break
 	done
 }
 
@@ -1973,6 +1973,60 @@ _cli_execute_command() {
 
 		args_length="${#args[@]}"
         _cli_log 4 "cmd: $cmd, args: $args, length: ${#args[@]}"
+
+		# Exit 52: more placeholders in command expression than args provided.
+		# Only checked when at least 1 arg is provided (0 args falls through to exit 53).
+		if [ "$args_length" -gt 0 ]; then
+			local _early_cmd_expr
+			_early_cmd_expr="$(_cli_get_command_expr "$cmd")"
+			if [ "$_early_cmd_expr" != "" ]; then
+				local _early_last_word="${cmd##* }"
+				_early_cmd_expr=${_early_cmd_expr//\\0/$_early_last_word}
+				local _pi=1
+				while [[ "$_early_cmd_expr" == *"\\$_pi"* ]]; do
+					if [ "$_pi" -gt "$args_length" ]; then
+						_cli_error "more placeholders in command expression than args provided: $_early_cmd_expr"
+						exit_code=52
+						_cli_exit_if_not_sourced $exit_code
+						return "$exit_code"
+					fi
+					_pi=$((_pi+1))
+				done
+			fi
+		fi
+
+		# Exit 53: command has required args but none were provided.
+		if [ "$args_length" -eq 0 ]; then
+			local _awk_out
+			_awk_out="$(_awk output=commands command_filter="$cmd")"
+			# Check if __CMD_ARG_VALUE[0] is set (command has defined args)
+			local _first_arg_value
+			_first_arg_value="$(printf '%s\n' "$_awk_out" | sed -n 's/^__CMD_ARG_VALUE\[0\]="\(.*\)"/\1/p')"
+			if [ -n "$_first_arg_value" ]; then
+				# Check if all args are optional (value ends with ?)
+				local _all_optional=1
+				local _val_line
+				while IFS= read -r _val_line; do
+					[[ "$_val_line" =~ ^__CMD_ARG_VALUE\[ ]] || continue
+					local _val="${_val_line#*=\"}"
+					_val="${_val%\"}"
+					if [[ "$_val" != *\? ]]; then
+						_all_optional=0
+						break
+					fi
+				done <<< "$_awk_out"
+				if [ "$_all_optional" -eq 0 ]; then
+					_cli_error "Command \"$cmd\" is missing parameters to execute"
+					if ! _cli_global_is_negative_bool CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS; then
+						_awk output=help command_filter="$cmd" do_format=1
+					fi
+					exit_code=53
+					_cli_exit_if_not_sourced $exit_code
+					return "$exit_code"
+				fi
+			fi
+		fi
+
 		#if [ "${#args[@]}" -eq 0 ] || _cli_args_are_complete "$cmd" ${args[@]}; then
 		if _cli_args_are_complete "$cmd" "${args[@]}"; then
 			# fetch the command to execute from the config
