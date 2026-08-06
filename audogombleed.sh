@@ -1997,33 +1997,41 @@ _cli_execute_command() {
 
 		# Exit 53: command has required args but none were provided.
 		if [ "$args_length" -eq 0 ]; then
-			local _awk_out
+			local _awk_out _aline _has_args=0 _all_optional=1
+			local _atype _aval
 			_awk_out="$(_awk output=commands command_filter="$cmd")"
-			# Check if __CMD_ARG_VALUE[0] is set (command has defined args)
-			local _first_arg_value
-			_first_arg_value="$(printf '%s\n' "$_awk_out" | sed -n 's/^__CMD_ARG_VALUE\[0\]="\(.*\)"/\1/p')"
-			if [ -n "$_first_arg_value" ]; then
-				# Check if all args are optional (value ends with ?)
-				local _all_optional=1
-				local _val_line
-				while IFS= read -r _val_line; do
-					[[ "$_val_line" =~ ^__CMD_ARG_VALUE\[ ]] || continue
-					local _val="${_val_line#*=\"}"
-					_val="${_val%\"}"
-					if [[ "$_val" != *\? ]]; then
-						_all_optional=0
-						break
-					fi
-				done <<< "$_awk_out"
-				if [ "$_all_optional" -eq 0 ]; then
-					_cli_error "Command \"$cmd\" is missing parameters to execute"
-					if ! _cli_global_is_negative_bool CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS; then
-						_awk output=help command_filter="$cmd" do_format=1
-					fi
-					exit_code=53
-					_cli_exit_if_not_sourced $exit_code
-					return "$exit_code"
+			while IFS= read -r _aline; do
+				if [[ "$_aline" == __CMD_ARG_TYPE\[* ]]; then
+					_atype="${_aline#*=\"}"
+					_atype="${_atype%\"}"
+					_has_args=1
+					# value type args have a default and are always optional
+					[[ "$_atype" == "value" ]] && continue
+					# extract matching value field to check for ? suffix
+					local _vidx="${_aline%%\]*}"
+					_vidx="${_vidx##*\[}"
+					_aval=""
+					local _vline
+					while IFS= read -r _vline; do
+						if [[ "$_vline" == __CMD_ARG_VALUE\["$_vidx"\]=* ]]; then
+							_aval="${_vline#*=\"}"
+							_aval="${_aval%\"}"
+							break
+						fi
+					done <<< "$_awk_out"
+					[[ "$_aval" == *\? ]] && continue
+					_all_optional=0
+					break
 				fi
+			done <<< "$_awk_out"
+			if [ "$_has_args" -eq 1 ] && [ "$_all_optional" -eq 0 ]; then
+				_cli_error "Command \"$cmd\" is missing parameters to execute"
+				if ! _cli_global_is_negative_bool CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS; then
+					_awk output=help command_filter="$cmd" do_format=1
+				fi
+				exit_code=53
+				_cli_exit_if_not_sourced $exit_code
+				return "$exit_code"
 			fi
 		fi
 
