@@ -1211,17 +1211,17 @@ provision
 # =============================================================================
 # 8-level deep command paths for benchmarking completion under extreme nesting.
 
-	deep
-		level2
-			level3
-				level4
-					level5
-						level6
-							level7
-								level8-alpha: echo "deep alpha \1"
-									:param:STRING
-								level8-beta: echo "deep beta \1"
-									:param:STRING
-								level8-gamma: echo "deep gamma \1"
-									:param:STRING
+deep
+	level2
+		level3
+			level4
+				level5
+					level6
+						level7
+							level8-alpha: echo "deep alpha \1"
+								:param:STRING
+							level8-beta: echo "deep beta \1"
+								:param:STRING
+							level8-gamma: echo "deep gamma \1"
+								:param:STRING
 EOF

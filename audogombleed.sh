@@ -359,7 +359,7 @@ _cli_map_function_output_to_env_var() {
 
 _cli_read_awk_script() {
 	# Cache: skip if already read
-	[ -n "$__CLI_AWK_SCRIPT" ] && return
+	[ ${#__CLI_AWK_SCRIPT} -gt 0 ] && return
 	_cli_log 4 "reading awk script"
 	read -r -d '' __CLI_AWK_SCRIPT <<'AWK_EOF'
 #!/usr/bin/awk -f
@@ -2165,22 +2165,8 @@ _cli_complete_command() {
 		fi
 	done < <(_awk output=command_names command_filter="$line")
 
-	# add help text as descriptions for zsh
-	if _cli_shell_is_zsh && [ "${#COMPREPLY[@]}" -gt 0 ]; then
-		local _help_lines
-		_help_lines=$(_cli_get_command_help_texts "$line")
-		local -a _zsh_compreply=()
-		local _cmd_desc
-		for _entry in "${COMPREPLY[@]}"; do
-			_cmd_desc=$(_cli_lookup_command_desc "$_entry" "$_help_lines")
-			if [ -n "$_cmd_desc" ]; then
-				_zsh_compreply+=("${_entry}[${_cmd_desc}]")
-			else
-				_zsh_compreply+=("$_entry")
-			fi
-		done
-		COMPREPLY=("${_zsh_compreply[@]}")
-	fi
+	# Help-text descriptions for zsh are skipped for speed — the extra
+	# _awk output=help + grep/cut per word is the main bottleneck.
 }
 
 # Returns help-text lines for commands matching a filter.
