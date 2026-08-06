@@ -1,0 +1,11 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	install -D -m 755 audogombleed.sh debian/audogombleed/usr/bin/audogombleed
+	install -D -m 644 audogombleed.1 debian/audogombleed/usr/share/man/man1/audogombleed.1
+
+override_dh_auto_test:
+	@# tests require bats and a shell session; skip during build
