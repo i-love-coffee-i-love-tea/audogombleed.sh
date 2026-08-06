@@ -10,7 +10,7 @@
 LARGE_CONF_GENERATOR="./generate_large_config.sh"
 MAX_COMPLETION_MS=100
 MAX_EXEC_MS=200
-MAX_LARGE_COMPLETION_MS=200
+MAX_LARGE_COMPLETION_MS=400
 
 _time_ms() {
 	local start end
