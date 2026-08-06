@@ -91,6 +91,15 @@ _cli_shell_is_bash() {
 _cli_shell_is_zsh() {
 	[ "$ZSH_VERSION" != "" ]
 }
+
+# Portable file modification time (works on Linux and macOS)
+_cli_mtime() {
+	if [ "$(uname)" = "Darwin" ]; then
+		stat -f %m "$1" 2>/dev/null
+	else
+		stat -c %Y "$1" 2>/dev/null
+	fi
+}
 _cli_get_shell_name() {
 	local name=""
 	_cli_shell_is_bash && name="-bash"
@@ -389,7 +398,7 @@ _cli_read_command_list() {
 	local _cfg_file
 	_cfg_file="$(_cli_global CONFIG_FILE)"
 	local _cfg_mtime
-	_cfg_mtime=$(stat -c %Y "$_cfg_file" 2>/dev/null)
+	_cfg_mtime=$(_cli_mtime "$_cfg_file")
 	if [ "$_cfg_mtime" = "$__CLI_CONFIG_MTIME" ] && [ "${#__CLI_CONFIG[@]}" -gt 0 ]; then
 		_cli_log 4 "using cached command list"
 		return
@@ -2423,7 +2432,7 @@ _cli_complete_arg() {
 			description="system group"
 			;;
 		SSH_HOST)
-			SSH_HOSTS=$(grep -P "^host ([^*]+)$" "$HOME/.ssh/config" | sed 's/host //')
+			SSH_HOSTS=$(grep -E "^host [^*]+$" "$HOME/.ssh/config" | sed 's/host //')
 			compgen -W "$SSH_HOSTS" -- "$word"
 			description="SSH host"
 			;;
@@ -2736,7 +2745,7 @@ _cli_load_command_word_functions() {
 	local _cfg_file
 	_cfg_file="$(_cli_global CONFIG_FILE)"
 	local _cfg_mtime
-	_cfg_mtime=$(stat -c %Y "$_cfg_file" 2>/dev/null)
+	_cfg_mtime=$(_cli_mtime "$_cfg_file")
 	if [ "$_cfg_mtime" = "$__CLI_CMD_FUNCS_MTIME" ] && [ -n "$__CLI_CMD_FUNCS_CACHED" ]; then
 		funcs="$__CLI_CMD_FUNCS_CACHED"
 	else
