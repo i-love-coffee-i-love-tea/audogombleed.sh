@@ -332,6 +332,16 @@ _cli_close_logfile() {
 
 _cli_read_command_list() {
 	_cli_log 1 "config file: $(_cli_global CONFIG_FILE)"
+	# Cache: skip if config file hasn't changed
+	local _cfg_file
+	_cfg_file="$(_cli_global CONFIG_FILE)"
+	local _cfg_mtime
+	_cfg_mtime=$(stat -c %Y "$_cfg_file" 2>/dev/null)
+	if [ "$_cfg_mtime" = "$__CLI_CONFIG_MTIME" ] && [ "${#__CLI_CONFIG[@]}" -gt 0 ]; then
+		_cli_log 4 "using cached command list"
+		return
+	fi
+	__CLI_CONFIG_MTIME="$_cfg_mtime"
 	if _cli_shell_is_zsh; then
 		__CLI_CONFIG=("${(@f)$(_awk "output=commands")}")
 	else
@@ -348,6 +358,8 @@ _cli_map_function_output_to_env_var() {
 }
 
 _cli_read_awk_script() {
+	# Cache: skip if already read
+	[ -n "$__CLI_AWK_SCRIPT" ] && return
 	_cli_log 4 "reading awk script"
 	read -r -d '' __CLI_AWK_SCRIPT <<'AWK_EOF'
 #!/usr/bin/awk -f
@@ -1816,11 +1828,10 @@ _cli_getfirstwords() {
 	_cli_log 4 "word: '$word'"
 
 	if _cli_shell_is_zsh; then
-		local _help_lines
-		_help_lines=$(_cli_get_command_help_texts "$word")
+		# Skip help-text lookup for speed — descriptions are added later
+		# by _cli_complete_command when completing subsequent words.
 		local -a _zsh_results=()
 		local -A _zsh_seen=()
-		local _cmd_desc
 		while read cmd; do
 			# shellcheck disable=SC2296
 			a_cmd=("${(z)cmd}")
@@ -1829,12 +1840,7 @@ _cli_getfirstwords() {
 					break
 				fi
 				_zsh_seen[$w]=1
-				_cmd_desc=$(_cli_lookup_command_desc "$w" "$_help_lines")
-				if [ -n "$_cmd_desc" ]; then
-					_zsh_results+=("${w}[${_cmd_desc}]")
-				else
-					_zsh_results+=("$w")
-				fi
+				_zsh_results+=("$w")
 				break
 			done
 		done < <(_awk output=command_names command_filter="$word" | sort | uniq)
@@ -2669,7 +2675,18 @@ _cli_first_word_equals() {
 _cli_load_command_word_functions() {
 	local fun
 	local funcs
-	funcs="$(_awk output=command_word_functions)"
+	# Cache: reuse function list if config hasn't changed
+	local _cfg_file
+	_cfg_file="$(_cli_global CONFIG_FILE)"
+	local _cfg_mtime
+	_cfg_mtime=$(stat -c %Y "$_cfg_file" 2>/dev/null)
+	if [ "$_cfg_mtime" = "$__CLI_CMD_FUNCS_MTIME" ] && [ -n "$__CLI_CMD_FUNCS_CACHED" ]; then
+		funcs="$__CLI_CMD_FUNCS_CACHED"
+	else
+		funcs="$(_awk output=command_word_functions)"
+		__CLI_CMD_FUNCS_MTIME="$_cfg_mtime"
+		__CLI_CMD_FUNCS_CACHED="$funcs"
+	fi
 	[ -z "$funcs" ] && return
 	while IFS= read -r fun; do
 		[ -z "$fun" ] && continue
