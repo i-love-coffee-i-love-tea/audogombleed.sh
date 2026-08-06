@@ -112,3 +112,4 @@ example with command trees and argument types.
 | [Hierarchical Configuration](docs/04-hierarchical-configuration.md) | `include_commands_from` — split your config across multiple files, merge at runtime |
 | [Shell Compatibility](docs/05-shell-compatibility.md) | Bash/zsh differences, execution model, `SH_WORD_SPLIT` requirement, known limitations |
 | [FAQ](docs/10-faq.md) | Common issues: globbing `?`, zsh setup, config debugging, multiple CLIs |
+| [Security](docs/SECURITY.md) | Trust model, `eval` implications, attack surface, recommendations |
