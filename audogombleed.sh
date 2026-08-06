@@ -196,6 +196,59 @@ _cli_config_file_is_present() {
 	fi
 }
 
+# Check that a file is safe to source:
+# - exists and is a regular file (or symlink to one)
+# - not world-writable
+# - owned by current user or root
+# - if symlink, target is also not world-writable
+_cli_check_file_permissions() {
+	local file="$1"
+	local context="${2:-file}"
+
+	if [ ! -f "$file" ]; then
+		_cli_error "config error: $context '$file' is not a regular file"
+		return 1
+	fi
+
+	# check if it's a symlink and validate the target
+	if [ -L "$file" ]; then
+		local target
+		target=$(readlink -f "$file" 2>/dev/null)
+		if [ -z "$target" ]; then
+			_cli_error "config error: $context '$file' is a symlink that cannot be resolved"
+			return 1
+		fi
+		if [ ! -f "$target" ]; then
+			_cli_error "config error: $context '$file' symlink target '$target' is not a regular file"
+			return 1
+		fi
+		if [ "$(stat -L -c '%a' "$target" 2>/dev/null | cut -c3)" = "7" ]; then
+			_cli_error "config error: $context '$file' symlink target '$target' is world-writable"
+			return 1
+		fi
+	fi
+
+	# not world-writable (use -L to follow symlinks to the target's permissions)
+	local perms
+	perms=$(stat -L -c '%a' "$file" 2>/dev/null)
+	if [ -n "$perms" ] && [ "$(echo "$perms" | cut -c3)" = "7" ]; then
+		_cli_error "config error: $context '$file' is world-writable (mode $perms)"
+		return 1
+	fi
+
+	# owned by current user or root
+	local owner
+	owner=$(stat -L -c '%u' "$file" 2>/dev/null)
+	local my_uid
+	my_uid=$(id -u)
+	if [ "$owner" != "$my_uid" ] && [ "$owner" != "0" ]; then
+		_cli_error "config error: $context '$file' is owned by uid $owner (expected $my_uid or 0)"
+		return 1
+	fi
+
+	return 0
+}
+
 _cli_init_global_vars() {
 	_cli_global CFG_EXEC_ACK_EXPANDED_COMMANDS "y"
 	_cli_global CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS "y"
@@ -1386,6 +1439,12 @@ _awk() {
 		return
 	fi
 
+	local _cfg_file
+	_cfg_file="$(_cli_global CONFIG_FILE)"
+	if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
+		return 1
+	fi
+
 	_cli_log 4 "$*" 
 
 	if [ "${#include_files[@]}" -eq 0 ]; then	
@@ -1406,6 +1465,9 @@ _awk() {
 			include_file="${file%%|*}"
 			if [ "$include_file" = "" ]; then
 				continue
+			fi
+			if ! _cli_check_file_permissions "$include_file" "include file"; then
+				return 1
 			fi
 			_cli_log 4 "creating fifo for file: $include_file" 
 			include_parent_command="${file##*|}" 
@@ -1509,7 +1571,11 @@ _cli_load_config_environment() {
 			# expand '~' and environment variables in path without eval
 			src_file="${env_line#* }"
 			src_file="${src_file/#\~/$HOME}"
-			if [ -f "$src_file" ]; then	
+			if [ -f "$src_file" ]; then
+				if ! _cli_check_file_permissions "$src_file" "source file"; then
+					line_nr=$((line_nr + 1))
+					continue
+				fi
 				source "$src_file"
 			else
 				# could have been set to not silent by previous eval of config line
@@ -1569,6 +1635,11 @@ $env_line"
 	done < <(_awk output=env)
 
 	if [ ! -z "$script" ]; then
+		local _cfg_file
+		_cfg_file="$(_cli_global CONFIG_FILE)"
+		if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
+			return
+		fi
 		source <(echo -e "$script")
 	fi
 
