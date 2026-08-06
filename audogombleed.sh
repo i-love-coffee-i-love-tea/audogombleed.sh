@@ -581,6 +581,13 @@ BEGIN {
 		#printf "setting type=command: '%s'\n", $0
 		type="command"
 		indentation=get_indentation()
+
+		# associate pending section heading with top-level standalone commands
+		if (pending_section_heading != "" && indentation == 0) {
+			cmd_help[cmd_help_index] = pending_section_heading
+			cmd_help_index++
+			pending_section_heading = ""
+		}
 		# detect indentation width, if not yet detected
 		if (detected_indentation_width == -1 && indentation > 0) {
 			detected_indentation_width = indentation
@@ -2470,6 +2477,19 @@ _cli_complete_arg() {
 }
 
 
+# Validate CLI name: only alphanumeric and underscores allowed
+# Dots and dashes break aliases and variable names
+_cli_validate_progname() {
+	if [[ "$__CLI_PROGNAME" =~ [^a-zA-Z0-9_] ]]; then
+		echo "error: CLI name '$__CLI_PROGNAME' contains invalid characters." >&2
+		echo "Only letters, digits, and underscores are allowed." >&2
+		echo "Create a symlink with a valid name, e.g.:" >&2
+		echo "  ln -sf $__CLI_PROGNAME mycli" >&2
+		return 1
+	fi
+	return 0
+}
+
 # must be initialized before _cli_complete_ and _execute_command, 
 # but because zsh $0 returns the function name,
 # when used in a function, it is called here directly
@@ -2502,6 +2522,9 @@ _cli_complete_()
 		if [ ! -z "${COMP_WORDS[0]}" ]; then
 			__CLI_PROGNAME="$(basename "${COMP_WORDS[0]}")"
 		fi
+	fi
+	if ! _cli_validate_progname; then
+		return 1
 	fi
 		
 
@@ -2783,6 +2806,10 @@ _cli_execute() {
 		if [ ! -z "${COMP_WORDS[0]}" ]; then
 			__CLI_PROGNAME="$(basename "${COMP_WORDS[0]}")"
 		fi
+	fi
+	if ! _cli_validate_progname; then
+		_cli_exit_if_not_sourced 1
+		return 1
 	fi
 
 	local cmd_args

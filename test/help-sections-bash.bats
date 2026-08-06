@@ -64,3 +64,15 @@ setup() {
     assert_success
     assert_line --partial "demonstration of list argument types"
 }
+
+@test "bash: help shows description for standalone top-level command" {
+    # The example.conf has "# example to test failing command exit code" before false:
+    # The help text should appear inline on the command line, not as a section heading
+    run ./testcli ?
+    assert_success
+    # inline: 4-space indent + command + help text on same line
+    assert_line --partial "fa[lse]"
+    assert_line --partial "example to test failing command exit code"
+    # NOT as a section heading (2-space prefix, separate line)
+    refute_line "  example to test failing command exit code"
+}
