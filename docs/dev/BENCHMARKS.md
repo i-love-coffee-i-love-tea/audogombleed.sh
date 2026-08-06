@@ -12,7 +12,7 @@ From the dev README:
 | Sluggish | >400ms |
 | OK | ~200ms |
 | Good | ~100ms |
-| Very good | <100ms |
+| Very good | <50ms |
 
 ## Running the benchmarks
 

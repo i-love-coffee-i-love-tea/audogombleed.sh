@@ -96,7 +96,7 @@ Script execution time of 400 ms definitely makes it feel sluggish
 
 - About 200ms is OK
 - 100ms is good
-- <100ms is very good
+- <50ms is very good
 
 
 time it with the `time` command

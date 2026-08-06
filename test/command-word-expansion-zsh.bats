@@ -8,8 +8,9 @@ setup_file() {
     load 'common-setup'
     _common_setup __CLI_CFG_EXEC_SILENT="y"
 
-    # inject test functions into [env] section (before [commands])
+    # inject test functions and exported variable into [env] section
     sed -i '/^\[commands\]/i \
+export __TEST_EXPANSION_WORDS="one two three"\
 single_word_func() { echo "alpha"; }\
 multi_word_func() { echo "alpha beta gamma"; }\
 empty_func() { :; }' ~/.testcli.conf
@@ -17,6 +18,10 @@ empty_func() { :; }' ~/.testcli.conf
     # append test commands to [commands] section
     cat >> ~/.testcli.conf <<'CMDS'
 
+dollar-expansion
+    $__TEST_EXPANSION_WORDS: echo \0
+list-expansion-words
+    one|two|three: echo \0
 single-word-func
     &single_word_func: echo \0
 multi-word-func
@@ -34,6 +39,60 @@ setup() {
     load 'test_helper/bats-assert/load'
     load 'zsh-helpers'
 }
+
+# --- $variable expansion ---
+
+# execution
+
+@test "zsh: \$variable expansion executes" {
+	run _zsh_run dollar-expansion one
+	assert_success
+	assert_output "one"
+}
+
+@test "zsh: \$variable expansion with \\0 placeholder replaces command word" {
+	run _zsh_run dollar-expansion two
+	assert_success
+	assert_output "two"
+}
+
+# completion
+
+@test "zsh: \$variable expansion completes all words" {
+    load 'auto-completion-mock-setup-zsh'
+	run test_completion_zsh 3 "testcli" "dollar-expansion"
+	assert_line "one"
+	assert_line "two"
+	assert_line "three"
+}
+
+# --- |list expansion ---
+
+# execution
+
+@test "zsh: |list expansion executes" {
+	run _zsh_run list-expansion-words one
+	assert_success
+	assert_output "one"
+}
+
+@test "zsh: |list expansion with \\0 placeholder replaces command word" {
+	run _zsh_run list-expansion-words two
+	assert_success
+	assert_output "two"
+}
+
+# completion
+
+@test "zsh: |list expansion completes all words" {
+    load 'auto-completion-mock-setup-zsh'
+	run test_completion_zsh 3 "testcli" "list-expansion-words"
+	assert_line "one"
+	assert_line "two"
+	assert_line "three"
+}
+
+# --- &function expansion ---
 
 # execution
 

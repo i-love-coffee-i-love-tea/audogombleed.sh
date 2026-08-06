@@ -55,6 +55,18 @@ sections are merged before parsing. The result is a single command tree.
 Each included file's commands are indented under the parent command word.
 With `ROOT`, they are merged without a parent wrapper.
 
+## Error handling
+
+- **Missing file:** if the included config file does not exist, the CLI
+  prints an error to stderr and stops. Check the path and filename.
+- **No `[commands]` section:** if the included file exists but has no
+  `[commands]` section, the include is silently ignored (no commands
+  are merged). The rest of the config works normally.
+- **One level only:** `include_commands_from` only works in the main
+  config's `[env]` section. Included files cannot include further files.
+  Any `include_commands_from` in an included file is treated as a shell
+  command and executed, not parsed as an include directive.
+
 ## Visual example
 
 Main config importing two modules:
