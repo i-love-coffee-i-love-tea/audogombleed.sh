@@ -9,15 +9,22 @@ fi
 
 version="$1"
 script="audogombleed.sh"
+manpage="audogombleed.1"
 
 if ! grep -q "^__CLI_VERSION=" "$script"; then
     echo "error: __CLI_VERSION not found in $script"
     exit 1
 fi
 
-sed -i "s/^__CLI_VERSION=.*/__CLI_VERSION=\"$version\"/" "$script"
+if ! grep -q '^\.TH ' "$manpage"; then
+    echo "error: .TH header not found in $manpage"
+    exit 1
+fi
 
-git add "$script"
+sed -i "s/^__CLI_VERSION=.*/__CLI_VERSION=\"$version\"/" "$script"
+sed -i "s/^\(\.TH [^ ]\+ [0-9]\+ \)\"[^\"]*\" \"[^\"]*\"/\1\"$(date +%Y)\" \"$version\"/" "$manpage"
+
+git add "$script" "$manpage"
 git commit -m "Bump version to $version"
 git tag "v$version"
 

@@ -8,8 +8,9 @@ setup_file() {
     load 'common-setup'
     _common_setup __CLI_CFG_EXEC_SILENT="y"
 
-    # inject test functions into [env] section (before [commands])
+    # inject test functions and exported variable into [env] section
     sed -i '/^\[commands\]/i \
+export __TEST_EXPANSION_WORDS="one two three"\
 single_word_func() { echo "alpha"; }\
 multi_word_func() { echo "alpha beta gamma"; }\
 empty_func() { :; }' ~/.testcli.conf
@@ -17,6 +18,10 @@ empty_func() { :; }' ~/.testcli.conf
     # append test commands to [commands] section
     cat >> ~/.testcli.conf <<'CMDS'
 
+dollar-expansion
+    $__TEST_EXPANSION_WORDS: echo \0
+list-expansion-words
+    one|two|three: echo \0
 single-word-func
     &single_word_func: echo \0
 multi-word-func
@@ -33,6 +38,56 @@ setup() {
 	load 'test_helper/bats-support/load'
 	load 'test_helper/bats-assert/load'
 }
+
+# --- $variable expansion ---
+
+# execution
+
+@test "bash: \$variable expansion executes" {
+	run ./testcli dollar-expansion one
+	assert_success
+	assert_output "one"
+}
+
+@test "bash: \$variable expansion with \\0 placeholder replaces command word" {
+	run ./testcli dollar-expansion two
+	assert_success
+	assert_output "two"
+}
+
+# completion
+
+@test "bash: \$variable expansion completes all words" {
+    load 'auto-completion-mock-setup'
+	result="$(test_completion 2 "testcli" "dollar-expansion")"
+	assert_equal "$result" 'one two three'
+}
+
+# --- |list expansion ---
+
+# execution
+
+@test "bash: |list expansion executes" {
+	run ./testcli list-expansion-words one
+	assert_success
+	assert_output "one"
+}
+
+@test "bash: |list expansion with \\0 placeholder replaces command word" {
+	run ./testcli list-expansion-words two
+	assert_success
+	assert_output "two"
+}
+
+# completion
+
+@test "bash: |list expansion completes all words" {
+    load 'auto-completion-mock-setup'
+	result="$(test_completion 2 "testcli" "list-expansion-words")"
+	assert_equal "$result" 'one two three'
+}
+
+# --- &function expansion ---
 
 # execution
 

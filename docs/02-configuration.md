@@ -54,18 +54,60 @@ Display help by appending `?` or `-h` to a command:
 
 ### Argument placeholders
 
-`\0` is replaced by the last command word. `\1`, `\2`, etc. are replaced by
-positional arguments:
+`\0` is replaced by the last word of the command path (the word before the
+colon). `\1`, `\2`, etc. are replaced by user-supplied arguments, matching
+the `:name:type:source` definitions in order:
 
     [commands]
-    echo: echo \2 \1
-        :first:list:one|two
-        :second:list:alpha|beta
+    deploy: ./deploy.sh --env \1 --tag \2
+        :environment:list:staging|prod
+        :tag:list:v1|v2|v3
 
-    $ mycli echo one alpha
-    >> executes: echo alpha one
+    $ mycli deploy staging v2
+    >> executes: ./deploy.sh --env staging --tag v2
 
-If not all placeholders are used, remaining arguments are appended to the end.
+`\1` maps to the first argument definition (`:environment`), `\2` to the
+second (`:tag`). If not all placeholders are used, remaining arguments are
+appended to the end of the command.
+
+**Note:** `\0` and `\1`+ come from different sources. `\0` is always the
+last command word — most useful with expanded commands (`$variable`,
+`&function`, `val1|val2`) where the expanded word carries meaning (e.g.,
+a namespace name). `\1`+ are the user's arguments after the command words.
+
+### Optional arguments
+
+Append `?` to the argument type to make it optional:
+
+    [commands]
+    deploy: ./deploy.sh \1 \2
+        :target:list:staging|prod
+        :tag:list?:v1|v2|v3
+
+Here `:tag` is optional — the command executes with or without it.
+Optional arguments must come after all required arguments.
+
+### Argument types
+
+| Type | Syntax | Completion behavior |
+|------|--------|---------------------|
+| Static list | `:arg:list:val1\|val2\|val3` | Fixed set of values |
+| Variable list | `:arg:list:$VAR` | Values from a shell variable |
+| Function list | `:arg:eval:function_name` | Values from function output |
+| Default value | `:arg:value:default` | Uses default (not a completion list) |
+| String | `:arg:STRING` | Free-form string |
+| Integer | `:arg:INTEGER` | Integer value |
+| Integer range | `:arg:int_range:min-max` | Integer within range (inclusive) |
+| File | `:arg:FILE` | File path completion |
+| Directory | `:arg:DIR` | Directory path completion |
+| Env variable | `:arg:ENVVAR` | Environment variable names |
+| User | `:arg:USER` | System usernames |
+| Group | `:arg:GROUP` | System group names |
+| SSH host | `:arg:SSH_HOST` | Hosts from `~/.ssh/config` |
+| Block device | `:arg:BLKDEV` | Block device names |
+| Service | `:arg:SERVICE` | systemd service names |
+
+Any type can be made optional by appending `?` (e.g., `:arg:list?:val1|val2`).
 
 
 ## [env] section
@@ -76,6 +118,12 @@ is handled differently (see
 [04-hierarchical-configuration.md](04-hierarchical-configuration.md)).
 
 Everything possible in a shell script is possible here.
+
+**Performance note:** the `[env]` section runs on every tab completion and
+every command execution. Avoid slow operations (network calls, heavy
+computation) in `[env]` — they will block completion and add latency to
+every invocation. If you need dynamic values for argument completion,
+use `eval` argument types instead, which run only at completion time.
 
 ### Purpose
 
@@ -129,7 +177,7 @@ Set these in the `[env]` section:
 | `__CLI_CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS` | `"y"` | Print help when not all arguments are supplied |
 | `__CLI_CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY` | `"n"` | Only allow values from completion lists |
 | `__CLI_CFG_EXEC_ALWAYS_RETURN_0` | `"n"` | Always return exit code 0 (useful for shell history) |
-| `__CLI_CFG_LOG_LEVEL` | `0` | Log level (0=off, 4=debug, writes to `/tmp/cli-bash.log`) |
+| `__CLI_CFG_LOG_LEVEL` | `0` | Log level (0=off, 4=debug, writes to `/tmp/cli-XXXXXX-{bash,zsh}.log`) |
 
 
 ### Detailed option descriptions
@@ -177,8 +225,8 @@ the real exit code.
 
 #### `__CLI_CFG_EXEC_SILENT` (default: "n")
 
-Suppress all CLI output on stdout and stderr. When set to `"y"`, the
-following are also overridden:
+Suppress all CLI output. When set to `"y"`, interactive features that
+produce output are also disabled:
 
     __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS="n"
     __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS="n"
@@ -199,13 +247,15 @@ that require interactive input (command expansion).
 - Sets `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS="n"`
 - Sets `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS="n"`
 
-### `--cli-print-awk-script`
+### `--version`
 
-Prints the embedded AWK script (for development).
+Print the script version and exit.
 
-### `--cli-run-awk-command`
+The following options are for development and debugging only:
 
-Runs the embedded AWK config parser script (for development).
+- `--cli-print-awk-script` — print the embedded AWK config parser script
+- `--cli-print-env` — print the parsed `[env]` section
+- `--cli-run-awk-command` — run the embedded AWK config parser directly
 
 
 ## Exit status
