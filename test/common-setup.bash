@@ -5,7 +5,7 @@ _set_option() {
 	local option value
 	option="$1"
 	value="$2"
-	sed -i 's/\('$option'\).*/\1='$value'/g' ~/.testcli.conf
+	sed 's/\('$option'\).*/\1='$value'/g' ~/.testcli.conf > ~/.testcli.conf.tmp && mv ~/.testcli.conf.tmp ~/.testcli.conf
 }
 
 # create testcli instance

@@ -9,11 +9,11 @@ setup_file() {
     _common_setup __CLI_CFG_EXEC_SILENT="y"
 
     # inject test functions and exported variable into [env] section
-    sed -i '/^\[commands\]/i \
+    sed '/^\[commands\]/i \
 export __TEST_EXPANSION_WORDS="one two three"\
 single_word_func() { echo "alpha"; }\
 multi_word_func() { echo "alpha beta gamma"; }\
-empty_func() { :; }' ~/.testcli.conf
+empty_func() { :; }' ~/.testcli.conf > ~/.testcli.conf.tmp && mv ~/.testcli.conf.tmp ~/.testcli.conf
 
     # append test commands to [commands] section
     cat >> ~/.testcli.conf <<'CMDS'
