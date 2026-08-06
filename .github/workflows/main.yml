@@ -66,11 +66,6 @@ jobs:
       # macOS ships bash 3.2 at /bin/bash; bats needs 4.2+
       - name: Install modern bash
         run: brew install bash && echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
-      - name: Debug environment
-        run: |
-          bash --version | head -1
-          which awk && awk --version 2>&1 | head -1 || echo "awk not found"
-          which zsh && zsh --version
       - name: Run zsh tests
         run: test/bats/bin/bats test/*-zsh.bats test/zsh-completion-descriptions.bats --formatter junit > report-macos-zsh.xml
       - name: Report

@@ -100,6 +100,22 @@ _cli_mtime() {
 		stat -c %Y "$1" 2>/dev/null
 	fi
 }
+# Portable file permissions in octal (e.g. 644)
+_cli_stat_perms() {
+	if [ "$(uname)" = "Darwin" ]; then
+		stat -f '%Lp' "$1" 2>/dev/null
+	else
+		stat -c '%a' "$1" 2>/dev/null
+	fi
+}
+# Portable file owner uid
+_cli_stat_uid() {
+	if [ "$(uname)" = "Darwin" ]; then
+		stat -f '%u' "$1" 2>/dev/null
+	else
+		stat -c '%u' "$1" 2>/dev/null
+	fi
+}
 _cli_get_shell_name() {
 	local name=""
 	_cli_shell_is_bash && name="-bash"
@@ -222,7 +238,11 @@ _cli_check_file_permissions() {
 	# check if it's a symlink and validate the target
 	if [ -L "$file" ]; then
 		local target
-		target=$(readlink -f "$file" 2>/dev/null)
+		if [ "$(uname)" = "Darwin" ]; then
+			target=$(perl -e "use Cwd 'abs_path'; print abs_path('$file')" 2>/dev/null)
+		else
+			target=$(readlink -f "$file" 2>/dev/null)
+		fi
 		if [ -z "$target" ]; then
 			_cli_error "config error: $context '$file' is a symlink that cannot be resolved"
 			return 1
@@ -231,7 +251,7 @@ _cli_check_file_permissions() {
 			_cli_error "config error: $context '$file' symlink target '$target' is not a regular file"
 			return 1
 		fi
-		if [ "$(stat -L -c '%a' "$target" 2>/dev/null | cut -c3)" = "7" ]; then
+		if [ "$(_cli_stat_perms "$target" | cut -c3)" = "7" ]; then
 			_cli_error "config error: $context '$file' symlink target '$target' is world-writable"
 			return 1
 		fi
@@ -239,7 +259,7 @@ _cli_check_file_permissions() {
 
 	# not world-writable (use -L to follow symlinks to the target's permissions)
 	local perms
-	perms=$(stat -L -c '%a' "$file" 2>/dev/null)
+	perms=$(_cli_stat_perms "$file")
 	if [ -n "$perms" ] && [ "$(echo "$perms" | cut -c3)" = "7" ]; then
 		_cli_error "config error: $context '$file' is world-writable (mode $perms)"
 		return 1
@@ -247,10 +267,10 @@ _cli_check_file_permissions() {
 
 	# owned by current user or root
 	local owner
-	owner=$(stat -L -c '%u' "$file" 2>/dev/null)
+	owner=$(_cli_stat_uid "$file")
 	local my_uid
 	my_uid=$(id -u)
-	if [ "$owner" != "$my_uid" ] && [ "$owner" != "0" ]; then
+	if [ -n "$owner" ] && [ "$owner" != "$my_uid" ] && [ "$owner" != "0" ]; then
 		_cli_error "config error: $context '$file' is owned by uid $owner (expected $my_uid or 0)"
 		return 1
 	fi
