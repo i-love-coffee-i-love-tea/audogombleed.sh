@@ -34,6 +34,24 @@ line sets the convention for the rest of the file.
 
 This creates commands like `cd git-projects project1`.
 
+### Command words vs. arguments
+
+A command is a path through the tree. In `mycli deploy staging`, both
+`deploy` and `staging` are **command words** — defined by indentation in
+the config file.
+
+Commands can also have **arguments** — values typed after the command
+words. In `mycli deploy staging v2`, `v2` is an argument. Arguments are
+defined by `:name:type:source` lines and substituted into placeholders
+like `\1`. If no arguments are defined, the command has none.
+
+The last command word can also be dynamic — provided by a variable
+(`$namespaces`), a function (`&get_namespaces`), or a static list
+(`staging|production`). This blurs the line: the user types what looks
+like an argument, but it's actually selecting a command word. See
+[Advanced Command Configurations](03-advanced-command-configurations.md)
+for details.
+
 ### Comments
 
 Lines beginning with `#` are comments. They document the next command or
@@ -51,6 +69,98 @@ Display help by appending `?` or `-h` to a command:
 
     $ mycli deploy ?
     deployment commands
+
+#### Comment types
+
+There are four levels of comments:
+
+**Global header** — consecutive `#` lines at the very top of `[commands]`,
+terminated by a blank line. Appears at the top of `mycli ?` output, above
+all section headings. Use for CLI name, description, or usage hints:
+
+    [commands]
+    # mycli — manage widgets and gadgets
+    # Run 'mycli <command> ?' for help.
+
+    # deployment commands
+    deploy
+        ...
+
+    $ mycli ?
+      mycli — manage widgets and gadgets
+      Run 'mycli <command> ?' for help.
+
+      deployment commands
+        d[eploy] ...
+
+If the blank line is omitted, the `#` lines become section headings for the
+first group instead:
+
+    [commands]
+    # deployment commands
+    deploy
+        ...
+
+    $ mycli ?
+      deployment commands
+        d[eploy] ...
+
+**Section headings** — a `#` comment at the top level (no indentation) before
+a command group. Appears above the group in global help (`mycli ?`), with a
+2-space indent:
+
+    # deployment commands
+    deploy
+        ...
+
+    $ mycli ?
+      deployment commands
+        d[eploy] ...
+
+**Command help** — a `#` comment directly before a command (at the same
+indentation level). Appears inline with the command in help output:
+
+    deploy
+        # deploy to production
+        prod: ./deploy.sh prod
+
+    $ mycli deploy ?
+      d[eploy] p[rod]          deploy to production
+
+A `#` comment before a standalone (non-group) top-level command also appears
+inline:
+
+    # show version
+    version: echo "1.0.0"
+
+    $ mycli ?
+      v[ersion]                show version
+
+**Detail comments** — lines beginning with `##` (double hash). These provide
+extra detail text shown when viewing a specific command's help (`mycli cmd ?`),
+displayed below the command's `#` help text:
+
+    deploy
+        ## requires AWS credentials in ~/.aws/credentials
+        ## runs in us-east-1 by default
+        # deploy to production
+        prod: ./deploy.sh prod
+
+    $ mycli deploy prod ?
+      deploy to production
+        requires AWS credentials in ~/.aws/credentials
+        runs in us-east-1 by default
+
+`##` comments can also be placed before a command group to provide group-level
+detail:
+
+    ## all deploy commands require AWS credentials
+    deploy
+        ...
+
+    $ mycli deploy ?
+    all deploy commands require AWS credentials
+      d[eploy] ...
 
 ### Argument placeholders
 
