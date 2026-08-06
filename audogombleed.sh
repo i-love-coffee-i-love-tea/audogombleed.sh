@@ -1218,6 +1218,8 @@ function print_command_environment_vars(fullcmd, cmd_exec) {
 	print "declare -g -A __CMD_ARG __CMD_ARG_TYPE __CMD_ARG_VALUE __CMD_ARG_DESC __CMD_ARG_NAME"
 	_pcev_fc=fullcmd; sub(/:.*$/, "", _pcev_fc)
 	_pcev_ce=cmd_exec; sub(/:.*$/, "", _pcev_ce)
+	# escape double quotes so the output is safe to eval
+	gsub(/"/, "\\\"", _pcev_ce)
 	printf "__CMD=\"%s\"\n", _pcev_fc
 	printf "__CMD_EXEC=\"%s\"\n", _pcev_ce
 	arg=0
@@ -1908,10 +1910,10 @@ _cli_getfirstwords() {
 	_cli_log 4 "word: '$word'"
 
 	if _cli_shell_is_zsh; then
-		# Skip help-text lookup for speed — descriptions are added later
-		# by _cli_complete_command when completing subsequent words.
 		local -a _zsh_results=()
 		local -A _zsh_seen=()
+		local _zsh_help_lines
+		_zsh_help_lines="$(_cli_get_command_help_texts "$word")"
 		while read cmd; do
 			# shellcheck disable=SC2296
 			a_cmd=("${(z)cmd}")
@@ -1920,7 +1922,13 @@ _cli_getfirstwords() {
 					break
 				fi
 				_zsh_seen[$w]=1
-				_zsh_results+=("$w")
+				local _desc
+				_desc="$(_cli_lookup_command_desc "$w" "$_zsh_help_lines")"
+				if [ -n "$_desc" ]; then
+					_zsh_results+=("${w}[${_desc}]")
+				else
+					_zsh_results+=("$w")
+				fi
 				break
 			done
 		done < <(_awk output=command_names command_filter="$word" | sort | uniq)
