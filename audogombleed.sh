@@ -103,17 +103,17 @@ _cli_mtime() {
 # Portable file permissions in octal (e.g. 644)
 _cli_stat_perms() {
 	if [ "$(uname)" = "Darwin" ]; then
-		stat -f '%Lp' "$1" 2>/dev/null
+		stat -L -f '%p' "$1" 2>/dev/null
 	else
-		stat -c '%a' "$1" 2>/dev/null
+		stat -L -c '%a' "$1" 2>/dev/null
 	fi
 }
 # Portable file owner uid
 _cli_stat_uid() {
 	if [ "$(uname)" = "Darwin" ]; then
-		stat -f '%u' "$1" 2>/dev/null
+		stat -L -f '%u' "$1" 2>/dev/null
 	else
-		stat -c '%u' "$1" 2>/dev/null
+		stat -L -c '%u' "$1" 2>/dev/null
 	fi
 }
 _cli_get_shell_name() {
