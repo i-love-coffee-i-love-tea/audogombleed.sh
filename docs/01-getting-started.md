@@ -2,11 +2,15 @@
 
 ## 1. Install
 
-### Option A: .deb package (for local or private usage)
+### Option A: .deb package
 
-Build the package:
+For local or private usage (unsigned):
 
-    dpkg-buildpackage -us -uc -b
+    ./build-deb.sh
+
+For distribution (signed with GPG):
+
+    ./build-deb.sh --sign
 
 This produces `../audogombleed_<version>_all.deb`. Install with:
 

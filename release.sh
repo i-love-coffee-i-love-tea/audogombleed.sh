@@ -41,3 +41,4 @@ git commit -m "Bump version to $version"
 git tag "v$version"
 
 echo "Tagged v$version — run 'git push && git push --tags' to publish"
+echo "After pushing, update the Homebrew formula in audogombleed.sh-homebrew"

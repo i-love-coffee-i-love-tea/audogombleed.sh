@@ -145,6 +145,32 @@ caller's arguments are already expanded. Word splitting happens at the
 call site, before the function body runs. The fix must be where the
 unquoted variable is expanded.
 
+## OS support
+
+Audogombleed runs on Linux, macOS, and Windows (via WSL).
+
+### Linux
+
+Full native support. Tested with bash 4.2–5.3 and zsh. Distribution via
+`.deb` package or direct install.
+
+### macOS
+
+Native support. macOS ships zsh as the default shell, which is fully
+supported. Bash 4.2+ is also supported (install via Homebrew: `brew
+install bash`). The system bash (3.2) is **not supported**.
+
+Distribution via Homebrew:
+
+    brew tap i-love-coffee-i-love-tea/audogombleed
+    brew install audogombleed
+
+### Windows
+
+Supported via WSL (Windows Subsystem for Linux). Install a Linux
+distribution from the Microsoft Store, then follow the Linux install
+instructions. Git Bash / MSYS2 are not officially supported.
+
 ## Known limitations
 
 - **`zsh -c` sourcing** — `$zsh_eval_context` loses the `file` token

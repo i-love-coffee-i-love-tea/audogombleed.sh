@@ -53,3 +53,21 @@ jobs:
           path: report-zsh.xml
           reporter: java-junit
           fail-on-error: true
+
+  macos:
+    name: "macOS zsh tests"
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+      - name: Run zsh tests
+        run: test/bats/bin/bats test/*-zsh.bats test/zsh-completion-descriptions.bats --formatter junit > report-macos-zsh.xml
+      - name: Report
+        uses: dorny/test-reporter@v3
+        if: always()
+        with:
+          name: "BATS Test Report (macOS zsh)"
+          path: report-macos-zsh.xml
+          reporter: java-junit
+          fail-on-error: true
