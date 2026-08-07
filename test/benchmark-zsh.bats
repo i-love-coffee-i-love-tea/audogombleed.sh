@@ -18,8 +18,10 @@ _now_ms() {
 	t=$(date +%s%N 2>/dev/null)
 	if [[ "$t" =~ ^[0-9]+$ ]]; then
 		echo $(( t / 1000000 ))
-	else
+	elif command -v python3 &>/dev/null; then
 		python3 -c 'import time; print(int(time.time()*1000))'
+	else
+		echo $(( $(date +%s) * 1000 ))
 	fi
 }
 
@@ -51,8 +53,10 @@ _zsh_timed_completion() {
 			t=$(date +%s%N 2>/dev/null)
 			if [[ "$t" =~ ^[0-9]+$ ]]; then
 				echo $(( t / 1000000 ))
-			else
+			elif command -v python3 &>/dev/null; then
 				python3 -c "import time; print(int(time.time()*1000))"
+			else
+				echo $(( $(date +%s) * 1000 ))
 			fi
 		}
 
