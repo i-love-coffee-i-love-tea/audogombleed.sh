@@ -393,8 +393,10 @@ _cli_open_logfile() {
 		return
 	fi
 
-	local logfile
-	logfile=$(mktemp "/tmp/cli-XXXXXX$(_cli_get_shell_name).log")
+	local logfile tmpfile
+	tmpfile=$(mktemp "/tmp/cli-XXXXXXXX")
+	logfile="${tmpfile}$(_cli_get_shell_name).log"
+	mv "$tmpfile" "$logfile"
 	chmod 600 "$logfile" 2>/dev/null
 	if exec 3>"$logfile";  then
 		_cli_global LOG_OPENED "0"
@@ -513,12 +515,12 @@ BEGIN {
 	}
 	
 	# required to pre-declare array
-	delete cmd_help
-	delete cmd_details_help
-	delete command_names
-	delete arr
-	delete format_command_names
-	delete section_headings
+	clear_array(cmd_help)
+	clear_array(cmd_details_help)
+	clear_array(command_names)
+	clear_array(arr)
+	clear_array(format_command_names)
+	clear_array(section_headings)
 	pending_section_heading=""
 	global_help_header=""
 	global_header_closed=0
@@ -725,7 +727,7 @@ BEGIN {
 					v_cmd_details_help[_fck, i]=cmd_details_help[i]
 					i++
 				}
-				delete cmd_details_help
+				clear_array(cmd_details_help)
 				cmd_details_help_index=0
 			}
 			$1=""
@@ -783,7 +785,7 @@ END {
 				i++
 			}
 		} else {
-			delete format_command_names
+			clear_array(format_command_names)
 			# prepare function input arrays
 			if (command_filter != "") {
 				format_command_names_index=0
@@ -1047,7 +1049,7 @@ END {
 function format_commands() {
 	cmd_count=0
 	max_words=0
-	delete arr
+	clear_array(arr)
 	if (length(format_command_names) == 0) {
 		return
 	}
@@ -1238,8 +1240,8 @@ function remove_last_word(words) {
 # fills the array dyn_cmds
 function expand_dynamic_commands(fullcmd, placeholder) {
 	dyn_cmd_idx=0
-	delete dyn_cmds
-	delete completion_words
+	clear_array(dyn_cmds)
+	clear_array(completion_words)
 	if (placeholder ~ "^\\$.*") {
 		sub(/^\$/, "", placeholder)
 		if (ENVIRON[placeholder] != "") {
@@ -1403,11 +1405,11 @@ function print_command() {
 }
 
 function clear_command_vars_for_next_command() {
-	delete cmd_args
-	delete cmd_argname
-	delete cmd_argtype
-	delete cmd_argvalue
-	delete cmd_argdesc
+	clear_array(cmd_args)
+	clear_array(cmd_argname)
+	clear_array(cmd_argtype)
+	clear_array(cmd_argvalue)
+	clear_array(cmd_argdesc)
 	argind=0
 	fullcmd=""
 	cmd_exec=""
@@ -1449,7 +1451,7 @@ function cache_cmd_help(cmd) {
 		}
 	}
 	cmd_help_index=0
-	delete cmd_help
+	clear_array(cmd_help)
 }
 
 function cache_cmd_details_help(cmd) {
@@ -1473,7 +1475,7 @@ function cache_cmd_details_help(cmd) {
 			i++
 		}
 		cmd_details_help_index=0
-		delete cmd_details_help
+		clear_array(cmd_details_help)
 	}
 }
 
@@ -1505,6 +1507,8 @@ function _strip_from_last_colon(s) {
 	sub(/[ \t]*:[^:]*$/, "", s)
 	return s
 }
+# Portable array clear: BWK awk (macOS) does not support bare "delete array"
+function clear_array(a,    k) { for (k in a) delete a[k] }
 
 AWK_EOF
 }
@@ -3020,7 +3024,7 @@ if ! _cli_is_sourced; then
 else 
 	if _cli_shell_is_bash; then
 		complete -F _cli_complete_ "$__CLI_PROGNAME"
-	elif _cli_shell_is_zsh; then
+	elif _cli_shell_is_zsh && (( $+functions[compdef] )); then
 		compdef _cli_complete_ "$__CLI_PROGNAME"
 	fi
 fi
