@@ -391,7 +391,7 @@ _cli_is_sourced() {
 		[ "$0" != "${BASH_SOURCE[0]}" ]
 	elif _cli_shell_is_zsh; then
 		# shellcheck disable=SC2154
-		[[ "$zsh_eval_context" =~ .*?file* ]]
+		[[ "$zsh_eval_context" =~ file ]]
 	fi
 }
 
