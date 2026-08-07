@@ -1,0 +1,50 @@
+# vim:et:ts=4:sw=4
+#
+# Smoke test: prints versions and paths of all required/used binaries.
+# Run this first to diagnose environment issues (e.g. wrong awk on macOS).
+
+@test "smoke: environment diagnostics" {
+	local sep="────────────────────────────────────────"
+
+	echo "# $sep" >&3
+	echo "# ENVIRONMENT DIAGNOSTICS" >&3
+	echo "# $sep" >&3
+
+	# OS
+	echo "# os:       $(uname -srm)" >&3
+
+	# Shell
+	echo "# bash:     ${BASH_VERSION:-not found}" >&3
+	if command -v zsh &>/dev/null; then
+		echo "# zsh:      $(zsh --version 2>&1 | head -1)" >&3
+	else
+		echo "# zsh:      not found" >&3
+	fi
+
+	# AWK implementations
+	for bin in awk gawk mawk nawk; do
+		local path
+		path="$(command -v "$bin" 2>/dev/null)"
+		if [ -n "$path" ]; then
+			local ver
+			ver="$("$bin" --version 2>&1 | head -1)"
+			echo "# $bin:      $path  ($ver)" >&3
+		else
+			echo "# $bin:      not found" >&3
+		fi
+	done
+
+	# Detected AWK preference (same logic as _cli_detect_awk)
+	local detected_awk="awk"
+	command -v gawk &>/dev/null && detected_awk="gawk"
+	echo "# __CLI_AWK: $detected_awk (detected)" >&3
+
+	# Other tools
+	for bin in sed grep sort mktemp stat; do
+		local path
+		path="$(command -v "$bin" 2>/dev/null)"
+		echo "# $bin:     ${path:-not found}" >&3
+	done
+
+	echo "# $sep" >&3
+}
