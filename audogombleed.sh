@@ -2026,6 +2026,134 @@ _cli_wc() {
 	echo $#
 }
 
+# Portable replacement for bash's compgen builtin.
+# Works in both bash and zsh.
+# Usage:
+#   _cli_compgen -W "word1 word2 ..." prefix   — match words by prefix
+#   _cli_compgen -f word                        — file completion
+#   _cli_compgen -d word                        — directory completion
+#   _cli_compgen -e word                        — environment variable names
+#   _cli_compgen -u word                        — system users
+#   _cli_compgen -g word                        — system groups
+#   _cli_compgen -A variable name               — check if variable is defined (prints name if so)
+_cli_compgen() {
+	local flag="$1"; shift
+	case "$flag" in
+		-W)
+			local words="$1"; shift
+			local prefix="$1"
+			local w
+			for w in $words; do
+				if [[ "$w" == "$prefix"* ]]; then
+					echo "$w"
+				fi
+			done
+			;;
+		-f)
+			local word="$1"
+			local entry
+			if [ -z "$word" ]; then
+				word="."
+			fi
+			if [ -d "$word" ]; then
+				for entry in "$word"/* "$word"/.*; do
+					[ -e "$entry" ] || continue
+					echo "$entry"
+				done
+			else
+				local dir="${word%/*}"
+				local base="${word##*/}"
+				[ "$dir" = "$word" ] && dir="."
+				if [ -d "$dir" ]; then
+					for entry in "$dir"/* "$dir"/.*; do
+						[ -e "$entry" ] || continue
+						local name="${entry##*/}"
+						if [[ "$name" == "$base"* ]]; then
+							echo "$entry"
+						fi
+					done
+				fi
+			fi
+			;;
+		-d)
+			local word="$1"
+			local entry
+			if [ -z "$word" ]; then
+				word="."
+			fi
+			if [ -d "$word" ]; then
+				echo "$word"
+				for entry in "$word"/* "$word"/.*; do
+					[ -d "$entry" ] || continue
+					echo "$entry"
+				done
+			else
+				local dir="${word%/*}"
+				local base="${word##*/}"
+				[ "$dir" = "$word" ] && dir="."
+				if [ -d "$dir" ]; then
+					for entry in "$dir"/* "$dir"/.*; do
+						[ -d "$entry" ] || continue
+						local name="${entry##*/}"
+						if [[ "$name" == "$base"* ]]; then
+							echo "$entry"
+						fi
+					done
+				fi
+			fi
+			;;
+		-e)
+			local prefix="$1"
+			local v
+			while IFS='=' read -r v _; do
+				if [[ "$v" == "$prefix"* ]]; then
+					echo "$v"
+				fi
+			done < <(env 2>/dev/null | sort)
+			;;
+		-u)
+			local prefix="$1"
+			local user
+			while IFS=: read -r user _; do
+				if [[ "$user" == "$prefix"* ]]; then
+					echo "$user"
+				fi
+			done < /etc/passwd
+			;;
+		-g)
+			local prefix="$1"
+			local group
+			while IFS=: read -r group _; do
+				if [[ "$group" == "$prefix"* ]]; then
+					echo "$group"
+				fi
+			done < /etc/group
+			;;
+		-A)
+			local mode="$1"; shift
+			local name="$1"
+			case "$mode" in
+				variable)
+					if _cli_shell_is_zsh; then
+						[ ${(P)name+_} ] && echo "$name"
+					else
+						[ "${!name+_}" ] && echo "$name"
+					fi
+					;;
+			esac
+			;;
+	esac
+}
+
+# Portable replacement for seq (not available on macOS by default).
+# Usage: _cli_seq <first> <last>
+_cli_seq() {
+	local i
+	for ((i=$1; i<=$2; i++)); do
+		echo "$i"
+	done
+}
+
 # todo: replace shell word splitting
 _cli_is_one_word() {
 	[ "$#" -eq "1" ]
@@ -2045,15 +2173,12 @@ _cli_yes_no_prompt() {
 }
 
 _cli_is_env_var_defined() {
-	local varname=$1 found=1
+	local varname=$1
 	_cli_log 4 "varname: $varname"
 
-	# this whole construct returns >0 when no match is found
-	compgen -A variable $varname | while read l; do
-		if [[ "$l" = "$varname" ]]; then
-			return 0
-		fi
-	done
+	local _match
+	_match=$(_cli_compgen -A variable "$varname")
+	[ -n "$_match" ]
 }
 
 _cli_print_usage() {
@@ -2448,7 +2573,7 @@ _cli_complete_arg() {
 				if _cli_is_env_var_defined "$var_name"; then
 					_cli_log 4 "var is defined"
 					arg_list=$(eval echo $arg_list)
-					compgen -W "$arg_list" "$word"
+					_cli_compgen -W "$arg_list" "$word"
 				else
 					_cli_log 4 "var is not defined"
 				fi
@@ -2457,7 +2582,7 @@ _cli_complete_arg() {
 				# list separated by |
 				arg_list=${arg_list//|/ }
 				_cli_log 4 "function arg_list, word: $arg_list, $word"
-				compgen -W "$arg_list" "$word"
+				_cli_compgen -W "$arg_list" "$word"
 			else
 				echo $arg_list
 			fi
@@ -2479,53 +2604,63 @@ _cli_complete_arg() {
 			elif [ "$word" = "" ]; then
 				len=$((arg_max - arg_min + 1))
 				if [ "$len" -lt 20 ]; then
-					seq $arg_min $arg_max
+					_cli_seq $arg_min $arg_max
 				fi
 			fi
 			description="integer between $arg_min and $arg_max (inclusive)"
 			;;
 		eval)
 			arg_list=$(eval "$eval_cmd")
-			compgen -W "$arg_list" "$word"
+			_cli_compgen -W "$arg_list" "$word"
 			;;	
 		IP) ;;
 		MAC) ;;
 	    FILE)
-			compgen -f -- "$word"
+			_cli_compgen -f "$word"
 			description="file"
 			;;
         DIR)
-			compgen -d -- "$word"
+			_cli_compgen -d "$word"
 			description="directory"
 			;;
 		ENVVAR)
-			compgen -e -- "$word"
+			_cli_compgen -e "$word"
 			description="environment variable"
 			;;
 		USER)
-			compgen -u -- "$word"
+			_cli_compgen -u "$word"
 			description="system user"
 			;;
 		GROUP)
-			compgen -g -- "$word"
+			_cli_compgen -g "$word"
 			description="system group"
 			;;
 		SSH_HOST)
 			SSH_HOSTS=$(grep -E "^host [^*]+$" "$HOME/.ssh/config" | sed 's/host //')
-			compgen -W "$SSH_HOSTS" -- "$word"
+			_cli_compgen -W "$SSH_HOSTS" "$word"
 			description="SSH host"
 			;;
 		BLKDEV)
-			BLKDEVS=$(lsblk -plin -o NAME)
-			compgen -W "$BLKDEVS" -- "$word"
+			if _cli_shell_is_bash; then
+				BLKDEVS=$(lsblk -plin -o NAME 2>/dev/null)
+			else
+				# macOS: list disk devices
+				BLKDEVS=$(ls /dev/disk* 2>/dev/null | grep -E '^/dev/disk[0-9]+$')
+			fi
+			_cli_compgen -W "$BLKDEVS" "$word"
 			description="block device"
 			;;
 		SERVICE)
-		    systemctl list-units --full --all || systemctl list-unit-files  2> /dev/null | awk '$1 ~ /\.service$/ { sub("\\.service$", "", $1); print $1 }'
-    		if [[ -x /sbin/upstart-udev-bridge ]]; then
-        		initctl list 2> /dev/null | _cli_cut 1 space
-    		fi;
-    		compgen -W "${COMPREPLY[@]#${sysvdirs[0]}/}" -- "$word"
+			local _svc_list=""
+			if command -v systemctl &>/dev/null; then
+				_svc_list=$(systemctl list-units --full --all --no-legend 2>/dev/null | awk '$1 ~ /\.service$/ { sub("\\.service$", "", $1); print $1 }')
+			elif command -v launchctl &>/dev/null; then
+				# macOS
+				_svc_list=$(launchctl list 2>/dev/null | awk 'NR>1 {print $3}')
+			elif [[ -x /sbin/upstart-udev-bridge ]]; then
+				_svc_list=$(initctl list 2>/dev/null | _cli_cut 1 space)
+			fi
+			_cli_compgen -W "$_svc_list" "$word"
 			description="systemd service"
 			;;
 	esac
