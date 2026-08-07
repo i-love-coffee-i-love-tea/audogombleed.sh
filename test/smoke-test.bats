@@ -46,5 +46,38 @@
 		echo "# $bin:     ${path:-not found}" >&3
 	done
 
+	# macOS zsh system configs (can interfere with zsh -c 'source ./testcli')
+	for f in /etc/zshrc /etc/zshrc_Apple_Terminal /etc/zprofile /etc/zshenv; do
+		if [ -f "$f" ]; then
+			echo "# --- $f ---" >&3
+			sed 's/^/#   /' "$f" >&3
+		fi
+	done
+
+	# Test: what does zsh -c 'source ./testcli' actually produce?
+	echo "# --- zsh sourcing test ---" >&3
+	ln -sf ./audogombleed.sh ./testcli
+	cp -n example.conf ~/.testcli.conf 2>/dev/null
+	local zsh_out
+	zsh_out=$(zsh -c 'source ./testcli 2>&1; echo "exit=$?"; echo "PROGNAME=$__CLI_PROGNAME"; echo "AWK=$__CLI_AWK"' 2>&1)
+	echo "# $zsh_out" >&3
+
+	# Test: zsh completion for list-argument static
+	local comp_out
+	comp_out=$(zsh -c '
+		autoload -Uz compinit bashcompinit
+		compinit -u
+		bashcompinit
+		source ./testcli
+		_values() { :; }
+		CURRENT=4
+		words=("testcli" "list-argument" "static")
+		_cli_complete_
+		printf "%s\n" "${COMPREPLY[@]}"
+	' _ 2>&1)
+	echo "# completions: $comp_out" >&3
+
+	rm -f ./testcli ~/.testcli.conf
+
 	echo "# $sep" >&3
 }
