@@ -12,16 +12,16 @@ MAX_COMPLETION_MS=300
 MAX_EXEC_MS=200
 MAX_LARGE_COMPLETION_MS=400
 
-# Portable millisecond timestamp (works on macOS and Linux).
+# Portable millisecond timestamp.
+# On Linux (GNU date) uses nanosecond precision; on macOS falls back to seconds.
 _now_ms() {
-	local t
-	t=$(date +%s%N 2>/dev/null)
-	if [[ "$t" =~ ^[0-9]+$ ]]; then
-		echo $(( t / 1000000 ))
-	elif command -v python3 &>/dev/null; then
-		python3 -c 'import time; print(int(time.time()*1000))'
+	local s ns
+	s=$(date +%s)
+	ns=$(date +%N 2>/dev/null)
+	if [[ "$ns" =~ ^[0-9]+$ ]]; then
+		echo $(( s * 1000 + 10#$ns / 1000000 ))
 	else
-		echo $(( $(date +%s) * 1000 ))
+		echo $(( s * 1000 ))
 	fi
 }
 
