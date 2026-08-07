@@ -2043,7 +2043,14 @@ _cli_compgen() {
 			local words="$1"; shift
 			local prefix="$1"
 			local w
-			for w in $words; do
+			local -a _words
+			if _cli_shell_is_zsh; then
+				# shellcheck disable=SC2296
+				_words=("${(f)words}")
+			else
+				mapfile -t _words <<< "$words"
+			fi
+			for w in "${_words[@]}"; do
 				if [[ "$w" == "$prefix"* ]]; then
 					echo "$w"
 				fi
