@@ -12,12 +12,23 @@ MAX_COMPLETION_MS=300
 MAX_EXEC_MS=200
 MAX_LARGE_COMPLETION_MS=400
 
+# Portable millisecond timestamp (works on macOS and Linux).
+_now_ms() {
+	local t
+	t=$(date +%s%N 2>/dev/null)
+	if [[ "$t" =~ ^[0-9]+$ ]]; then
+		echo $(( t / 1000000 ))
+	else
+		python3 -c 'import time; print(int(time.time()*1000))'
+	fi
+}
+
 _time_ms() {
 	local start end
-	start=$(date +%s%N)
+	start=$(_now_ms)
 	"$@" >/dev/null 2>&1
-	end=$(date +%s%N)
-	echo $(( (end - start) / 1000000 ))
+	end=$(_now_ms)
+	echo $(( end - start ))
 }
 
 # Time a single _cli_complete_ call (the real TAB-press path).
@@ -30,13 +41,13 @@ _time_completion() {
 	source ./testcli
 
 	local start end
-	start=$(date +%s%N)
+	start=$(_now_ms)
 	COMP_CWORD=$comp_cword
 	COMP_WORDS=("${comp_words[@]}")
 	COMP_LINE="$comp_line"
 	_cli_complete_
-	end=$(date +%s%N)
-	echo $(( (end - start) / 1000000 ))
+	end=$(_now_ms)
+	echo $(( end - start ))
 }
 
 setup_file() {
