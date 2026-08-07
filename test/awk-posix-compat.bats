@@ -39,7 +39,18 @@ setup() {
 _run_awk_with() {
 	local awk_bin="$1" config="$2"
 	shift 2
-	awk 'NR>=449 && NR<=1512' audogombleed.sh | "$awk_bin" -f - "$config" "$@"
+	sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$awk_bin" -f - "$config" "$@"
+}
+
+# Print path to gawk binary, or return 1 if not installed.
+_gawk_bin() {
+	if [ -x /usr/bin/gawk ]; then
+		echo /usr/bin/gawk
+	elif command -v gawk &>/dev/null; then
+		command -v gawk
+	else
+		return 1
+	fi
 }
 
 # ── Tests: substr(s, 0, 1) in $-prefixed arg values ────────────────
@@ -50,12 +61,13 @@ _run_awk_with() {
 # dependent. These tests verify the escaping works across all impls.
 
 @test "awk: \$-prefixed arg value is backslash-escaped (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 dollar-arg: echo
 	:env:list:$MY_VAR
 EOF
-	run ./testcli --cli-run-awk-command output=commands command_filter="dollar-arg"
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=commands command_filter="dollar-arg"
 	assert_success
 	assert_line '__CMD_ARG_VALUE[0]="\$MY_VAR"'
 }
@@ -103,6 +115,7 @@ EOF
 # agree on the output.
 
 @test "awk: nested command groups parse identically (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 alpha
@@ -110,7 +123,7 @@ alpha
 		charlie: echo hello
 		delta: echo world
 EOF
-	run ./testcli --cli-run-awk-command output=command_names
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "alpha bravo charlie"
 	assert_line "alpha bravo delta"
@@ -156,6 +169,7 @@ EOF
 # multiple backtrack steps.
 
 @test "awk: deep backtrack produces correct paths (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 a
@@ -163,7 +177,7 @@ a
 		c: echo deep
 	d: echo shallow
 EOF
-	run ./testcli --cli-run-awk-command output=command_names
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "a b c"
 	assert_line "a b d"
@@ -208,6 +222,7 @@ EOF
 # get_first_n_words through multiple indentation transitions.
 
 @test "awk: four-level nesting parses correctly (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 level1
@@ -215,7 +230,7 @@ level1
 		level3
 			level4: echo deep
 EOF
-	run ./testcli --cli-run-awk-command output=command_names
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "level1 level2 level3 level4"
 	assert_equal "1" "${#lines[@]}"
@@ -258,6 +273,7 @@ EOF
 # calculated as indentation / detected_indentation_width.
 
 @test "awk: indentation-based path trimming (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 x
@@ -265,7 +281,7 @@ x
 		z: echo deep
 	y2: echo mid
 EOF
-	run ./testcli --cli-run-awk-command output=command_names
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "x y z"
 	assert_line "x y y2"
@@ -310,12 +326,13 @@ EOF
 # Exercises the simplest code path through the parser.
 
 @test "awk: single-word commands parse correctly (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 foo: echo foo
 bar: echo bar
 EOF
-	run ./testcli --cli-run-awk-command output=command_names
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "foo"
 	assert_line "bar"
@@ -357,13 +374,14 @@ EOF
 # subscripts (v_argnames[cmd, idx]) and the print_command function.
 
 @test "awk: command_filter exact match with args (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 echo: \0 \2 \1
 	:arg1:list:first
 	:arg2:list:second
 EOF
-	run ./testcli --cli-run-awk-command output=commands command_filter="echo"
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=commands command_filter="echo"
 	assert_success
 	assert_line '__CMD="echo"'
 	assert_line '__CMD_EXEC=" \0 \2 \1"'
@@ -421,6 +439,7 @@ EOF
 # The arg type regex and value extraction must work identically.
 
 @test "awk: all argument types parse correctly (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 all-types: echo
@@ -432,7 +451,7 @@ all-types: echo
 	:e:eval:my_func
 	:opt:list:x|y?
 EOF
-	run ./testcli --cli-run-awk-command output=commands command_filter="all-types"
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=commands command_filter="all-types"
 	assert_success
 	assert_line '__CMD_ARG_TYPE[0]="list"'
 	assert_line '__CMD_ARG_VALUE[0]="a|b|c"'
@@ -494,13 +513,14 @@ EOF
 # in output=commands, arg names are bare.
 
 @test "awk: optional args parsed correctly (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 opt-test: echo
 	:req:list:a|b
 	:maybe:list:x|y?
 EOF
-	run ./testcli --cli-run-awk-command output=commands command_filter="opt-test"
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=commands command_filter="opt-test"
 	assert_success
 	assert_line '__CMD_ARG_NAME[0]="req"'
 	assert_line '__CMD_ARG_VALUE[0]="a|b"'
@@ -548,6 +568,7 @@ EOF
 # with different argument structures.
 
 @test "awk: array state is cleared between commands (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 cmd-a: echo
@@ -556,7 +577,7 @@ cmd-a: echo
 cmd-b: echo
 	:only:list:solo
 EOF
-	run ./testcli --cli-run-awk-command output=commands command_filter="cmd-b"
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=commands command_filter="cmd-b"
 	assert_success
 	assert_line '__CMD_ARG[0]="list"'
 	assert_line '__CMD_ARG_NAME[0]="only"'
@@ -607,11 +628,12 @@ EOF
 # branch in print_command_environment_vars.
 
 @test "awk: command with no args produces empty arg fields (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 noargs: echo hello
 EOF
-	run ./testcli --cli-run-awk-command output=commands command_filter="noargs"
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=commands command_filter="noargs"
 	assert_success
 	assert_line '__CMD="noargs"'
 	assert_line '__CMD_EXEC=" echo hello"'
@@ -658,6 +680,7 @@ EOF
 # POSIX awk.
 
 @test "awk: variable expansion in command words (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [env]
 export __TEST_WORDS="alpha beta gamma"
@@ -666,11 +689,13 @@ export __TEST_WORDS="alpha beta gamma"
 vtest
 	$__TEST_WORDS: echo \0
 EOF
-	run ./testcli --cli-run-awk-command output=command_names
+	export __TEST_WORDS="alpha beta gamma"
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "vtest alpha"
 	assert_line "vtest beta"
 	assert_line "vtest gamma"
+	unset __TEST_WORDS
 }
 
 @test "awk: variable expansion in command words (mawk)" {
@@ -717,12 +742,13 @@ EOF
 # This exercises split() on | in expand_dynamic_commands.
 
 @test "awk: pipe-separated list expansion (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 ltest
 	one|two|three: echo \0
 EOF
-	run ./testcli --cli-run-awk-command output=command_names
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "ltest one"
 	assert_line "ltest two"
@@ -764,6 +790,7 @@ EOF
 # output uses bracket notation like d[eploy].
 
 @test "awk: help output contains formatted command (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 # Group heading
@@ -771,7 +798,7 @@ deploy: echo deploy
 	# Deploy help text
 	:env:list:prod|staging
 EOF
-	run ./testcli --cli-run-awk-command output=help command_filter="" do_format=1
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=help command_filter="" do_format=1
 	assert_success
 	assert_output --partial "Group heading"
 	assert_output --partial "eploy"
@@ -811,11 +838,12 @@ EOF
 # ENVIRON is POSIX awk and must work on all implementations.
 
 @test "awk: COLUMNS env var affects help width (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 short: echo hi
 EOF
-	COLUMNS=40 run ./testcli --cli-run-awk-command output=help command_filter="" do_format=1
+	COLUMNS=40 run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=help command_filter="" do_format=1
 	assert_success
 	assert_output --partial "hort"
 }
@@ -852,8 +880,9 @@ EOF
 # If this passes, the parser handles a realistic config correctly.
 
 @test "awk: example.conf parses correctly (gawk)" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	cp example.conf ~/.testcli.conf
-	run ./testcli --cli-run-awk-command output=command_names
+	run _run_awk_with "$_gawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "echo"
 	assert_line "install jar from file"
@@ -896,6 +925,7 @@ EOF
 # three and comparing line-by-line.
 
 @test "awk: gawk and mawk produce identical output for example.conf" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	[ -x /usr/bin/mawk ] || skip "mawk not installed"
 	cp example.conf ~/.testcli.conf
 	local config="$HOME/.testcli.conf"
@@ -903,14 +933,15 @@ EOF
 	export ARGUMENT_OPTIONS="option1 option2 option3"
 
 	local gawk_out mawk_out
-	gawk_out=$(awk 'NR>=449 && NR<=1512' audogombleed.sh | awk -f - "$config" output=command_names 2>/dev/null | sort)
-	mawk_out=$(awk 'NR>=449 && NR<=1512' audogombleed.sh | mawk -f - "$config" output=command_names 2>/dev/null | sort)
+	gawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=command_names 2>/dev/null | sort)
+	mawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | mawk -f - "$config" output=command_names 2>/dev/null | sort)
 
 	assert_equal "$gawk_out" "$mawk_out"
 	unset __VAR_EXPANSION_WORDS ARGUMENT_OPTIONS
 }
 
 @test "awk: gawk and nawk produce identical output for example.conf" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	[ -x /usr/bin/nawk ] || skip "nawk not installed"
 	cp example.conf ~/.testcli.conf
 	local config="$HOME/.testcli.conf"
@@ -918,8 +949,8 @@ EOF
 	export ARGUMENT_OPTIONS="option1 option2 option3"
 
 	local gawk_out nawk_out
-	gawk_out=$(awk 'NR>=449 && NR<=1512' audogombleed.sh | awk -f - "$config" output=command_names 2>/dev/null | sort)
-	nawk_out=$(awk 'NR>=449 && NR<=1512' audogombleed.sh | nawk -f - "$config" output=command_names 2>/dev/null | sort)
+	gawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=command_names 2>/dev/null | sort)
+	nawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | nawk -f - "$config" output=command_names 2>/dev/null | sort)
 
 	assert_equal "$gawk_out" "$nawk_out"
 	unset __VAR_EXPANSION_WORDS ARGUMENT_OPTIONS
@@ -930,6 +961,7 @@ EOF
 # Command environment variable output must be identical across impls.
 
 @test "awk: gawk and mawk produce identical arg output" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	[ -x /usr/bin/mawk ] || skip "mawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
@@ -940,13 +972,14 @@ EOF
 	local config="$HOME/.testcli.conf"
 
 	local gawk_out mawk_out
-	gawk_out=$(awk 'NR>=449 && NR<=1512' audogombleed.sh | awk -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
-	mawk_out=$(awk 'NR>=449 && NR<=1512' audogombleed.sh | mawk -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
+	gawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
+	mawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | mawk -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
 
 	assert_equal "$gawk_out" "$mawk_out"
 }
 
 @test "awk: gawk and nawk produce identical arg output" {
+	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
 	[ -x /usr/bin/nawk ] || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
@@ -957,8 +990,8 @@ EOF
 	local config="$HOME/.testcli.conf"
 
 	local gawk_out nawk_out
-	gawk_out=$(awk 'NR>=449 && NR<=1512' audogombleed.sh | awk -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
-	nawk_out=$(awk 'NR>=449 && NR<=1512' audogombleed.sh | nawk -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
+	gawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
+	nawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | nawk -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
 
 	assert_equal "$gawk_out" "$nawk_out"
 }

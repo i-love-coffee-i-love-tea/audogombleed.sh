@@ -67,6 +67,18 @@
 #	
 __CLI_VERSION="1.3.0"
 
+# Prefer gawk over system awk (BWK on macOS) when available.
+# Exported so subshells and tests can inspect the choice.
+_cli_detect_awk() {
+	if command -v gawk &>/dev/null; then
+		__CLI_AWK="gawk"
+	else
+		__CLI_AWK="awk"
+	fi
+	export __CLI_AWK
+}
+_cli_detect_awk
+
 _cli_remove_last_word() {
 	local ret
 	while [ $# -gt 1 ]; do
@@ -1531,7 +1543,7 @@ _awk() {
 
 	if [ "${#include_files[@]}" -eq 0 ]; then	
 		# no includes configured, load only the main configuration, 
-		echo -E "$__CLI_AWK_SCRIPT" | awk -f - "$(_cli_global CONFIG_FILE)" "$@"
+		echo -E "$__CLI_AWK_SCRIPT" | "$__CLI_AWK" -f - "$(_cli_global CONFIG_FILE)" "$@"
 	else 
 		# merge main config and include config files before parsing
 
@@ -1559,9 +1571,9 @@ _awk() {
 			# write the [commands] content to the fifo
 			# the section is expected to be the last in the file
 			if [ "$include_parent_command" = "ROOT" ]; then
-				awk '$1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print $0}}' "$include_file" > "$tmpdir/include_file_${fifo_idx}" &
+				"$__CLI_AWK" '$1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print $0}}' "$include_file" > "$tmpdir/include_file_${fifo_idx}" &
 			else
-				awk 'BEGIN {p=index(ARGV[2],"parent="); if(p>0) print substr(ARGV[2],p+7)}; $1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print "    " $0}}' "$include_file" parent="$include_parent_command" > "$tmpdir/include_file_${fifo_idx}" &
+				"$__CLI_AWK" 'BEGIN {p=index(ARGV[2],"parent="); if(p>0) print substr(ARGV[2],p+7)}; $1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print "    " $0}}' "$include_file" parent="$include_parent_command" > "$tmpdir/include_file_${fifo_idx}" &
 			fi
 			fifo_idx=$((fifo_idx + 1))
 		done
@@ -1573,7 +1585,7 @@ _awk() {
 
 		# parse merged_config
 		export COLUMNS
-		echo -E "$__CLI_AWK_SCRIPT" | awk -f - "$tmpdir/merged_config" "$@"
+		echo -E "$__CLI_AWK_SCRIPT" | "$__CLI_AWK" -f - "$tmpdir/merged_config" "$@"
 
 		rm -rf "$tmpdir" 2>/dev/null
 	fi
