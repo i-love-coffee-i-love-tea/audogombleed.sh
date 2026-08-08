@@ -18,7 +18,7 @@ setup() {
 @test "command is expanded correctly: e -> echo" {
     run ./testcli e first-arg second-arg
 	assert_success
-	assert_line --index 0 --partial 'Executing command "echo" -->   echo second-arg first-arg'
+	assert_line --index 0 --partial 'Executing command "echo" --> echo second-arg first-arg'
 	assert_line --index 1 			'second-arg first-arg'
 }
 
@@ -29,7 +29,7 @@ setup() {
     run -127 ./testcli i w f m coord123
 
 	assert_failure 127
-	assert_line --index 0 --partial 'Executing command "install war from maven" -->   ~/bin/install-maven-war.sh'
+	assert_line --index 0 --partial 'Executing command "install war from maven" --> ~/bin/install-maven-war.sh'
 	assert_line --index 1 --partial	'bin/install-maven-war.sh: No such file or directory'
 }
 

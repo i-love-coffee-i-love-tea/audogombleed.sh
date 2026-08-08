@@ -85,23 +85,37 @@ zsh is now faster than bash for all large config benchmarks after removing the
 expensive help-text lookup (`_awk output=help` + `grep | cut` per word) from
 `_cli_getfirstwords` and `_cli_complete_command`.
 
-## Profiling breakdown (bash, simple config)
+## Results (2026-08-09)
 
-| Step | Time |
-|------|------|
-| `_cli_init_global_vars` | 2ms |
-| `_cli_open_logfile` | 2ms |
-| `_cli_read_awk_script` | 5ms |
-| `_cli_load_config_environment` | 4ms |
-| `_cli_load_command_word_functions` | 2ms |
-| `_cli_read_command_list` | 2ms |
-| **Setup total** | **~20ms** |
-| Completion logic | ~15ms |
-| **Full completion** | **~35ms** |
+After performance optimizations (subshell elimination, AWK fork reduction,
+bash-native env extraction, combined completion_init, permission check caching).
 
-The AWK script reading and config environment loading are the main setup costs.
-The AWK parser fork (`_awk`) and the `[env]` section sourcing
-(`source <(echo -e "$script")`) are the dominant operations.
+| Test | bash | zsh |
+|------|------|-----|
+| Simple command exec | 57ms | — |
+| Hierarchical command exec | 65ms | — |
+| First-word completion | 81ms | — |
+| Second-word completion | 76ms | — |
+| Argument list completion | 82ms | — |
+| Hierarchical completion | 79ms | — |
+| Large config — first-word | 118ms | — |
+| Large config — deep nesting | 145ms | — |
+| Large config — argument | 143ms | — |
+| Large config — 8-level deep | 128ms | — |
+
+Simple config results are in the "very good" zone (<100ms).
+Large config results are in the "good" zone (<200ms).
+
+## AWK call count per TAB press
+
+| Call | output= | Before | After |
+|------|---------|--------|-------|
+| 1 | `env` | AWK fork | **bash inline** (no fork) |
+| 2 | `command_structure` | AWK fork | combined into `completion_init` |
+| 3 | `commands` (no filter) | AWK fork | AWK fork (mtime cached) |
+| 4 | `command_word_functions` | AWK fork | combined into `completion_init` |
+| **First TAB total** | | **4 forks** | **2 forks** |
+| **Subsequent TAB** | | **1 fork** (env) | **0 forks** |
 
 ## Large config generator
 

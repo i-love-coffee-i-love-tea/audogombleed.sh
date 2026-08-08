@@ -69,6 +69,18 @@ __CLI_VERSION="1.3.0"
 
 # Cache uname once at source time — avoids subprocess fork in every stat call
 __CLI_UNAME="$(uname)"
+# Cache current uid — avoids subprocess fork in every permission check
+__CLI_MY_UID="$(id -u)"
+# Cache shell detection — avoids function call overhead (called 40+ times per completion)
+if [ -n "$ZSH_VERSION" ]; then
+	__CLI_IS_ZSH=1; __CLI_IS_BASH=0
+else
+	__CLI_IS_ZSH=0; __CLI_IS_BASH=1
+fi
+# Per-file stat cache — avoids repeated subprocess forks for the same file
+declare -A __CLI_STAT_MTIME 2>/dev/null
+declare -A __CLI_STAT_PERMS 2>/dev/null
+declare -A __CLI_STAT_UID 2>/dev/null
 
 # Prefer gawk over system awk (BWK on macOS) when available.
 # Exported so subshells and tests can inspect the choice.
@@ -109,27 +121,49 @@ _cli_shell_is_zsh() {
 
 # Portable file modification time (works on Linux and macOS)
 _cli_mtime() {
-	if [ "$__CLI_UNAME" = "Darwin" ]; then
-		stat -f %m "$1" 2>/dev/null
-	else
-		stat -c %Y "$1" 2>/dev/null
+	# Return cached value if available
+	if [ "${__CLI_STAT_MTIME[$1]+_}" ]; then
+		echo "${__CLI_STAT_MTIME[$1]}"
+		return
 	fi
+	local _val
+	if [ "$__CLI_UNAME" = "Darwin" ]; then
+		_val=$(stat -f %m "$1" 2>/dev/null)
+	else
+		_val=$(stat -c %Y "$1" 2>/dev/null)
+	fi
+	__CLI_STAT_MTIME["$1"]="$_val" 2>/dev/null
+	echo "$_val"
 }
 # Portable file permissions in octal (e.g. 644)
 _cli_stat_perms() {
-	if [ "$__CLI_UNAME" = "Darwin" ]; then
-		stat -L -f '%p' "$1" 2>/dev/null
-	else
-		stat -L -c '%a' "$1" 2>/dev/null
+	if [ "${__CLI_STAT_PERMS[$1]+_}" ]; then
+		echo "${__CLI_STAT_PERMS[$1]}"
+		return
 	fi
+	local _val
+	if [ "$__CLI_UNAME" = "Darwin" ]; then
+		_val=$(stat -L -f '%p' "$1" 2>/dev/null)
+	else
+		_val=$(stat -L -c '%a' "$1" 2>/dev/null)
+	fi
+	__CLI_STAT_PERMS["$1"]="$_val" 2>/dev/null
+	echo "$_val"
 }
 # Portable file owner uid
 _cli_stat_uid() {
-	if [ "$__CLI_UNAME" = "Darwin" ]; then
-		stat -L -f '%u' "$1" 2>/dev/null
-	else
-		stat -L -c '%u' "$1" 2>/dev/null
+	if [ "${__CLI_STAT_UID[$1]+_}" ]; then
+		echo "${__CLI_STAT_UID[$1]}"
+		return
 	fi
+	local _val
+	if [ "$__CLI_UNAME" = "Darwin" ]; then
+		_val=$(stat -L -f '%u' "$1" 2>/dev/null)
+	else
+		_val=$(stat -L -c '%u' "$1" 2>/dev/null)
+	fi
+	__CLI_STAT_UID["$1"]="$_val" 2>/dev/null
+	echo "$_val"
 }
 _cli_get_shell_name() {
 	local name=""
@@ -143,7 +177,7 @@ _cli_global_is_negative_bool() {
 	local value
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	var_name=__CLI_${_safe_progname}_${var_name}
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 	  # shellcheck disable=SC2296
 		value="${(P)var_name}"
 	else
@@ -161,7 +195,7 @@ _cli_global_is_positive_bool() {
 	local var_name="$1"
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	var_name=__CLI_${_safe_progname}_${var_name}
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 	  # shellcheck disable=SC2296
 		_cli_is_positive_bool "${(P)var_name}"
 	else
@@ -187,7 +221,7 @@ _cli_global() {
 	if [ $# -eq 1 ]; then
 		# get value
 		var_name=__CLI_${_safe_progname}_${var_name}
-		if _cli_shell_is_zsh; then
+		if [ "$__CLI_IS_ZSH" = "1" ]; then
 			echo "${(P)var_name}"
 		else
 			echo "${!var_name}"
@@ -202,7 +236,7 @@ _cli_global() {
 # Usage: _cli_global_val CONFIG_FILE _result  →  $_result has the value
 _cli_global_val() {
 	local _gv_name=__CLI_${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}_$1
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 		printf -v "$2" '%s' "${(P)_gv_name}"
 	else
 		printf -v "$2" '%s' "${!_gv_name}"
@@ -213,7 +247,7 @@ _cli_global_is_set() {
 	local var_name="$1"
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	var_name=__CLI_${_safe_progname}_${var_name}
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 		[ ! -z "${(P)var_name}" ]
 	else
 		[ ! -z "${!var_name}" ]
@@ -224,7 +258,7 @@ _cli_global_equals() {
 	local var_name="$1"
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	var_name=__CLI_${_safe_progname}_${var_name}
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 		[ ! -z "${(P)var_name}" ] && [ "${(P)var_name}" = "$2" ]
 	else
 		# bash and maybe others?
@@ -237,7 +271,7 @@ _cli_log_level_is_enabled() {
 	local var_name
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	var_name="__CLI_${_safe_progname}_CFG_LOG_LEVEL"
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 		[ ! -z "${(P)var_name}" ] && [ "${(P)var_name}" -ge "$log_level" ]
 	else
 		[ ! -z "${!var_name}" ] && [ "${!var_name}" -ge "$log_level" ]
@@ -249,7 +283,7 @@ _cli_config_file_is_present() {
 	local var_name
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	var_name="__CLI_${_safe_progname}_CONFIG_FILE"
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 		[ -f "${(P)var_name}" ]
 	else
 		[ -f "${!var_name}" ]
@@ -305,10 +339,8 @@ _cli_check_file_permissions() {
 	# owned by current user or root
 	local owner
 	owner=$(_cli_stat_uid "$file")
-	local my_uid
-	my_uid=$(id -u)
-	if [ -n "$owner" ] && [ "$owner" != "$my_uid" ] && [ "$owner" != "0" ]; then
-		_cli_error "config error: $context '$file' is owned by uid $owner (expected $my_uid or 0)"
+	if [ -n "$owner" ] && [ "$owner" != "$__CLI_MY_UID" ] && [ "$owner" != "0" ]; then
+		_cli_error "config error: $context '$file' is owned by uid $owner (expected $__CLI_MY_UID or 0)"
 		return 1
 	fi
 
@@ -316,14 +348,16 @@ _cli_check_file_permissions() {
 }
 
 _cli_init_global_vars() {
-	_cli_global CFG_EXEC_ACK_EXPANDED_COMMANDS "y"
-	_cli_global CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS "y"
-	_cli_global CFG_EXEC_EXPAND_ABBREVIATED_ARGS "n"       
-	_cli_global CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS "y"
-	_cli_global CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY "n"
-	_cli_global CFG_EXEC_ALWAYS_RETURN_0 "n"
-	_cli_global CFG_EXEC_SILENT "n"
-	_cli_global CFG_LOG_LEVEL 0
+	# Inline _cli_global calls — avoids 8× function call + progname string substitution overhead
+	local _pfx=__CLI_${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}_
+	printf -v "${_pfx}CFG_EXEC_ACK_EXPANDED_COMMANDS" '%s' "y"
+	printf -v "${_pfx}CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS" '%s' "y"
+	printf -v "${_pfx}CFG_EXEC_EXPAND_ABBREVIATED_ARGS" '%s' "n"
+	printf -v "${_pfx}CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS" '%s' "y"
+	printf -v "${_pfx}CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY" '%s' "n"
+	printf -v "${_pfx}CFG_EXEC_ALWAYS_RETURN_0" '%s' "n"
+	printf -v "${_pfx}CFG_EXEC_SILENT" '%s' "n"
+	printf -v "${_pfx}CFG_LOG_LEVEL" '%s' "0"
 }
 
 _cli_collapse_spaces() {
@@ -352,6 +386,17 @@ _cli_collapse_spaces() {
 
 
 _cli_log() {
+	# Fast path: when logging is disabled (the common case), skip all
+	# function calls.  Costs one variable lookup + one comparison instead
+	# of 3+ function calls (_cli_global_is_set, _cli_global_equals, …).
+	local _ll_var="__CLI_${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}_CFG_LOG_LEVEL"
+	local _ll_val
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
+		_ll_val="${(P)_ll_var}"
+	else
+		_ll_val="${!_ll_var}"
+	fi
+	[ "${_ll_val:-0}" -lt "$1" ] 2>/dev/null && return
 	local level_str
 	local level=$1
 	shift
@@ -377,7 +422,7 @@ _cli_log() {
 	fi
 
 	local -a funcname
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 		funcname+=("${funcstack[2]}")
 		funcname+=("${funcstack[3]}")
 	else
@@ -431,10 +476,10 @@ _cli_open_logfile() {
 	fi
 
 	local logfile shell_name
-	# Inline shell name detection (avoids subshell)
+	# Use cached shell detection
 	shell_name=""
-	_cli_shell_is_bash && shell_name="-bash"
-	_cli_shell_is_zsh && shell_name="-zsh"
+	[ "$__CLI_IS_BASH" = "1" ] && shell_name="-bash"
+	[ "$__CLI_IS_ZSH" = "1" ] && shell_name="-zsh"
 	# Create log file atomically — mktemp with template including shell name
 	logfile=$(mktemp "/tmp/cli-XXXXXXXX${shell_name}.log" 2>/dev/null)
 	if [ -z "$logfile" ]; then
@@ -444,7 +489,7 @@ _cli_open_logfile() {
 	chmod 600 "$logfile" 2>/dev/null
 	if exec 3>"$logfile";  then
 		_cli_global LOG_OPENED "0"
-		if _cli_shell_is_bash; then
+		if [ "$__CLI_IS_BASH" = "1" ]; then
 			_cli_log 1 ">>>>>>>>>>>>>> file opened $(printf '%(%X)T' -1) >>>>>>>>>>>>>>>>"
 		else
 			_cli_log 1 ">>>>>>>>>>>>>> file opened $(date +'%X') >>>>>>>>>>>>>>>>"
@@ -457,7 +502,7 @@ _cli_close_logfile() {
 	if ! _cli_global_equals LOG_OPENED "0"; then
 		return
 	fi
-	if _cli_shell_is_bash; then
+	if [ "$__CLI_IS_BASH" = "1" ]; then
 		_cli_log 1 "<<<<<<<<<<<<<< file closed $(printf '%(%X)T' -1) <<<<<<<<<<<<<<<<"
 	else
 		_cli_log 1 "<<<<<<<<<<<<<< file closed $(date +'%X') <<<<<<<<<<<<<<<<"
@@ -478,7 +523,7 @@ _cli_read_command_list() {
 		return
 	fi
 	__CLI_CONFIG_MTIME="$_cfg_mtime"
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 		__CLI_CONFIG=("${(@f)$(_awk "output=commands")}")
 	else
 		mapfile -t __CLI_CONFIG < <(_awk "output=commands")
@@ -2018,7 +2063,7 @@ _cli_is_command_complete() {
                 new_line=""
                 words=0
 
-                if _cli_shell_is_zsh; then
+                if [ "$__CLI_IS_ZSH" = "1" ]; then
                     # shellcheck disable=SC2296
                     for w in ${(z)line}; do
                         words=$((words + 1))
@@ -2089,7 +2134,7 @@ _cli_match_command_with_structure() {
         [ -z "$struct_line" ] && continue
         
         # Split into words
-        if _cli_shell_is_zsh; then
+        if [ "$__CLI_IS_ZSH" = "1" ]; then
             # shellcheck disable=SC2296
             words=("${(z)struct_line}")
         else
@@ -2291,39 +2336,33 @@ _cli_getfirstwords() {
 	[ "$word" = "empty" ] && word=""
 	_cli_log 4 "word: '$word'"
 
-	if _cli_shell_is_zsh; then
-		local -a _zsh_results=()
-		local -A _zsh_seen=()
-		local _zsh_help_lines
+	# Use cached __CLI_CONFIG instead of spawning gawk subprocess
+	local -A _seen=()
+	local _l _cmd_part _first_word
+	local _zsh_help_lines=""
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 		_zsh_help_lines="$(_cli_get_command_help_texts "$word")"
-		while read -r cmd; do
-			# shellcheck disable=SC2296
-			a_cmd=("${(z)cmd}")
-			for w in "${a_cmd[@]}"; do
-				if [ -n "${_zsh_seen[$w]}" ]; then
-					break
-				fi
-				_zsh_seen[$w]=1
-				local _desc
-				_desc="$(_cli_lookup_command_desc "$w" "$_zsh_help_lines")"
-				if [ -n "$_desc" ]; then
-					_zsh_results+=("${w}[${_desc}]")
-				else
-					_zsh_results+=("$w")
-				fi
-				break
-			done
-		done < <(_awk output=command_names command_filter="$word" | sort | uniq)
-		printf '%s\n' "${_zsh_results[@]}"
-	else
-		_awk output=command_names command_filter="$word" | while read -r cmd; do
-			read -a a_cmd <<<"$cmd"
-			for w in "${a_cmd[@]}"; do
-				echo "$w"
-				break
-			done
-		done | sort | uniq
 	fi
+	for _l in "${__CLI_CONFIG[@]}"; do
+		_cmd_part="${_l%%,*}"
+		_cmd_part="${_cmd_part%"${_cmd_part##*[![:space:]]}"}"
+		[[ "$_cmd_part" == "$word"* ]] || continue
+		# extract first word
+		_first_word="${_cmd_part%% *}"
+		[ -z "${_seen[$_first_word]+_}" ] || continue
+		_seen[$_first_word]=1
+		if [ "$__CLI_IS_ZSH" = "1" ]; then
+			local _desc
+			_desc="$(_cli_lookup_command_desc "$_first_word" "$_zsh_help_lines")"
+			if [ -n "$_desc" ]; then
+				echo "${_first_word}[${_desc}]"
+			else
+				echo "$_first_word"
+			fi
+		else
+			echo "$_first_word"
+		fi
+	done
 }
 
 _cli_trim() {
@@ -2355,7 +2394,7 @@ _cli_compgen() {
 			local prefix="$1"
 			local w
 			local -a _words
-			if _cli_shell_is_zsh; then
+			if [ "$__CLI_IS_ZSH" = "1" ]; then
 				# shellcheck disable=SC2296
 				_words=("${(z)words}")
 			else
@@ -2371,7 +2410,7 @@ _cli_compgen() {
 			local word="$1"
 			local entry
 			# zsh: make unmatched globs (e.g. .*) return empty instead of erroring
-			_cli_shell_is_zsh && setopt localoptions null_glob
+			[ "$__CLI_IS_ZSH" = "1" ] && setopt localoptions null_glob
 			if [ -z "$word" ]; then
 				word="."
 			fi
@@ -2399,7 +2438,7 @@ _cli_compgen() {
 			local word="$1"
 			local entry
 			# zsh: make unmatched globs (e.g. .*) return empty instead of erroring
-			_cli_shell_is_zsh && setopt localoptions null_glob
+			[ "$__CLI_IS_ZSH" = "1" ] && setopt localoptions null_glob
 			if [ -z "$word" ]; then
 				word="."
 			fi
@@ -2456,7 +2495,7 @@ _cli_compgen() {
 			local name="$1"
 			case "$mode" in
 				variable)
-					if _cli_shell_is_zsh; then
+					if [ "$__CLI_IS_ZSH" = "1" ]; then
 						[ ${(P)name+_} ] && echo "$name"
 					else
 						[ "${!name+_}" ] && echo "$name"
@@ -2582,7 +2621,7 @@ _cli_execute_command() {
 	local args_length
 	local cmd_expr
 	local last_word
-	local exit_code
+	local exit_code=0
 
 	cmdline="$*"
 	cmd_expanded="n"
@@ -2807,27 +2846,32 @@ _cli_complete_command() {
     local line="$@"
 	unset COMPREPLY
 	
-	if ! _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" != "1" ]; then
 		pos=$((pos - 1))
 	fi
 
 	_cli_log 4 "pos: $pos, word: $word, line: $line"
-	while read -r cmd; do
-		# create array to extract word at position
-		if _cli_shell_is_zsh; then
+	# Use cached __CLI_CONFIG instead of spawning a gawk subprocess
+	local _l _cmd_part
+	for _l in "${__CLI_CONFIG[@]}"; do
+		# extract command part (before first comma)
+		_cmd_part="${_l%%,*}"
+		_cmd_part="${_cmd_part%"${_cmd_part##*[![:space:]]}"}"
+		[[ "$_cmd_part" == "$line"* ]] || continue
+		# split into words and get the one at position $pos
+		if [ "$__CLI_IS_ZSH" = "1" ]; then
 		  # shellcheck disable=SC2296
-			a_cmd=("${(z)cmd}")	
+			a_cmd=("${(z)_cmd_part}")
 		else
-			read -a a_cmd <<<"$cmd"
+			read -a a_cmd <<<"$_cmd_part"
 		fi
-		if [ ! -z "${a_cmd[pos]}" ]; then
-			#echo "${a_cmd[pos]}"
-			_cli_log 4 "adding ${a_cmd[pos]}"
-			if ! [[ " ${COMPREPLY[*]} " =~ " ${a_cmd[pos]} " ]]; then
-				COMPREPLY+=("${a_cmd[pos]}")
+		if [ -n "${a_cmd[$pos]}" ]; then
+			_cli_log 4 "adding ${a_cmd[$pos]}"
+			if ! [[ " ${COMPREPLY[*]} " =~ " ${a_cmd[$pos]} " ]]; then
+				COMPREPLY+=("${a_cmd[$pos]}")
 			fi
 		fi
-	done < <(_awk output=command_names command_filter="$line")
+	done
 
 	# Help-text descriptions for zsh are skipped for speed — the extra
 	# _awk output=help + grep/cut per word is the main bottleneck.
@@ -2952,7 +2996,7 @@ _cli_complete_arg() {
 				var_name="${arg_list//\$/}"
 				if _cli_is_env_var_defined "$var_name"; then
 					_cli_log 4 "var is defined"
-					if _cli_shell_is_zsh; then
+					if [ "$__CLI_IS_ZSH" = "1" ]; then
 						arg_list="${(P)var_name}"
 					else
 						arg_list="${!var_name}"
@@ -3097,11 +3141,11 @@ _cli_complete_()
 	local word
 	local -a a_line
 
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 		if [ ! -z "${COMP_WORDS[1]}" ]; then
 			__CLI_PROGNAME="$(basename "${COMP_WORDS[1]}")"
 		fi
-	else 
+	else
 		if [ ! -z "${COMP_WORDS[0]}" ]; then
 			__CLI_PROGNAME="$(basename "${COMP_WORDS[0]}")"
 		fi
@@ -3109,22 +3153,20 @@ _cli_complete_()
 	if ! _cli_validate_progname; then
 		return 1
 	fi
-		
+
 
 	_cli_global CONFIG_FILE "$HOME/.${__CLI_PROGNAME}.conf"
-	
+
 	_cli_init_global_vars
 	_cli_open_logfile
 	_cli_read_awk_script
 	_cli_load_config_environment
 	
 	# Combined init: structure + word function names in one AWK pass
+	# (also loads word functions and reads command list)
 	_cli_completion_init
-	
-	# Read command list (separate pass — includes dynamic expansion)
-	_cli_read_command_list
 
-	if _cli_shell_is_bash; then
+	if [ "$__CLI_IS_BASH" = "1" ]; then
 		# bash completion sets $COMP_WORDS, $COMP_CWORD and $COMP_LINE
 		line="$COMP_LINE"
     	word=${COMP_WORDS[COMP_CWORD]}
@@ -3143,7 +3185,7 @@ _cli_complete_()
 	_cli_log 4 "COMP_WORDS[*]: ${COMP_WORDS[*]}"
 	
 	# remove first word (program name)
-	if _cli_shell_is_zsh; then
+	if [ "$__CLI_IS_ZSH" = "1" ]; then
 	  # shellcheck disable=SC2296
 		a_line=("${(z)line}")
 		a_line=("${a_line[@]:1}")
@@ -3164,7 +3206,7 @@ _cli_complete_()
 		# first word: need all &functions expanded for command names
 		_cli_load_command_word_functions
 		_cli_read_command_list
-		if _cli_shell_is_zsh; then
+		if [ "$__CLI_IS_ZSH" = "1" ]; then
 			# shellcheck disable=SC2296
 			COMPREPLY=("${(@f)$(_cli_getfirstwords "$word")}")
 		else
@@ -3189,10 +3231,11 @@ _cli_complete_()
 			_cli_load_command_word_functions
 		fi
 		# Re-read command list with &function results available
+		unset __CLI_CONFIG_MTIME
 		_cli_read_command_list
 
 		if _cli_is_command_complete "${a_line[*]}"; then
-			if _cli_shell_is_zsh; then
+			if [ "$__CLI_IS_ZSH" = "1" ]; then
 			  # shellcheck disable=SC2296
 				a_complete_cmd=("${(z)__CLI_CMD_WORDS}")
 			else
@@ -3212,7 +3255,7 @@ _cli_complete_()
 				local arg_pos=$((line_word_count - cmd_word_count))
 				_cli_load_completion_vars "$__CLI_CMD_WORDS"
 				__CLI_DESC="${__CMD_ARG_DESC[$arg_pos]}"
-				if _cli_shell_is_zsh; then
+				if [ "$__CLI_IS_ZSH" = "1" ]; then
 					# shellcheck disable=SC2296
 					COMPREPLY=("${(@f)$(_cli_complete_arg "$arg_pos" "$word" "$__CLI_CMD_WORDS")}")
 				else
@@ -3224,7 +3267,7 @@ _cli_complete_()
 					esac
 				fi
 				# append [description] to arg completions for zsh
-				if _cli_shell_is_zsh && [ "${#COMPREPLY[@]}" -gt 0 ]; then
+				if [ "$__CLI_IS_ZSH" = "1" ] && [ "${#COMPREPLY[@]}" -gt 0 ]; then
 					local _arg_desc="$__CLI_DESC"
 					if [ -z "$_arg_desc" ]; then
 						local _arg_type="${__CMD_ARG_TYPE[$arg_pos]%%\?}"
@@ -3261,7 +3304,7 @@ _cli_complete_()
 		fi
 	fi
 
-	if [ "$COMPREPLY" != "" ] && _cli_shell_is_zsh; then
+	if [ "$COMPREPLY" != "" ] && [ "$__CLI_IS_ZSH" = "1" ]; then
 		#COMPREPLY+=("value_with_description[the description]")
 		_values "$description" "${COMPREPLY[@]}"
 	fi
