@@ -28,3 +28,9 @@ setup() {
 	assert_equal "23" "${#lines[@]}"
 	assert_line "install war from maven        , list,  ~/bin/install-maven-war.sh"
 }
+
+@test "zsh: command_filter with regex metacharacter matches literally" {
+	run _zsh_run --cli-run-awk-command output=command_names command_filter="ech."
+	assert_success
+	assert_equal "${#lines[@]}" "0"
+}

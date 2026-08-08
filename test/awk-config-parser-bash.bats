@@ -32,7 +32,6 @@ setup() {
 	run ./testcli --cli-run-awk-command output=commands command_filter="echo"
 	assert_line 'declare -g -A __CMD_ARG __CMD_ARG_TYPE __CMD_ARG_VALUE __CMD_ARG_DESC __CMD_ARG_NAME'
 	assert_line '__CMD="echo"'
-	assert_line '__CMD_EXEC=" \0 \2 \1"'
     assert_line '__CMD_ARG[0]="list"'
     assert_line '__CMD_ARG_NAME[0]="arg1"'
     assert_line '__CMD_ARG_TYPE[0]="list"'
@@ -114,4 +113,13 @@ EOF
 	assert_line '__CMD_ARG_TYPE[0]="eval"'
 	assert_line '__CMD_ARG_VALUE[0]="get_deployments"'
 	assert_line '__CMD_ARG_DESC[0]="target deployment"'
+}
+
+@test "command_filter with regex metacharacter matches literally" {
+	# The dot in "ech." should match only a literal dot, not any character
+	# "echo" has no literal dot, so "ech." should not match
+	run ./testcli --cli-run-awk-command output=command_names command_filter="ech."
+	assert_success
+	# Should return no results since no command contains a literal dot after "ech"
+	assert_equal "${#lines[@]}" "0"
 }

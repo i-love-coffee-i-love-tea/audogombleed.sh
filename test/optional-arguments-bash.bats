@@ -56,3 +56,24 @@ setup() {
     assert_success
     assert_output "alpha x"
 }
+
+@test "bash: missing required arg fails when optional arg is defined" {
+    echo 'test-mixed3: echo' >> ~/.testcli.conf
+    echo '    :required:list:alpha|beta' >> ~/.testcli.conf
+    echo '    :optional:list:x|y|z?' >> ~/.testcli.conf
+    source ./testcli
+    # Provide no args at all — should fail because required arg is missing
+    run ./testcli test-mixed3
+    assert_failure 53
+}
+
+@test "bash: missing second required arg fails with optional arg defined" {
+    echo 'test-two-req: echo' >> ~/.testcli.conf
+    echo '    :req1:list:alpha|beta' >> ~/.testcli.conf
+    echo '    :req2:list:x|y|z' >> ~/.testcli.conf
+    echo '    :opt1:list:one|two|three?' >> ~/.testcli.conf
+    source ./testcli
+    # Provide only 1 of 2 required args — should fail
+    run ./testcli test-two-req alpha
+    assert_failure 53
+}

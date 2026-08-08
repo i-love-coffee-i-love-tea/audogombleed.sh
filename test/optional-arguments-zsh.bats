@@ -50,3 +50,12 @@ setup() {
     assert_success
     assert_output "alpha x"
 }
+
+@test "zsh: missing second required arg fails with optional arg defined" {
+    echo 'test-two-req-zsh: echo' >> ~/.testcli.conf
+    echo '    :req1:list:alpha|beta' >> ~/.testcli.conf
+    echo '    :req2:list:x|y|z' >> ~/.testcli.conf
+    echo '    :opt1:list:one|two|three?' >> ~/.testcli.conf
+    run _zsh_run test-two-req-zsh alpha
+    assert_failure 53
+}

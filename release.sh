@@ -34,7 +34,7 @@ sed -i "s/^\(\.TH [^ ]\+ [0-9]\+ \)\"[^\"]*\" \"[^\"]*\"/\1\"$(date +%Y)\" \"$ve
 rfc_date=$(date -R)
 sed -i "1s/audogombleed ([^)]*)/audogombleed ($version)/" "$changelog"
 sed -i "1s/\* Release .*/\* Release $version/" "$changelog"
-sed -i "s/^ -- .*<.*>  .*$/ -- Steffen Kremsler <steffen@example.com>  $rfc_date/" "$changelog"
+sed -i "s/^ -- .*<.*>  .*$/ -- Steffen Kremsler <github.com@gobuki.org>  $rfc_date/" "$changelog"
 
 git add "$script" "$manpage" "$changelog"
 git commit -m "Bump version to $version"

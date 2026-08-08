@@ -28,3 +28,17 @@ setup() {
     run _zsh_run return2
     assert_failure 2
 }
+
+@test "zsh: backslashes in config values are preserved" {
+    cat > ~/.testcli.conf <<'CONF'
+[env]
+__CLI_CFG_EXEC_SILENT="y"
+export REGEX_PATTERN="\d+\.\d+"
+[commands]
+show-regex: printf '%s' $REGEX_PATTERN
+CONF
+    source ./testcli
+    run _zsh_run show-regex
+    assert_success
+    assert_output '\d+\.\d+'
+}

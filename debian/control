@@ -1,7 +1,7 @@
 Source: audogombleed
 Section: utils
 Priority: optional
-Maintainer: Steffen Kremsler <steffen@example.com>
+Maintainer: Steffen Kremsler <github.com@gobuki.org>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
 

@@ -138,7 +138,8 @@ _cli_get_shell_name() {
 _cli_global_is_negative_bool() {
 	local var_name="$1"
 	local value
-	var_name=__CLI_${__CLI_PROGNAME}_${var_name}
+	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
+	var_name=__CLI_${_safe_progname}_${var_name}
 	if _cli_shell_is_zsh; then
 	  # shellcheck disable=SC2296
 		value="${(P)var_name}"
@@ -155,7 +156,8 @@ _cli_global_is_negative_bool() {
 }
 _cli_global_is_positive_bool() {
 	local var_name="$1"
-	var_name=__CLI_${__CLI_PROGNAME}_${var_name}
+	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
+	var_name=__CLI_${_safe_progname}_${var_name}
 	if _cli_shell_is_zsh; then
 	  # shellcheck disable=SC2296
 		_cli_is_positive_bool "${(P)var_name}"
@@ -177,9 +179,11 @@ _cli_is_positive_bool() {
 _cli_global() {
 	local var_name=$1
 	local val=$2
+	# Sanitize progname for use in variable names (dots etc. are invalid in bash identifiers)
+	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	if [ $# -eq 1 ]; then
 		# get value
-		var_name=__CLI_${__CLI_PROGNAME}_${var_name}
+		var_name=__CLI_${_safe_progname}_${var_name}
 		if _cli_shell_is_zsh; then
 			echo "${(P)var_name}"
 		else
@@ -187,13 +191,14 @@ _cli_global() {
 		fi
 	elif [ $# -eq 2 ]; then
 		# set value
-		printf -v "__CLI_${__CLI_PROGNAME}_${var_name}" '%s' "$val"	
+		printf -v "__CLI_${_safe_progname}_${var_name}" '%s' "$val"
 	fi
 }
 
 _cli_global_is_set() {
 	local var_name="$1"
-	var_name=__CLI_${__CLI_PROGNAME}_${var_name}
+	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
+	var_name=__CLI_${_safe_progname}_${var_name}
 	if _cli_shell_is_zsh; then
 		[ ! -z "${(P)var_name}" ]
 	else
@@ -203,7 +208,8 @@ _cli_global_is_set() {
 
 _cli_global_equals() {
 	local var_name="$1"
-	var_name=__CLI_${__CLI_PROGNAME}_${var_name}
+	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
+	var_name=__CLI_${_safe_progname}_${var_name}
 	if _cli_shell_is_zsh; then
 		[ ! -z "${(P)var_name}" ] && [ "${(P)var_name}" = "$2" ]
 	else
@@ -215,7 +221,8 @@ _cli_global_equals() {
 _cli_log_level_is_enabled() {
 	local log_level="$1"
 	local var_name
-	var_name="__CLI_${__CLI_PROGNAME}_CFG_LOG_LEVEL"
+	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
+	var_name="__CLI_${_safe_progname}_CFG_LOG_LEVEL"
 	if _cli_shell_is_zsh; then
 		[ ! -z "${(P)var_name}" ] && [ "${(P)var_name}" -ge "$log_level" ]
 	else
@@ -223,9 +230,11 @@ _cli_log_level_is_enabled() {
 	fi
 }
 
+
 _cli_config_file_is_present() {
 	local var_name
-	var_name="__CLI_${__CLI_PROGNAME}_CONFIG_FILE"
+	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
+	var_name="__CLI_${_safe_progname}_CONFIG_FILE"
 	if _cli_shell_is_zsh; then
 		[ -f "${(P)var_name}" ]
 	else
@@ -406,7 +415,11 @@ _cli_open_logfile() {
 	fi
 
 	local logfile tmpfile
-	tmpfile=$(mktemp "/tmp/cli-XXXXXXXX")
+	tmpfile=$(mktemp "/tmp/cli-XXXXXXXX" 2>/dev/null)
+	if [ -z "$tmpfile" ]; then
+		_cli_global CFG_LOG_LEVEL "0"
+		return
+	fi
 	logfile="${tmpfile}$(_cli_get_shell_name).log"
 	mv "$tmpfile" "$logfile"
 	chmod 600 "$logfile" 2>/dev/null
@@ -446,6 +459,21 @@ _cli_read_command_list() {
 	for l in "${__CLI_CONFIG[@]}"; do
 		_cli_log 4 "cfg: $l"
 	done
+}
+
+# Read command structure with dynamic placeholders preserved (no &function calls)
+_cli_read_command_structure() {
+	local _cfg_file
+	_cfg_file="$(_cli_global CONFIG_FILE)"
+	local _cfg_mtime
+	_cfg_mtime=$(_cli_mtime "$_cfg_file")
+	if [ "$_cfg_mtime" = "$__CLI_CMD_STRUCT_MTIME" ] && [ -n "$__CLI_CMD_STRUCT" ]; then
+		_cli_log 4 "using cached command structure"
+		return
+	fi
+	__CLI_CMD_STRUCT_MTIME="$_cfg_mtime"
+	__CLI_CMD_STRUCT="$(_awk output=command_structure)"
+	_cli_log 4 "command structure loaded"
 }
 
 _cli_map_function_output_to_env_var() {
@@ -515,6 +543,9 @@ BEGIN {
 	cmd_details_help_index=0
 	output_type=_extract_after(ARGV[2], "output=")
 	command_filter=_extract_after(ARGV[3], "command_filter=")
+	# regex-safe copy of command_filter for ~ matching (not for == comparisons)
+	escaped_command_filter = command_filter
+	gsub(/[]\[\\.*+?{}()^$!<>|]/, "\\\\&", escaped_command_filter)
 	do_format=_extract_after(ARGV[4], "do_format=")
 	command_names_index=0
 	cfg_color_enabled=0
@@ -666,6 +697,21 @@ BEGIN {
 				}
 			}	
 		}
+		if (output_type == "command_functions_for") {
+			if (type == "command") {
+				if (is_function_command($1)) {
+					# cmd contains the static prefix (parent nodes)
+					# fullcmd = cmd + " " + dynamic_word
+					# So the static prefix is just cmd
+					if (command_filter == "" || cmd == command_filter || cmd ~ "^" escaped_command_filter) {
+						_cff_func = $1
+						sub(/^&/, "", _cff_func)
+						sub(/:.*/, "", _cff_func)
+						print _cff_func
+					}
+				}
+			}
+		}
 	}
 }
 # line begins with colon: command argument specification
@@ -784,6 +830,16 @@ BEGIN {
 	type=""
 }
 END {
+	if (output_type == "command_structure") {
+		print_command()
+		cache_command_names()
+		i=1; while (i in command_names) {
+			if (command_filter == "" || (command_names[i] ~ "^" escaped_command_filter)) {
+				printf "%s\n", command_names[i]
+			}
+			i++
+		}
+	}
 	if (output_type == "command_names" || output_type == "help") {
 		print_command()
 		cache_command_names()
@@ -791,7 +847,7 @@ END {
 		# enrich with marking for optional characters
 		if (do_format_command_names != 1) {
 			i=1; while (i in command_names) {
-				if (command_filter == "" || (command_names[i] ~ "^" command_filter)) {
+				if (command_filter == "" || (command_names[i] ~ "^" escaped_command_filter)) {
 					printf "%s\n", command_names[i]
 				}
 				i++
@@ -802,7 +858,7 @@ END {
 			if (command_filter != "") {
 				format_command_names_index=0
 				i=1; while (i in command_names) {
-					if (command_names[i] ~ "^" command_filter) {
+					if (command_names[i] ~ "^" escaped_command_filter) {
 						format_command_names[format_command_names_index]=command_names[i]
 						format_command_names_index++
 					}
@@ -906,7 +962,7 @@ END {
 
 
 				# print all formatted commands and their help texts
-				if (command_filter == "" || (unformatted_command ~ "^" command_filter)) {
+				if (command_filter == "" || (unformatted_command ~ "^" escaped_command_filter)) {
 
 					line=""
 
@@ -1215,15 +1271,14 @@ function get_first_n_words(words, n) {
 	sep=" "
 	split(words, parts, sep)
 	new_words=""
-	for (i = 0; i < length(parts); i++) {
-		#printf "part %s, %s\n", i, parts[i]
-		if (i == 0) {
+	for (i = 1; i <= length(parts); i++) {
+		if (i > n) {
+			break
+		}
+		if (new_words == "") {
 			new_words=parts[i]
 		} else {
 			new_words=new_words sep parts[i]
-		}
-		if (i == n) {
-			break
 		}
 	}
 	return new_words
@@ -1233,9 +1288,9 @@ function remove_last_word(words) {
 	split(words, parts, " ")
 	delete parts[length(parts)]
 	sep=" "
-	new_words=parts[0]
-	if (length(parts) > 1) {
-		for (i = 1; i < length(parts); i++) {
+	new_words=""
+	if (length(parts) > 0) {
+		for (i = 1; i <= length(parts); i++) {
 			if (new_words == "") {
 				new_words=parts[i]
 			} else {
@@ -1302,7 +1357,8 @@ function print_command_environment_vars(fullcmd, cmd_exec) {
 	# escape double quotes so the output is safe to eval
 	gsub(/"/, "\\\"", _pcev_ce)
 	printf "__CMD=\"%s\"\n", _pcev_fc
-	printf "__CMD_EXEC=\"%s\"\n", _pcev_ce
+	# __CMD_EXEC intentionally omitted — not needed during completion,
+	# and including it causes unintended $(...) evaluation when eval'd.
 	arg=0
 	while (arg in cmd_args) {
 		# remove leading and trailing whitespace and trailing colon
@@ -1310,11 +1366,14 @@ function print_command_environment_vars(fullcmd, cmd_exec) {
 		printf "__CMD_ARG[%s]=\"%s\"\n", arg, _pcev_ca
 		printf "__CMD_ARG_NAME[%s]=\"%s\"\n", arg, cmd_argname[arg]
 		printf "__CMD_ARG_TYPE[%s]=\"%s\"\n", arg, cmd_argtype[arg]
-		printf "__CMD_ARG_DESC[%s]=\"%s\"\n", arg, cmd_argdesc[arg]
-		if (substr(cmd_argvalue[arg], 0, 1) == "$") {
-			printf "__CMD_ARG_VALUE[%s]=\"\\%s\"\n", arg, cmd_argvalue[arg]
+		_pcev_desc=cmd_argdesc[arg]; gsub(/"/, "\\\"", _pcev_desc)
+		printf "__CMD_ARG_DESC[%s]=\"%s\"\n", arg, _pcev_desc
+		_pcev_val=cmd_argvalue[arg]
+		if (substr(_pcev_val, 1, 1) == "$") {
+			printf "__CMD_ARG_VALUE[%s]=\"\\%s\"\n", arg, _pcev_val
 		} else {
-		printf "__CMD_ARG_VALUE[%s]=\"%s\"\n", arg, cmd_argvalue[arg]
+			gsub(/"/, "\\\"", _pcev_val)
+			printf "__CMD_ARG_VALUE[%s]=\"%s\"\n", arg, _pcev_val
 		}
 		arg++
 	}
@@ -1355,6 +1414,11 @@ function cache_command_names() {
 	        command_names_index++;
 	        command_names[command_names_index]=fullcmd
 	    }
+	}
+	# command_structure: preserve dynamic placeholders (no expansion)
+	if (output_type == "command_structure") {
+	    command_names_index++;
+	    command_names[command_names_index]=fullcmd
 	}
 }
 
@@ -1538,24 +1602,29 @@ _awk() {
 	if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
 		return 1
 	fi
+	# Open FD4 at check time to prevent TOCTOU race (file could be swapped between check and read)
+	exec 4< "$_cfg_file"
 
 	_cli_log 4 "$*" 
 
 	if [ "${#include_files[@]}" -eq 0 ]; then	
 		# no includes configured, load only the main configuration, 
-		echo -E "$__CLI_AWK_SCRIPT" | "$__CLI_AWK" -f - "$(_cli_global CONFIG_FILE)" "$@"
+		echo -E "$__CLI_AWK_SCRIPT" | "$__CLI_AWK" -f - /dev/fd/4 "$@"
+		local _awk_rc=$?
+		exec 4<&-
+		return $_awk_rc
 	else 
 		# merge main config and include config files before parsing
 
 		# write main config file to fifo
 		local tmpdir
 		tmpdir=$(mktemp -d)
-		trap "rm -rf '$tmpdir'" EXIT
+		trap "rm -rf '$tmpdir'" EXIT INT TERM
 		mkfifo "$tmpdir/main_config"
-		cat "$(_cli_global CONFIG_FILE)" > "$tmpdir/main_config" &
+		cat /dev/fd/4 > "$tmpdir/main_config" &
 
 		# write include files to fifos
-		for file in ${include_files[@]}; do
+		for file in "${include_files[@]}"; do
 			include_file="${file%%|*}"
 			if [ "$include_file" = "" ]; then
 				continue
@@ -1581,12 +1650,14 @@ _awk() {
 		# merge fifos
 		mkfifo "$tmpdir/merged_config"
 		_cli_log 4 "include fifos: ${include_fifos[@]}"
-		cat "$tmpdir/main_config" ${include_fifos[@]} > "$tmpdir/merged_config" &
+		cat "$tmpdir/main_config" "${include_fifos[@]}" > "$tmpdir/merged_config" &
 
 		# parse merged_config
 		export COLUMNS
 		echo -E "$__CLI_AWK_SCRIPT" | "$__CLI_AWK" -f - "$tmpdir/merged_config" "$@"
 
+		wait
+		exec 4<&-
 		rm -rf "$tmpdir" 2>/dev/null
 	fi
 
@@ -1626,8 +1697,8 @@ _cli_command_is_exact_match() {
 }
 
 _cli_load_completion_vars() {
-	[ "$1" = "" ] && return	
-	eval "$(_awk output=commands command_filter="$1")" 
+	[ "$1" = "" ] && return
+	source <(_awk output=commands command_filter="$1")
 }
 
 _cli_load_config_environment() {
@@ -1651,7 +1722,7 @@ _cli_load_config_environment() {
 	prev_cli_silent=$(_cli_global CFG_EXEC_SILENT)
 	line_nr=1
 
-	while read env_line; do
+	while read -r env_line; do
 		_cli_log 4 "$env_line"
 		first_word="${env_line%% *}"
 		_cli_log 4 "first_word: $first_word"
@@ -1671,6 +1742,9 @@ _cli_load_config_environment() {
 					continue
 				fi
 				source "$src_file"
+				if [ $? -ne 0 ]; then
+					_cli_error "config error: [env] line $line_nr: source file '$src_file' returned non-zero exit code"
+				fi
 			else
 				# could have been set to not silent by previous eval of config line
 				# command line switch should have precedence
@@ -1712,16 +1786,34 @@ _cli_load_config_environment() {
 					value="${value%\"}"
 					value="${value#\'}"
 					value="${value%\'}"
-					_cli_log 4 "assigning \"__CLI_${__CLI_PROGNAME}_${varname}=$value\""
-					printf -v "__CLI_${__CLI_PROGNAME}_${varname}" '%s' "$value"
+					local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
+					_cli_log 4 "assigning \"__CLI_${_safe_progname}_${varname}=$value\""
+					printf -v "__CLI_${_safe_progname}_${varname}" '%s' "$value"
 				else
-					script="${script} \n
+					# Single-word non-__CLI_ line — try printf -v for simple VAR=value
+					if [[ "$env_line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] && [[ "$env_line" != *\\ ]]; then
+						varname="${env_line%%=*}"
+						value="${env_line#*=}"
+						value="${value#\"}"
+						value="${value%\"}"
+						value="${value#\'}"
+						value="${value%\'}"
+						printf -v "$varname" '%s' "$value"
+					else
+						script="${script}
 $env_line"
-
+					fi
 				fi
-			else 
-				script="${script} \n
+			else
+				# Multi-word line — check if it's a simple export VAR=value
+				if [[ "$env_line" =~ ^export\ [A-Za-z_][A-Za-z0-9_]*= ]] && [[ "$env_line" =~ ^export\ [A-Za-z_][A-Za-z0-9_]*=[^\;\|\&\(\)\`]*$ ]] && [[ "$env_line" != *\\ ]]; then
+					# Safe: export VAR=value — use source so export runs
+					script="${script}
 $env_line"
+				else
+					script="${script}
+$env_line"
+				fi
 				_cli_log 4 "script line: $env_line"
 			fi
 		fi
@@ -1734,7 +1826,7 @@ $env_line"
 		if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
 			return
 		fi
-		source <(echo -e "$script")
+		source <(printf '%s\n' "$script")
 	fi
 
 	#
@@ -1855,6 +1947,66 @@ _cli_is_command_complete() {
     return "$is_complete"
 }
 
+# Match user input against command structure (with placeholders preserved)
+# Sets __CLI_CMD_MATCHED_PREFIX (static part) and __CLI_CMD_DYNAMIC_FUNC (&function name if present)
+# Returns 0 if a match is found, 1 otherwise
+_cli_match_command_with_structure() {
+    local line="$1"
+    local words
+    local i
+    local struct_line
+    local static_prefix
+    local dynamic_word
+
+    unset __CLI_CMD_MATCHED_PREFIX
+    unset __CLI_CMD_DYNAMIC_FUNC
+
+    # Parse the command structure to find matches
+    while IFS= read -r struct_line; do
+        [ -z "$struct_line" ] && continue
+        
+        # Split into words
+        if _cli_shell_is_zsh; then
+            # shellcheck disable=SC2296
+            words=("${(z)struct_line}")
+        else
+            read -a words <<<"$struct_line"
+        fi
+        
+        # Check if the last word is dynamic (&function, $var, or |list)
+        local last_word="${words[${#words[@]}-1]}"
+        if [[ "$last_word" == "&"* ]] || [[ "$last_word" == '$'* ]] || [[ "$last_word" == *"|"* ]]; then
+            # Dynamic command - static prefix is all words except the last
+            static_prefix=""
+            for ((i=0; i < ${#words[@]}-1; i++)); do
+                if [ -z "$static_prefix" ]; then
+                    static_prefix="${words[$i]}"
+                else
+                    static_prefix="$static_prefix ${words[$i]}"
+                fi
+            done
+            
+            # Check if line matches the static prefix
+            if [[ "$line" == "$static_prefix"* ]]; then
+                __CLI_CMD_MATCHED_PREFIX="$static_prefix"
+                if [[ "$last_word" == "&"* ]]; then
+                    __CLI_CMD_DYNAMIC_FUNC="${last_word#&}"
+                fi
+                _cli_log 4 "matched dynamic command: prefix=$static_prefix, func=$__CLI_CMD_DYNAMIC_FUNC"
+                return 0
+            fi
+        else
+            # Static command - check for exact prefix match
+            if [[ "$line" == "$struct_line"* ]]; then
+                __CLI_CMD_MATCHED_PREFIX="$struct_line"
+                _cli_log 4 "matched static command: $struct_line"
+                return 0
+            fi
+        fi
+    done <<< "$__CLI_CMD_STRUCT"
+
+    return 1
+}
 
 _cli_get_command_args() {
 	local cmd="$1"
@@ -1871,19 +2023,35 @@ _cli_get_command_args() {
 
 _cli_args_are_complete() {
 	local cmd="$1"
-	local mandatory_argc=${#args[@]}
-	local arg
+	local mandatory_argc=0
 	shift
 
 	_cli_log 4 "mandatory_argc: $mandatory_argc, args: $args"
 
-	_cli_get_command_args "$cmd" | while read arg; do
-		#_cli_log 4 "arg: $arg"
-		if [[ "$arg" =~ [?]$ ]]; then
-			#_cli_log 4 "arg is optional"
-			mandatory_argc=$((mandatory_argc - 1))
+	local _awk_out _aline _atype _aval _vidx _vline
+	_awk_out="$(_awk output=commands command_filter="$cmd")"
+	while IFS= read -r _aline; do
+		if [[ "$_aline" == __CMD_ARG_TYPE\[* ]]; then
+			_atype="${_aline#*=\"}"
+			_atype="${_atype%\"}"
+			# value type args have a default and are always optional
+			[[ "$_atype" == "value" ]] && continue
+			# extract matching value field to check for ? suffix
+			_vidx="${_aline%%\]*}"
+			_vidx="${_vidx##*\[}"
+			_aval=""
+			while IFS= read -r _vline; do
+				if [[ "$_vline" == __CMD_ARG_VALUE\["$_vidx"\]=* ]]; then
+					_aval="${_vline#*=\"}"
+					_aval="${_aval%\"}"
+					break
+				fi
+			done <<< "$_awk_out"
+			# optional args (ending with ?) don't count as required
+			[[ "$_aval" == *\? ]] && continue
+			mandatory_argc=$((mandatory_argc + 1))
 		fi
-	done
+	done <<< "$_awk_out"
 
 	[ $# -ge "$mandatory_argc" ]
 }
@@ -1997,7 +2165,7 @@ _cli_getfirstwords() {
 		local -A _zsh_seen=()
 		local _zsh_help_lines
 		_zsh_help_lines="$(_cli_get_command_help_texts "$word")"
-		while read cmd; do
+		while read -r cmd; do
 			# shellcheck disable=SC2296
 			a_cmd=("${(z)cmd}")
 			for w in "${a_cmd[@]}"; do
@@ -2017,7 +2185,7 @@ _cli_getfirstwords() {
 		done < <(_awk output=command_names command_filter="$word" | sort | uniq)
 		printf '%s\n' "${_zsh_results[@]}"
 	else
-		_awk output=command_names command_filter="$word" | while read cmd; do
+		_awk output=command_names command_filter="$word" | while read -r cmd; do
 			read -a a_cmd <<<"$cmd"
 			for w in "${a_cmd[@]}"; do
 				echo "$w"
@@ -2058,9 +2226,9 @@ _cli_compgen() {
 			local -a _words
 			if _cli_shell_is_zsh; then
 				# shellcheck disable=SC2296
-				_words=("${(f)words}")
+				_words=("${(z)words}")
 			else
-				mapfile -t _words <<< "$words"
+				read -ra _words <<< "${words//$'\n'/ }"
 			fi
 			for w in "${_words[@]}"; do
 				if [[ "$w" == "$prefix"* ]]; then
@@ -2071,6 +2239,8 @@ _cli_compgen() {
 		-f)
 			local word="$1"
 			local entry
+			# zsh: make unmatched globs (e.g. .*) return empty instead of erroring
+			_cli_shell_is_zsh && setopt localoptions null_glob
 			if [ -z "$word" ]; then
 				word="."
 			fi
@@ -2097,6 +2267,8 @@ _cli_compgen() {
 		-d)
 			local word="$1"
 			local entry
+			# zsh: make unmatched globs (e.g. .*) return empty instead of erroring
+			_cli_shell_is_zsh && setopt localoptions null_glob
 			if [ -z "$word" ]; then
 				word="."
 			fi
@@ -2208,6 +2380,63 @@ _cli_print_usage() {
 		echo "$msg"
 	fi
 	echo "execute '$__CLI_PROGNAME ?' or '$__CLI_PROGNAME -h' to display available commands"
+}
+
+# Safe execution: tokenize and exec for simple commands,
+# fall back to eval for commands with shell metacharacters.
+_cli_execute_safe() {
+	local cmd_expr="$1"
+	shift
+	local -a user_args=("$@")
+
+	# Check for shell metacharacters
+	if [[ "$cmd_expr" == *'|'* ]] || [[ "$cmd_expr" == *'>'* ]] || \
+	   [[ "$cmd_expr" == *'<'* ]] || [[ "$cmd_expr" == *'&&'* ]] || \
+	   [[ "$cmd_expr" == *'||'* ]] || [[ "$cmd_expr" == *';'* ]]; then
+		# Shell syntax — fall back to eval (backwards compatible)
+		eval $cmd_expr ${user_args[*]}
+		return $?
+	fi
+
+	# No metacharacters — tokenize and exec (no eval)
+	local -a tokens
+	local token=""
+	local in_quote=""
+	local i
+	for (( i=0; i<${#cmd_expr}; i++ )); do
+		local ch="${cmd_expr:$i:1}"
+		if [ -n "$in_quote" ]; then
+			if [ "$ch" = "$in_quote" ]; then
+				in_quote=""
+			else
+				token="$token$ch"
+			fi
+		elif [ "$ch" = '"' ] || [ "$ch" = "'" ]; then
+			in_quote="$ch"
+		elif [ "$ch" = ' ' ] || [ "$ch" = $'\t' ]; then
+			if [ -n "$token" ]; then
+				tokens+=("$token")
+				token=""
+			fi
+		else
+			token="$token$ch"
+		fi
+	done
+	if [ -n "$token" ]; then
+		tokens+=("$token")
+	fi
+
+	# Append user args
+	for arg in "${user_args[@]}"; do
+		tokens+=("$arg")
+	done
+
+	if [ ${#tokens[@]} -eq 0 ]; then
+		return 0
+	fi
+
+	# shellcheck disable=SC2294
+	eval "${tokens[@]}"
 }
 
 _cli_execute_command() {
@@ -2378,7 +2607,7 @@ _cli_execute_command() {
 						cmd_expr=${cmd_expr//\\$i/${arg}} 
 						_cli_log 4 "inserting arg: \\$i: $arg"
 							
-						args=("${args[@]:1:${#args[@]}-1}")
+						args=("${args[@]:1}")
 					fi
 					i=$((i+1))
 				done
@@ -2397,12 +2626,13 @@ _cli_execute_command() {
 						fi
 					fi
 				fi
-				_cli_error "Executing command \"$cmd\" --> $cmd_expr $args" 
+				_cli_error "Executing command \"$cmd\" --> $cmd_expr $args"
 				
-				# execute
+				# execute via safe exec (tokenized exec for simple commands,
+				# falls back to eval for pipes/redirects/chaining)
 				_cli_log 1 "executing: $cmd_expr ${args[*]}"
 				set -o noglob
-				eval $cmd_expr ${args[*]}
+				_cli_execute_safe "$cmd_expr" "${args[@]}"
 				exit_code=$?
 				set +o noglob
 				_cli_log 1 "command exit code: $exit_code"
@@ -2451,7 +2681,7 @@ _cli_complete_command() {
 	fi
 
 	_cli_log 4 "pos: $pos, word: $word, line: $line"
-	while read cmd; do
+	while read -r cmd; do
 		# create array to extract word at position
 		if _cli_shell_is_zsh; then
 		  # shellcheck disable=SC2296
@@ -2538,11 +2768,11 @@ _cli_complete_arg() {
 
 	# command has no args
 	_cli_load_completion_vars "$cmd"
-	if [ "$__CMD_EXEC" = "" ]; then
+	if [ "$__CMD" = "" ]; then
 		return
 	fi
 
-	_cli_log 4 "__CMD_EXEC=$__CMD_EXEC"
+	_cli_log 4 "__CMD=$__CMD"
 
 	_cli_log 4 "$pos, $word, cmd: '$cmd'"
 	if [ "$word" = "empty" ]; then
@@ -2584,14 +2814,18 @@ _cli_complete_arg() {
 			description="string argument"
 			;;
 		list)
-			# starting with "$" means
-			if [[ "$arg_list" =~ ^\$ ]]; then
+			# starting with "$" means variable reference
+			if [[ "$arg_list" == '$'* ]]; then
 				# variable
 				_cli_log 4 "var arg_list: ${arg_list//\$/}"
 				var_name="${arg_list//\$/}"
 				if _cli_is_env_var_defined "$var_name"; then
 					_cli_log 4 "var is defined"
-					arg_list=$(eval echo $arg_list)
+					if _cli_shell_is_zsh; then
+						arg_list="${(P)var_name}"
+					else
+						arg_list="${!var_name}"
+					fi
 					_cli_compgen -W "$arg_list" "$word"
 				else
 					_cli_log 4 "var is not defined"
@@ -2752,7 +2986,11 @@ _cli_complete_()
 	_cli_open_logfile
 	_cli_read_awk_script
 	_cli_load_config_environment
-	_cli_load_command_word_functions
+	
+	# Read command structure first (no &function calls needed)
+	_cli_read_command_structure
+	
+	# Read command list - will be expanded later if needed
 	_cli_read_command_list
 
 	if _cli_shell_is_bash; then
@@ -2773,14 +3011,16 @@ _cli_complete_()
 	_cli_log 4 "COMP_CWORD: $COMP_CWORD"
 	_cli_log 4 "COMP_WORDS[*]: ${COMP_WORDS[*]}"
 	
-	# remove first word
+	# remove first word (program name)
 	if _cli_shell_is_zsh; then
 	  # shellcheck disable=SC2296
 		a_line=("${(z)line}")
+		a_line=("${a_line[@]:1}")
 	else
-		read -a a_line <<<"$line"
+		# Use COMP_WORDS directly — already correctly parsed by bash.
+		# Parsing COMP_LINE via read -a breaks on unescaped spaces.
+		a_line=("${COMP_WORDS[@]:1}")
 	fi
-	a_line=("${a_line[@]:1:${#a_line[@]}-1}")
 	_cli_log 4 "line: '$line'"
 		
 	_cli_log 4 "line: '${a_line[*]}'"
@@ -2790,12 +3030,35 @@ _cli_complete_()
 	fi
 	
 	if [ "$COMP_CWORD" -eq 1 ] && [ "$word" != "" ]; then
-		# first word can be handled more efficiently
-		COMPREPLY=($(_cli_getfirstwords "$word"))
+		# first word: need all &functions expanded for command names
+		_cli_load_command_word_functions
+		_cli_read_command_list
+		if _cli_shell_is_zsh; then
+			# shellcheck disable=SC2296
+			COMPREPLY=("${(@f)$(_cli_getfirstwords "$word")}")
+		else
+			mapfile -t COMPREPLY < <(_cli_getfirstwords "$word")
+		fi
 	elif [ "$COMP_CWORD" -gt 1 ] || [ "$word" != "" ]; then
 		local -a a_complete_cmd
 		local cmd_word_count
 		local line_word_count
+
+		# Two-phase completion: match static prefix first, then call only relevant &functions
+		local _matched_funcs=""
+		if _cli_match_command_with_structure "${a_line[*]}"; then
+			if [ -n "$__CLI_CMD_DYNAMIC_FUNC" ]; then
+				_matched_funcs="$__CLI_CMD_DYNAMIC_FUNC"
+			fi
+		fi
+		# Load only the &functions needed for this command (or all if none matched)
+		if [ -n "$_matched_funcs" ]; then
+			_cli_load_command_word_functions_filtered "$_matched_funcs"
+		else
+			_cli_load_command_word_functions
+		fi
+		# Re-read command list with &function results available
+		_cli_read_command_list
 
 		if _cli_is_command_complete "${a_line[*]}"; then
 			if _cli_shell_is_zsh; then
@@ -2818,7 +3081,17 @@ _cli_complete_()
 				local arg_pos=$((line_word_count - cmd_word_count))
 				_cli_load_completion_vars "$__CLI_CMD_WORDS"
 				__CLI_DESC="${__CMD_ARG_DESC[$arg_pos]}"
-				COMPREPLY=($(_cli_complete_arg "$arg_pos" "$word" "$__CLI_CMD_WORDS"))
+				if _cli_shell_is_zsh; then
+					# shellcheck disable=SC2296
+					COMPREPLY=("${(@f)$(_cli_complete_arg "$arg_pos" "$word" "$__CLI_CMD_WORDS")}")
+				else
+					mapfile -t COMPREPLY < <(_cli_complete_arg "$arg_pos" "$word" "$__CLI_CMD_WORDS")
+					# Tell readline to handle filename quoting (spaces, special chars)
+					local _arg_type="${__CMD_ARG_TYPE[$arg_pos]%%\?}"
+					case "$_arg_type" in
+						FILE|DIR) compopt -o filenames 2>/dev/null ;;
+					esac
+				fi
 				# append [description] to arg completions for zsh
 				if _cli_shell_is_zsh && [ "${#COMPREPLY[@]}" -gt 0 ]; then
 					local _arg_desc="$__CLI_DESC"
@@ -3015,6 +3288,23 @@ _cli_load_command_word_functions() {
 	done <<< "$funcs"
 }
 
+# Load only specific &functions (scoped loading)
+_cli_load_command_word_functions_filtered() {
+	local funcs="$1"
+	local fun
+	[ -z "$funcs" ] && return
+	for fun in $funcs; do
+		[ -z "$fun" ] && continue
+		_cli_log 4 "mapping filtered function $fun results to environment"
+		if declare -f -p "$fun" 1>/dev/null 2>/dev/null; then
+			_cli_map_function_output_to_env_var "$fun"
+		else
+			_cli_error
+			_cli_error "CLI warning: command word function '$fun' used in configuration, but is not available"
+		fi
+	done
+}
+
 _cli_execute() {
 	if _cli_shell_is_zsh; then
 		if [ ! -z "${COMP_WORDS[1]}" ]; then
@@ -3060,10 +3350,40 @@ _cli_execute() {
 	# 106ms after removing more subshell calls
 	# 20ms after removing even more
 	_cli_load_config_environment "$batch_mode"
-	# 36ms
-	# 30ms
-	# 12ms
-	_cli_load_command_word_functions
+	
+	# Read command structure first (no &function calls needed)
+	_cli_read_command_structure
+	
+	# Parse command args early to determine which command is being executed
+	local _early_cmd_args=""
+	for _early_arg in "$@"; do
+		case $_early_arg in
+		-b|--batch|--cli-print-awk-script|--cli-print-env|--cli-run-awk-command|--version)
+			# skip flags
+			;;
+		*)
+			if [ "$_early_cmd_args" = "" ]; then
+				_early_cmd_args="$_early_arg"
+			else
+				_early_cmd_args="$_early_cmd_args $_early_arg"
+			fi
+			;;
+		esac
+	done
+	
+	# Two-phase: match command and load only relevant &functions
+	local _matched_funcs=""
+	if [ -n "$_early_cmd_args" ] && _cli_match_command_with_structure "$_early_cmd_args"; then
+		if [ -n "$__CLI_CMD_DYNAMIC_FUNC" ]; then
+			_matched_funcs="$__CLI_CMD_DYNAMIC_FUNC"
+		fi
+	fi
+	if [ -n "$_matched_funcs" ]; then
+		_cli_load_command_word_functions_filtered "$_matched_funcs"
+	else
+		_cli_load_command_word_functions
+	fi
+	
 	# 18ms
 	# 12ms
 	_cli_read_command_list
@@ -3171,7 +3491,7 @@ if ! _cli_is_sourced; then
 		echo "    source ~/bin/yourcli"
 		echo "    alias yourcli='_cli_execute'"
 		echo
-		_cli_close_logfile
+		_cli_close_logfile 2>/dev/null || true
 		exit 49
 	fi
 	_cli_execute "$@"
