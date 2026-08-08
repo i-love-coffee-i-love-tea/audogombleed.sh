@@ -508,6 +508,44 @@ _cli_map_function_output_to_env_var() {
     export "_cli_${FUNC_TO_CALL}_result=$("$FUNC_TO_CALL")"
 }
 
+# Combined init: command structure + word function names in one AWK pass
+# (commands list is still read separately via _cli_read_command_list)
+_cli_completion_init() {
+	local _cfg_file
+	_cli_global_val CONFIG_FILE _cfg_file
+	local _cfg_mtime
+	_cfg_mtime=$(_cli_mtime "$_cfg_file")
+
+	# If both are already cached, skip
+	if [ "$_cfg_mtime" = "$__CLI_COMP_INIT_MTIME" ] && \
+	   [ -n "$__CLI_CMD_STRUCT" ] && \
+	   [ -n "$__CLI_CMD_FUNCS_CACHED" ]; then
+		_cli_log 4 "using cached completion init"
+		return
+	fi
+
+	local _output
+	_output="$(_awk output=completion_init)"
+
+	# Split on markers using string manipulation (faster than bash loop)
+	local _funcs _struct
+	_funcs="${_output#*===word_functions===}"
+	_funcs="${_funcs%%===structure===*}"
+	_struct="${_output#*===structure===}"
+	# Trim trailing newlines
+	_funcs="${_funcs%"${_funcs##*[![:space:]]}"}"
+	_struct="${_struct%"${_struct##*[![:space:]]}"}"
+
+	# Populate cache variables
+	__CLI_CMD_FUNCS_CACHED="$_funcs"
+	__CLI_CMD_STRUCT="$_struct"
+
+	# Set mtime stamps
+	__CLI_COMP_INIT_MTIME="$_cfg_mtime"
+	__CLI_CMD_STRUCT_MTIME="$_cfg_mtime"
+	__CLI_CMD_FUNCS_MTIME="$_cfg_mtime"
+}
+
 _cli_read_awk_script() {
 	# Cache: skip if already read
 	[ ${#__CLI_AWK_SCRIPT} -gt 0 ] && return
@@ -594,6 +632,11 @@ BEGIN {
 	pending_section_heading=""
 	global_help_header=""
 	global_header_closed=0
+
+	# completion_init support: store outputs in arrays instead of printing
+	clear_array(word_functions_list)
+	clear_array(struct_names_list)
+	cwf_idx=0; sn_idx=0
 
 	# POSIX: no PROCINFO; ordered iteration via _for_seq helper
 
@@ -714,13 +757,18 @@ BEGIN {
 			cache_command_names()
 			clear_command_vars_for_next_command()
 		}
-		if (output_type == "command_word_functions") {
+		if (output_type == "command_word_functions" || output_type == "completion_init") {
 			if (type == "command") {
 				if (is_function_command($1)) {
 					_cwf = $1
 					sub(/^&/, "", _cwf)
 					sub(/:.*/, "", _cwf)
-					print _cwf
+					if (output_type == "completion_init") {
+						cwf_idx++
+						word_functions_list[cwf_idx] = _cwf
+					} else {
+						print _cwf
+					}
 				}
 			}	
 		}
@@ -1136,6 +1184,16 @@ END {
 			}
 		}
 	}
+	if (output_type == "completion_init") {
+		if (fullcmd != "") {
+			cache_command_names()
+			clear_command_vars_for_next_command()
+		}
+		print "===word_functions==="
+		i=1; while (i in word_functions_list) { print word_functions_list[i]; i++ }
+		print "===structure==="
+		i=1; while (i in struct_names_list) { print struct_names_list[i]; i++ }
+	}
 }
 
 # formats all words of all commands in all_command_names
@@ -1418,7 +1476,7 @@ function cache_command_names() {
 	# remove leading whitespace and trailing colon
 	sub(/^[ \t]+/, "", fullcmd)
 	sub(/:$/, "", fullcmd)
-	if (output_type == "command_names" || output_type == "help") {
+	if (output_type == "command_names" || output_type == "help" || output_type == "completion_init") {
 	    # create a list of all commands
 	    split(fullcmd, cmdparts, " ")
 	    last_word=cmdparts[length(cmdparts)]
@@ -1446,6 +1504,11 @@ function cache_command_names() {
 	if (output_type == "command_structure") {
 	    command_names_index++;
 	    command_names[command_names_index]=fullcmd
+	}
+	# completion_init: store unexpanded for structure section
+	if (output_type == "completion_init") {
+	    sn_idx++;
+	    struct_names_list[sn_idx]=fullcmd
 	}
 }
 
@@ -1624,10 +1687,14 @@ _awk() {
 		return
 	fi
 
-	local _cfg_file
+	local _cfg_file _cfg_mtime
 	_cli_global_val CONFIG_FILE _cfg_file
-	if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
-		return 1
+	_cfg_mtime=$(_cli_mtime "$_cfg_file")
+	if [ "$_cfg_mtime" != "$__CLI_PERMS_VALID_MTIME" ]; then
+		if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
+			return 1
+		fi
+		__CLI_PERMS_VALID_MTIME="$_cfg_mtime"
 	fi
 	# Open FD4 at check time to prevent TOCTOU race (file could be swapped between check and read)
 	exec 4< "$_cfg_file"
@@ -1766,6 +1833,20 @@ _cli_load_config_environment() {
 	_cli_global_val CFG_EXEC_SILENT prev_cli_silent
 	line_nr=1
 
+	# Extract [env] section lines in bash (avoids AWK fork)
+	local _cfg_file
+	_cli_global_val CONFIG_FILE _cfg_file
+	if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
+		return
+	fi
+	local _in_env=0
+	local _env_lines=""
+	while IFS= read -r _raw_line; do
+		[[ "$_raw_line" == "[env]" ]] && _in_env=1 && continue
+		[[ "$_raw_line" == "[commands]" ]] && break
+		[[ "$_in_env" -eq 1 ]] && _env_lines="${_env_lines}${_raw_line}"$'\n'
+	done < "$_cfg_file"
+
 	while read -r env_line; do
 		_cli_log 4 "$env_line"
 		first_word="${env_line%% *}"
@@ -1862,14 +1943,9 @@ $env_line"
 			fi
 		fi
 		line_nr=$((line_nr + 1))
-	done < <(_awk output=env)
+	done <<< "$_env_lines"
 
 	if [ ! -z "$script" ]; then
-		local _cfg_file
-		_cli_global_val CONFIG_FILE _cfg_file
-		if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
-			return
-		fi
 		source <(printf '%s\n' "$script")
 	fi
 
@@ -3042,10 +3118,10 @@ _cli_complete_()
 	_cli_read_awk_script
 	_cli_load_config_environment
 	
-	# Read command structure first (no &function calls needed)
-	_cli_read_command_structure
+	# Combined init: structure + word function names in one AWK pass
+	_cli_completion_init
 	
-	# Read command list - will be expanded later if needed
+	# Read command list (separate pass — includes dynamic expansion)
 	_cli_read_command_list
 
 	if _cli_shell_is_bash; then
@@ -3406,8 +3482,8 @@ _cli_execute() {
 	# 20ms after removing even more
 	_cli_load_config_environment "$batch_mode"
 	
-	# Read command structure first (no &function calls needed)
-	_cli_read_command_structure
+	# Combined init: structure + word function names in one AWK pass
+	_cli_completion_init
 	
 	# Parse command args early to determine which command is being executed
 	local _early_cmd_args=""
