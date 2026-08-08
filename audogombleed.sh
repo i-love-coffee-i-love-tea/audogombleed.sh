@@ -67,6 +67,9 @@
 #	
 __CLI_VERSION="1.3.0"
 
+# Cache uname once at source time — avoids subprocess fork in every stat call
+__CLI_UNAME="$(uname)"
+
 # Prefer gawk over system awk (BWK on macOS) when available.
 # Exported so subshells and tests can inspect the choice.
 _cli_detect_awk() {
@@ -106,7 +109,7 @@ _cli_shell_is_zsh() {
 
 # Portable file modification time (works on Linux and macOS)
 _cli_mtime() {
-	if [ "$(uname)" = "Darwin" ]; then
+	if [ "$__CLI_UNAME" = "Darwin" ]; then
 		stat -f %m "$1" 2>/dev/null
 	else
 		stat -c %Y "$1" 2>/dev/null
@@ -114,7 +117,7 @@ _cli_mtime() {
 }
 # Portable file permissions in octal (e.g. 644)
 _cli_stat_perms() {
-	if [ "$(uname)" = "Darwin" ]; then
+	if [ "$__CLI_UNAME" = "Darwin" ]; then
 		stat -L -f '%p' "$1" 2>/dev/null
 	else
 		stat -L -c '%a' "$1" 2>/dev/null
@@ -122,7 +125,7 @@ _cli_stat_perms() {
 }
 # Portable file owner uid
 _cli_stat_uid() {
-	if [ "$(uname)" = "Darwin" ]; then
+	if [ "$__CLI_UNAME" = "Darwin" ]; then
 		stat -L -f '%u' "$1" 2>/dev/null
 	else
 		stat -L -c '%u' "$1" 2>/dev/null
@@ -195,6 +198,17 @@ _cli_global() {
 	fi
 }
 
+# Fast variant: writes value into caller's variable (no subshell needed).
+# Usage: _cli_global_val CONFIG_FILE _result  →  $_result has the value
+_cli_global_val() {
+	local _gv_name=__CLI_${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}_$1
+	if _cli_shell_is_zsh; then
+		printf -v "$2" '%s' "${(P)_gv_name}"
+	else
+		printf -v "$2" '%s' "${!_gv_name}"
+	fi
+}
+
 _cli_global_is_set() {
 	local var_name="$1"
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
@@ -259,7 +273,7 @@ _cli_check_file_permissions() {
 	# check if it's a symlink and validate the target
 	if [ -L "$file" ]; then
 		local target
-		if [ "$(uname)" = "Darwin" ]; then
+		if [ "$__CLI_UNAME" = "Darwin" ]; then
 			target=$(perl -e "use Cwd 'abs_path'; print abs_path('$file')" 2>/dev/null)
 		else
 			target=$(readlink -f "$file" 2>/dev/null)
@@ -272,7 +286,9 @@ _cli_check_file_permissions() {
 			_cli_error "config error: $context '$file' symlink target '$target' is not a regular file"
 			return 1
 		fi
-		if [ "$(_cli_stat_perms "$target" | cut -c3)" = "7" ]; then
+		local target_perms
+		target_perms=$(_cli_stat_perms "$target")
+		if [ -n "$target_perms" ] && [ "${target_perms:2:1}" = "7" ]; then
 			_cli_error "config error: $context '$file' symlink target '$target' is world-writable"
 			return 1
 		fi
@@ -281,7 +297,7 @@ _cli_check_file_permissions() {
 	# not world-writable (use -L to follow symlinks to the target's permissions)
 	local perms
 	perms=$(_cli_stat_perms "$file")
-	if [ -n "$perms" ] && [ "$(echo "$perms" | cut -c3)" = "7" ]; then
+	if [ -n "$perms" ] && [ "${perms:2:1}" = "7" ]; then
 		_cli_error "config error: $context '$file' is world-writable (mode $perms)"
 		return 1
 	fi
@@ -414,18 +430,25 @@ _cli_open_logfile() {
 		return
 	fi
 
-	local logfile tmpfile
-	tmpfile=$(mktemp "/tmp/cli-XXXXXXXX" 2>/dev/null)
-	if [ -z "$tmpfile" ]; then
+	local logfile shell_name
+	# Inline shell name detection (avoids subshell)
+	shell_name=""
+	_cli_shell_is_bash && shell_name="-bash"
+	_cli_shell_is_zsh && shell_name="-zsh"
+	# Create log file atomically — mktemp with template including shell name
+	logfile=$(mktemp "/tmp/cli-XXXXXXXX${shell_name}.log" 2>/dev/null)
+	if [ -z "$logfile" ]; then
 		_cli_global CFG_LOG_LEVEL "0"
 		return
 	fi
-	logfile="${tmpfile}$(_cli_get_shell_name).log"
-	mv "$tmpfile" "$logfile"
 	chmod 600 "$logfile" 2>/dev/null
 	if exec 3>"$logfile";  then
 		_cli_global LOG_OPENED "0"
-		_cli_log 1 ">>>>>>>>>>>>>> file opened $(date +'%X %S.%N' ) >>>>>>>>>>>>>>>>"
+		if _cli_shell_is_bash; then
+			_cli_log 1 ">>>>>>>>>>>>>> file opened $(printf '%(%X)T' -1) >>>>>>>>>>>>>>>>"
+		else
+			_cli_log 1 ">>>>>>>>>>>>>> file opened $(date +'%X') >>>>>>>>>>>>>>>>"
+		fi
 		_cli_log 1 "cli script: $__CLI_PROGNAME"
 	fi
 }
@@ -434,16 +457,20 @@ _cli_close_logfile() {
 	if ! _cli_global_equals LOG_OPENED "0"; then
 		return
 	fi
-	_cli_log 1 "<<<<<<<<<<<<<< file closed $(date +'%X %S.%N')  <<<<<<<<<<<<<<<<"
+	if _cli_shell_is_bash; then
+		_cli_log 1 "<<<<<<<<<<<<<< file closed $(printf '%(%X)T' -1) <<<<<<<<<<<<<<<<"
+	else
+		_cli_log 1 "<<<<<<<<<<<<<< file closed $(date +'%X') <<<<<<<<<<<<<<<<"
+	fi
 	exec 3>&-
 	_cli_global LOG_OPENED 1
 }
 
 _cli_read_command_list() {
-	_cli_log 1 "config file: $(_cli_global CONFIG_FILE)"
 	# Cache: skip if config file hasn't changed
 	local _cfg_file
-	_cfg_file="$(_cli_global CONFIG_FILE)"
+	_cli_global_val CONFIG_FILE _cfg_file
+	_cli_log 1 "config file: $_cfg_file"
 	local _cfg_mtime
 	_cfg_mtime=$(_cli_mtime "$_cfg_file")
 	if [ "$_cfg_mtime" = "$__CLI_CONFIG_MTIME" ] && [ "${#__CLI_CONFIG[@]}" -gt 0 ]; then
@@ -464,7 +491,7 @@ _cli_read_command_list() {
 # Read command structure with dynamic placeholders preserved (no &function calls)
 _cli_read_command_structure() {
 	local _cfg_file
-	_cfg_file="$(_cli_global CONFIG_FILE)"
+	_cli_global_val CONFIG_FILE _cfg_file
 	local _cfg_mtime
 	_cfg_mtime=$(_cli_mtime "$_cfg_file")
 	if [ "$_cfg_mtime" = "$__CLI_CMD_STRUCT_MTIME" ] && [ -n "$__CLI_CMD_STRUCT" ]; then
@@ -1598,7 +1625,7 @@ _awk() {
 	fi
 
 	local _cfg_file
-	_cfg_file="$(_cli_global CONFIG_FILE)"
+	_cli_global_val CONFIG_FILE _cfg_file
 	if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
 		return 1
 	fi
@@ -1678,11 +1705,18 @@ _cli_getmatchingcommands() {
 _cli_count_matching_commands() {
 	local cmdline="$1"
 	local n=0
-	local l
+	local l cmd_part
+	__CLI_EXACT_MATCH=0
    	for l in "${__CLI_CONFIG[@]}"; do
-		if [[ "$l" =~ ^"$cmdline" ]]; then
-			n=$((n + 1))	
-			_cli_log 4 "matching command: $cmdline, $n" 
+		if [[ "$l" == "$cmdline"* ]]; then
+			n=$((n + 1))
+			# Check exact match inline to avoid second pass
+			if [ "$__CLI_EXACT_MATCH" -eq 0 ]; then
+				cmd_part="${l%%,*}"
+				cmd_part="${cmd_part%"${cmd_part##*[![:space:]]}"}"
+				[ "$cmd_part" = "$cmdline" ] && __CLI_EXACT_MATCH=1
+			fi
+			_cli_log 4 "matching command: $cmdline, $n"
 		fi	
 	done
 	# misusing return code here, to avoid having
@@ -1693,7 +1727,17 @@ _cli_count_matching_commands() {
 
 _cli_command_is_exact_match() {
 	local cmdline="$1"
-	_awk output=commands command_filter="$cmdline" > /dev/null
+	local l cmd_part
+	for l in "${__CLI_CONFIG[@]}"; do
+		# config format: "command                 , args, expr"
+		# extract command part (everything before first comma, trimmed)
+		cmd_part="${l%%,*}"
+		cmd_part="${cmd_part%"${cmd_part##*[![:space:]]}"}"
+		if [ "$cmd_part" = "$cmdline" ]; then
+			return 0
+		fi
+	done
+	return 1
 }
 
 _cli_load_completion_vars() {
@@ -1718,8 +1762,8 @@ _cli_load_config_environment() {
 	local prev_cli_silent
 
 	cli_silent_arg=$1
-	prev_log_level=$(_cli_global CFG_LOG_LEVEL)
-	prev_cli_silent=$(_cli_global CFG_EXEC_SILENT)
+	_cli_global_val CFG_LOG_LEVEL prev_log_level
+	_cli_global_val CFG_EXEC_SILENT prev_cli_silent
 	line_nr=1
 
 	while read -r env_line; do
@@ -1822,7 +1866,7 @@ $env_line"
 
 	if [ ! -z "$script" ]; then
 		local _cfg_file
-		_cfg_file="$(_cli_global CONFIG_FILE)"
+		_cli_global_val CONFIG_FILE _cfg_file
 		if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
 			return
 		fi
@@ -1839,13 +1883,15 @@ $env_line"
 
 	# log level changed by config?
 	if ! _cli_global_equals CFG_LOG_LEVEL "$prev_log_level"; then
-		_cli_log 1 "__CLI_CFG_LOG_LEVEL set to $(_cli_global CFG_LOG_LEVEL) by config. was $prev_log_level"
-		if [ "$(_cli_global CFG_LOG_LEVEL)" -gt 0 ] && [ "$prev_log_level" -lt 1 ]; then
+		local _cur_log_level
+		_cli_global_val CFG_LOG_LEVEL _cur_log_level
+		_cli_log 1 "__CLI_CFG_LOG_LEVEL set to $_cur_log_level by config. was $prev_log_level"
+		if [ "$_cur_log_level" -gt 0 ] && [ "$prev_log_level" -lt 1 ]; then
 			# log enabled
 			_cli_open_logfile
 		elif _cli_global_equals CFG_LOG_LEVEL "0" && [ "$prev_log_level" != "0" ]; then
 			# log disabled
-            newlevel=$(_cli_global CFG_LOG_LEVEL)
+            newlevel=$_cur_log_level
             #export __CLI_CFG_LOG_LEVEL=1
 			_cli_global CFG_LOG_LEVEL 1
 			_cli_close_logfile	
@@ -1881,7 +1927,8 @@ _cli_is_command_complete() {
         match_count=$?
         _cli_log 4 "$line, match_count=$match_count"
         if [ "$match_count" -eq 1 ]; then
-            if _cli_command_is_exact_match "$line"; then
+            # __CLI_EXACT_MATCH is set by _cli_count_matching_commands
+            if [ "$__CLI_EXACT_MATCH" -eq 1 ]; then
                 is_complete=0
                 cmd="$line"
             fi
@@ -2010,10 +2057,14 @@ _cli_match_command_with_structure() {
 
 _cli_get_command_args() {
 	local cmd="$1"
-	local l w
+	local l _rest _args w
 	for l in "${__CLI_CONFIG[@]}"; do
 		if [[ "$l" =~ ^${cmd} ]]; then
-			for w in $(printf '%s\n' "$l" | _cli_cut 2 ,); do
+			# Extract 2nd comma-field: "cmd , args, expr" → "args"
+			_rest="${l#*,}"
+			_args="${_rest%%,*}"
+			_args="${_args#"${_args%%[![:space:]]*}"}"
+			for w in $_args; do
 				printf '%s\n' "$w"
 			done
 			break
@@ -2144,12 +2195,16 @@ _cli_uniq_col() {
 
 _cli_get_command_expr() {
 	local cmd="$1"
-	local l
+	local l _rest _rest2 _expr
 	_cli_log 4 "cmd: $cmd"
 	for l in "${__CLI_CONFIG[@]}"; do
 		if [[ "$l" =~ ^"$cmd" ]]; then
-			printf '%s\n' "$l" | cut -f3 -d,  
-			_cli_log 4 "cmd expr: $(printf '%s\n' "$l" | cut -f 3 -d,)"
+			# Extract 3rd comma-field: "cmd , args, expr" → "expr"
+			_rest="${l#*,}"
+			_rest2="${_rest#*,}"
+			_expr="${_rest2#"${_rest2%%[![:space:]]*}"}"
+			printf '%s\n' "$_expr"
+			_cli_log 4 "cmd expr: $_expr"
 			break
 		fi
 	done
@@ -3265,7 +3320,7 @@ _cli_load_command_word_functions() {
 	local funcs
 	# Cache: reuse function list if config hasn't changed
 	local _cfg_file
-	_cfg_file="$(_cli_global CONFIG_FILE)"
+	_cli_global_val CONFIG_FILE _cfg_file
 	local _cfg_mtime
 	_cfg_mtime=$(_cli_mtime "$_cfg_file")
 	if [ "$_cfg_mtime" = "$__CLI_CMD_FUNCS_MTIME" ] && [ -n "$__CLI_CMD_FUNCS_CACHED" ]; then
