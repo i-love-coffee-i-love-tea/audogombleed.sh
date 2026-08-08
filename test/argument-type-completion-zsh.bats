@@ -91,6 +91,18 @@ setup() {
     rm -f /tmp/test-file-arg-type-zsh.txt
 }
 
+@test "zsh: FILE argument completion includes filenames with spaces" {
+    mkdir -p /tmp/test-completion-spaces-zsh
+    touch "/tmp/test-completion-spaces-zsh/my file.txt"
+    touch "/tmp/test-completion-spaces-zsh/normal.txt"
+    result="$(_zsh_complete testcli test-file-zsh /tmp/test-completion-spaces-zsh/)"
+    # Files with spaces should appear in completions
+    [[ "$result" == *"my file.txt"* ]]
+    # Normal files should also appear
+    [[ "$result" == *"normal.txt"* ]]
+    rm -rf /tmp/test-completion-spaces-zsh
+}
+
 # --- DIR ---
 
 @test "zsh: DIR argument execution passes directory path" {

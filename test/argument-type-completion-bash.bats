@@ -98,6 +98,19 @@ setup() {
     [ -n "$result" ]
 }
 
+@test "FILE argument completion includes filenames with spaces" {
+    load 'auto-completion-mock-setup'
+    mkdir -p /tmp/test-completion-spaces
+    touch "/tmp/test-completion-spaces/my file.txt"
+    touch "/tmp/test-completion-spaces/normal.txt"
+    result="$(test_completion 2 "testcli" "test-file" "/tmp/test-completion-spaces/")"
+    # Files with spaces should appear in completions (raw path, no literal quotes)
+    [[ "$result" == *"my file.txt"* ]]
+    # Normal files should also appear
+    [[ "$result" == *"normal.txt"* ]]
+    rm -rf /tmp/test-completion-spaces
+}
+
 # --- DIR ---
 
 @test "DIR argument execution passes directory path" {
