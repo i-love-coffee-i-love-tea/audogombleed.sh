@@ -47,6 +47,10 @@ test-blkdev: echo
 
 test-service: echo
     :svc:SERVICE
+
+file-then-string: echo
+    :file:FILE
+    :name:list:alpha|bravo|charlie
 EOF
 
     # Create SSH config for SSH_HOST tests
@@ -108,6 +112,54 @@ setup() {
     [[ "$result" == *"my file.txt"* ]]
     # Normal files should also appear
     [[ "$result" == *"normal.txt"* ]]
+    rm -rf /tmp/test-completion-spaces
+}
+
+@test "argument completion after file with spaces" {
+    mkdir -p /tmp/test-completion-spaces
+    touch "/tmp/test-completion-spaces/my file.txt"
+
+    result=$(bash -c '
+        source ./testcli
+        COMP_WORDS=(testcli file-then-string "/tmp/test-completion-spaces/my file.txt")
+        COMP_CWORD=3
+        COMP_LINE="testcli file-then-string /tmp/test-completion-spaces/my\\ file.txt"
+        _cli_complete_
+        echo "${COMPREPLY[*]}"
+    ')
+
+    echo "# debug result: $result" >&3
+
+    # Should complete the second argument (alpha|bravo|charlie)
+    [[ "$result" == *"alpha"* ]]
+    [[ "$result" == *"bravo"* ]]
+    [[ "$result" == *"charlie"* ]]
+
+    rm -rf /tmp/test-completion-spaces
+}
+
+@test "completion uses COMP_WORDS not COMP_LINE for arg parsing" {
+    mkdir -p /tmp/test-completion-spaces
+    touch "/tmp/test-completion-spaces/my file.txt"
+
+    # COMP_WORDS is correctly parsed by bash; COMP_LINE may have raw spaces.
+    # The code should use COMP_WORDS, not re-parse COMP_LINE.
+    result=$(bash -c '
+        source ./testcli
+        COMP_WORDS=(testcli file-then-string "/tmp/test-completion-spaces/my file.txt")
+        COMP_CWORD=3
+        COMP_LINE="testcli file-then-string /tmp/test-completion-spaces/my file.txt "
+        _cli_complete_
+        echo "${COMPREPLY[*]}"
+    ')
+
+    echo "# debug result: $result" >&3
+
+    # Should complete the second argument despite unescaped COMP_LINE
+    [[ "$result" == *"alpha"* ]]
+    [[ "$result" == *"bravo"* ]]
+    [[ "$result" == *"charlie"* ]]
+
     rm -rf /tmp/test-completion-spaces
 }
 

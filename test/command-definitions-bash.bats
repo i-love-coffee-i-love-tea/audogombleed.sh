@@ -8,10 +8,16 @@
 setup_file() {
     load 'common-setup'
     _common_setup __CLI_CFG_EXEC_SILENT="y"
+    # Create dummy script for maven commands
+    mkdir -p ~/bin
+    echo '#!/bin/sh' > ~/bin/install-maven-war.sh
+    echo 'echo "$@"' >> ~/bin/install-maven-war.sh
+    chmod +x ~/bin/install-maven-war.sh
 }
 teardown_file() {
     load 'common-teardown'
     _common_teardown
+    rm -f ~/bin/install-maven-war.sh
 }
 setup() {
 	load 'test_helper/bats-support/load'
@@ -69,7 +75,7 @@ setup() {
 	run ./testcli false
 	assert_failure
 }
-@test "arbitray exit status is returned correctly" {
+@test "arbitrary exit status is returned correctly" {
 	run ./testcli return2
 	assert_failure 2
 }
@@ -86,7 +92,7 @@ setup() {
 	assert_output '/some/file'
 }
 @test "complex tree structure commands are parsed correctly - 4" {
-	run ./testcli install war from file _coords_
+	run ./testcli install war from maven _coords_
 	assert_output '_coords_'
 }
 

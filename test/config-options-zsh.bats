@@ -18,17 +18,6 @@ setup() {
 	load 'zsh-helpers'
 }
 
-@test "zsh: executes command" {
-    run _zsh_run echo first second
-    assert_success
-    assert_output "second first"
-}
-
-@test "zsh: propagates exit code" {
-    run _zsh_run return2
-    assert_failure 2
-}
-
 @test "zsh: backslashes in config values are preserved" {
     cat > ~/.testcli.conf <<'CONF'
 [env]

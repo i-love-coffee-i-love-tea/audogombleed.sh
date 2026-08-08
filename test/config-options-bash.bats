@@ -17,21 +17,6 @@ setup() {
 	load 'test_helper/bats-assert/load'
 }
 
-@test "bash: executes command" {
-    load 'common-setup'
-    source ./testcli
-    run ./testcli echo first second
-    assert_success
-    assert_output "second first"
-}
-
-@test "bash: propagates exit code" {
-    load 'common-setup'
-    source ./testcli
-    run ./testcli return2
-    assert_failure 2
-}
-
 @test "bash: backslashes in config values are preserved" {
     cat > ~/.testcli.conf <<'CONF'
 [env]

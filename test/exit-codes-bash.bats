@@ -19,9 +19,8 @@ setup() {
 
 @test "exit code 49: script called with wrong name" {
     # When audogombleed.sh is called directly (not via symlink), it should exit 49
-    # Note: The actual exit code may vary based on environment, but the message should appear
     run ./audogombleed.sh
-    assert_failure
+    assert_failure 49
     assert_line "This script is not intended to be called directly."
 }
 

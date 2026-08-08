@@ -109,13 +109,6 @@ setup() {
 
 # --- command group help ---
 
-@test "bash: command group help shows sub-commands" {
-    run ./testcli alpha ?
-    assert_success
-    assert_line --partial "o[ne]"
-    assert_line --partial "t[wo]"
-}
-
 @test "bash: command group help shows sub-commands with bracket notation" {
     run ./testcli alpha ?
     assert_success

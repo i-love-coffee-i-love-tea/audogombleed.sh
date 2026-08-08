@@ -7,10 +7,16 @@
 setup_file() {
     load 'common-setup'
     _common_setup __CLI_CFG_EXEC_SILENT="y"
+    # Create dummy script for maven commands
+    mkdir -p ~/bin
+    echo '#!/bin/sh' > ~/bin/install-maven-war.sh
+    echo 'echo "$@"' >> ~/bin/install-maven-war.sh
+    chmod +x ~/bin/install-maven-war.sh
 }
 teardown_file() {
     load 'common-teardown'
     _common_teardown
+    rm -f ~/bin/install-maven-war.sh
 }
 setup() {
     load 'test_helper/bats-support/load'
@@ -89,7 +95,7 @@ setup() {
 }
 
 @test "zsh: complex tree structure commands are parsed correctly - 4" {
-    run _zsh_run install war from file _coords_
+    run _zsh_run install war from maven _coords_
     assert_output '_coords_'
 }
 

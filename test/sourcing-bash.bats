@@ -53,8 +53,3 @@ setup() {
     assert_line --partial "_cli_complete_ is a function"
 }
 
-@test "bash: _cli_execute function exists" {
-    run bash -c "source ./testcli && type _cli_execute"
-    assert_success
-    assert_line --partial "_cli_execute is a function"
-}

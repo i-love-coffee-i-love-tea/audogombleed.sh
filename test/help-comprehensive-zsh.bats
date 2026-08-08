@@ -110,13 +110,6 @@ setup() {
 
 # --- command group help ---
 
-@test "zsh: command group help shows sub-commands" {
-    run _zsh_run alpha ?
-    assert_success
-    assert_line --partial "o[ne]"
-    assert_line --partial "t[wo]"
-}
-
 @test "zsh: command group help shows sub-commands with bracket notation" {
     run _zsh_run alpha ?
     assert_success
