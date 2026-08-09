@@ -564,7 +564,7 @@ _cli_completion_init() {
 	# If both are already cached, skip
 	if [ "$_cfg_mtime" = "$__CLI_COMP_INIT_MTIME" ] && \
 	   [ -n "$__CLI_CMD_STRUCT" ] && \
-	   [ -n "$__CLI_CMD_FUNCS_CACHED" ]; then
+	   [ "${__CLI_CMD_FUNCS_LOADED:-0}" = "1" ]; then
 		_cli_log 4 "using cached completion init"
 		return
 	fi
