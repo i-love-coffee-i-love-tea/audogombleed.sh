@@ -77,6 +77,7 @@ if [ -n "$ZSH_VERSION" ]; then
 else
 	__CLI_IS_ZSH=0; __CLI_IS_BASH=1
 fi
+export __CLI_IS_ZSH __CLI_IS_BASH
 # Per-file stat cache — avoids repeated subprocess forks for the same file
 declare -A __CLI_STAT_MTIME 2>/dev/null
 declare -A __CLI_STAT_PERMS 2>/dev/null
@@ -572,6 +573,32 @@ _cli_completion_init() {
 	__CLI_CMD_STRUCT="$_struct"
 }
 
+# Lazy-load command descriptions (zsh only). Cached with mtime invalidation.
+_cli_load_cmd_descriptions() {
+	[ "$__CLI_IS_ZSH" != "1" ] && return
+	local _cfg_file
+	_cli_global_val CONFIG_FILE _cfg_file
+	local _cfg_mtime
+	_cfg_mtime=$(_cli_mtime "$_cfg_file")
+	if [ "$_cfg_mtime" = "$__CLI_CMD_DESC_MTIME" ] && [ "${__CLI_CMD_DESCRIPTIONS+_}" ]; then
+		return
+	fi
+	__CLI_CMD_DESC_MTIME="$_cfg_mtime"
+	unset __CLI_CMD_DESCRIPTIONS
+	declare -g -A __CLI_CMD_DESCRIPTIONS
+	local _output _line _cmd _d
+	_output="$(_awk output=cmd_descriptions)"
+	while IFS= read -r _line; do
+		[ -z "$_line" ] && continue
+		_cmd="${_line%%	*}"
+		_d="${_line#*	}"
+		[ "$_cmd" = "$_d" ] && continue
+		# Only store first value per key (multi-line comments produce duplicates)
+		[ -n "${__CLI_CMD_DESCRIPTIONS[$_cmd]+_}" ] && continue
+		__CLI_CMD_DESCRIPTIONS[$_cmd]="$_d"
+	done <<< "$_output"
+}
+
 _cli_read_awk_script() {
 	# Cache: skip if already read
 	[ ${#__CLI_AWK_SCRIPT} -gt 0 ] && return
@@ -824,10 +851,16 @@ BEGIN {
 # command group and command help for "all help" output (when filter is not set)
 /^[ \t]{0,}#[^#].*$/ {
 
-	if (cfg_section == "commands" && output_type == "help") {
+	if (cfg_section == "commands" && (output_type == "help" || output_type == "cmd_descriptions")) {
 		# top-level # (no indentation)
 		if ($0 ~ /^#[^#]/ && $0 !~ /^[ \t]/) {
-			if (global_header_closed == 0) {
+			if (output_type == "cmd_descriptions") {
+				# For cmd_descriptions: all comments go to cmd_help
+				_ch=$0; sub(/^[ \t]*#[ \t]?/, "", _ch)
+				cmd_help[cmd_help_index]=_ch
+				cmd_help_index++
+				global_header_closed = 1
+			} else if (global_header_closed == 0) {
 				# consecutive # lines at top of [commands] = global header
 				_ch=$0; sub(/^[ \t]*#[ \t]?/, "", _ch)
 				if (global_help_header == "") {
@@ -878,6 +911,11 @@ BEGIN {
 			} else {
 				fullcmd=cmd" "$1
 			}
+			# Flush any pending intermediate word help before caching this command
+			if (output_type == "cmd_descriptions" && pending_cmd != "") {
+				cache_cmd_help(pending_cmd)
+				pending_cmd=""
+			}
 			cache_cmd_help(fullcmd)
 			if (length(cmd_details_help) > 0) {
 				_fck=fullcmd; gsub(/:/, "", _fck)
@@ -916,7 +954,6 @@ BEGIN {
 			argind++
    		} else if (NF==1) {
 			# line containing a word belonging to command name tree
-			#printf "single word: %s\n", $1
 			if ( cmd == "" ) {
 				cmd=$1
 			} else {
@@ -925,7 +962,10 @@ BEGIN {
 			if (output_type == "help") { 
 				cache_cmd_help(cmd)
 				cache_cmd_details_help(cmd)
-			} 
+			}
+			if (output_type == "cmd_descriptions") {
+				cache_cmd_help(cmd)
+			}
 		}
 	}
 	type=""
@@ -1220,6 +1260,19 @@ END {
 		print "===structure==="
 		i=1; while (i in struct_names_list) { print struct_names_list[i]; i++ }
 	}
+	if (output_type == "cmd_descriptions") {
+		if (fullcmd != "") {
+			cache_cmd_help(fullcmd)
+			cache_command_names()
+			clear_command_vars_for_next_command()
+		}
+		for (key in cmd_help_by_cmd) {
+			split(key, _dk, SUBSEP)
+			_dk_val = cmd_help_by_cmd[key]
+			gsub(/"/, "\\\"", _dk_val)
+			print _dk[1] "\t" _dk_val
+		}
+	}
 }
 
 # formats all words of all commands in all_command_names
@@ -1502,7 +1555,7 @@ function cache_command_names() {
 	# remove leading whitespace and trailing colon
 	sub(/^[ \t]+/, "", fullcmd)
 	sub(/:$/, "", fullcmd)
-	if (output_type == "command_names" || output_type == "help" || output_type == "completion_init") {
+	if (output_type == "command_names" || output_type == "help" || output_type == "completion_init" || output_type == "cmd_descriptions") {
 	    # create a list of all commands
 	    split(fullcmd, cmdparts, " ")
 	    last_word=cmdparts[length(cmdparts)]
@@ -1640,6 +1693,29 @@ function cache_cmd_help(cmd) {
 				sub(/^[ \t]*#[ \t]*/, "", cmd_help_by_cmd[cmd, i])
 				i++
 			}
+		}
+	}
+	# Store descriptions for cmd_descriptions output mode
+	if (output_type == "cmd_descriptions") {
+		sub(/^[ \t]+/, "", cmd)
+		sub(/:.*$/, "", cmd)
+		# Strip dynamic word (last word starting with $ or & or containing |)
+		_cmd_nwords = split(cmd, _cmd_words, " ")
+		if (_cmd_nwords > 1) {
+			_last = _cmd_words[_cmd_nwords]
+			if (_last ~ "^\\$" || _last ~ "^&" || _last ~ "\\|") {
+				cmd = ""
+				for (_ci = 1; _ci < _cmd_nwords; _ci++) {
+					if (cmd == "") cmd = _cmd_words[_ci]
+					else cmd = cmd " " _cmd_words[_ci]
+				}
+			}
+		}
+		i=0
+		while (i in cmd_help) {
+			cmd_help_by_cmd[cmd, i] = cmd_help[i]
+			sub(/^[ \t]*#[ \t]*/, "", cmd_help_by_cmd[cmd, i])
+			i++
 		}
 	}
 	cmd_help_index=0
@@ -2280,6 +2356,7 @@ _cli_getfirstwords() {
 	# Use cached __CLI_CONFIG instead of spawning gawk subprocess
 	local -A _seen=()
 	local _l _cmd_part _first_word
+	_cli_load_cmd_descriptions
 	for _l in "${__CLI_CONFIG[@]}"; do
 		_cmd_part="${_l%%,*}"
 		_cmd_part="${_cmd_part%"${_cmd_part##*[![:space:]]}"}"
@@ -2288,7 +2365,11 @@ _cli_getfirstwords() {
 		_first_word="${_cmd_part%% *}"
 		[ -z "${_seen[$_first_word]+_}" ] || continue
 		_seen[$_first_word]=1
-		echo "$_first_word"
+		if [ "$__CLI_IS_ZSH" = "1" ] && [ -n "${__CLI_CMD_DESCRIPTIONS[$_first_word]+_}" ]; then
+			echo "${_first_word}[${__CLI_CMD_DESCRIPTIONS[$_first_word]}]"
+		else
+			echo "$_first_word"
+		fi
 	done
 }
 
@@ -2779,7 +2860,8 @@ _cli_complete_command() {
 
 	_cli_log 4 "pos: $pos, word: $word, line: $line"
 	# Use cached __CLI_CONFIG instead of spawning a gawk subprocess
-	local _l _cmd_part
+	_cli_load_cmd_descriptions
+	local _l _cmd_part _word _full_path
 	for _l in "${__CLI_CONFIG[@]}"; do
 		# extract command part (before first comma)
 		_cmd_part="${_l%%,*}"
@@ -2793,15 +2875,25 @@ _cli_complete_command() {
 			read -a a_cmd <<<"$_cmd_part"
 		fi
 		if [ -n "${a_cmd[$pos]}" ]; then
-			_cli_log 4 "adding ${a_cmd[$pos]}"
-			if ! [[ " ${COMPREPLY[*]} " =~ " ${a_cmd[$pos]} " ]]; then
-				COMPREPLY+=("${a_cmd[$pos]}")
+			_word="${a_cmd[$pos]}"
+			_cli_log 4 "adding $_word"
+			if ! [[ " ${COMPREPLY[*]} " =~ " $_word " ]]; then
+				if [ "$__CLI_IS_ZSH" = "1" ]; then
+					# Look up description: try full path first, then word alone
+					_full_path="${line} ${_word}"
+					if [ -n "${__CLI_CMD_DESCRIPTIONS[$_full_path]+_}" ]; then
+						COMPREPLY+=("${_word}[${__CLI_CMD_DESCRIPTIONS[$_full_path]}]")
+					elif [ -n "${__CLI_CMD_DESCRIPTIONS[$_word]+_}" ]; then
+						COMPREPLY+=("${_word}[${__CLI_CMD_DESCRIPTIONS[$_word]}]")
+					else
+						COMPREPLY+=("$_word")
+					fi
+				else
+					COMPREPLY+=("$_word")
+				fi
 			fi
 		fi
 	done
-
-	# Help-text descriptions for zsh are skipped for speed — the extra
-	# _awk output=help + grep/cut per word is the main bottleneck.
 }
 
 # Returns help-text lines for commands matching a filter.

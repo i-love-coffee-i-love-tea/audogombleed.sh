@@ -57,13 +57,13 @@ setup() {
 	assert_line "corporation"
 }
 
-# list args — first word
+# list args — first word (with descriptions)
 @test "zsh: list-argument first-word completion" {
     load 'auto-completion-mock-setup-zsh'
 	run test_completion_zsh 3 "testcli" "list-argument"
-	assert_line "static"
-	assert_line "from-function"
-	assert_line "from-variable"
+	assert_line --partial "static"
+	assert_line --partial "from-function"
+	assert_line --partial "from-variable"
 }
 
 # list args — static list with [description]

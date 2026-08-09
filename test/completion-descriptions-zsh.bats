@@ -21,7 +21,7 @@ setup() {
     load 'zsh-helpers'
 }
 
-@test "zsh completions: _cli_getfirstwords returns bare command names" {
+@test "zsh completions: _cli_getfirstwords includes descriptions" {
     run zsh -c '
         source ./testcli
         __CLI_PROGNAME="testcli"
@@ -35,9 +35,9 @@ setup() {
         _cli_close_logfile
     '
     assert_success
-    assert_line "var-expansion"
-    assert_line "list-argument"
-    assert_line "install"
+    assert_line --partial "var-expansion[demonstration of parameterized command word with variable]"
+    assert_line --partial "list-argument[demonstration of list argument types]"
+    assert_line --partial "install[example of deeper structure]"
 }
 
 @test "zsh completions: commands without description show bare name" {
@@ -54,13 +54,14 @@ setup() {
         _cli_close_logfile
     '
     assert_success
-    # echo, false, return2 have no group heading — bare names
-    assert_line "echo"
-    assert_line "false"
+    # return2 has no # comment — bare name
     assert_line "return2"
+    # echo and false have descriptions
+    assert_line --partial "echo[demonstration of positional argument expansion]"
+    assert_line --partial "false[example to test failing command exit code]"
 }
 
-@test "zsh completions: filtered first-word completion returns bare names" {
+@test "zsh completions: filtered first-word completion includes descriptions" {
     run zsh -c '
         source ./testcli
         __CLI_PROGNAME="testcli"
@@ -74,7 +75,7 @@ setup() {
         _cli_close_logfile
     '
     assert_success
-    assert_line "var-expansion"
+    assert_line --partial "var-expansion[demonstration of parameterized command word with variable]"
 }
 
 @test "zsh completions: _cli_complete_command includes descriptions" {
@@ -92,10 +93,30 @@ setup() {
         _cli_close_logfile
     '
     assert_success
-    # list-argument has subcommands: static, from-function, from-variable
-    assert_line --partial "static"
-    assert_line --partial "from-function"
-    assert_line --partial "from-variable"
+    # list-argument subcommands have # comments as descriptions
+    assert_line --partial "static[static arg list demo]"
+    assert_line --partial "from-function[arg list from function demo]"
+    assert_line --partial "from-variable[arg list from variable demo]"
+}
+
+@test "zsh completions: deeper-word descriptions work at 2+ levels" {
+    run zsh -c '
+        source ./testcli
+        __CLI_PROGNAME="testcli"
+        _cli_global CONFIG_FILE "$HOME/.${__CLI_PROGNAME}.conf"
+        _cli_init_global_vars
+        _cli_open_logfile
+        _cli_read_awk_script
+        _cli_load_config_environment
+        _cli_read_command_list
+        _cli_complete_command 2 "install"
+        printf "%s\n" "${COMPREPLY[@]}"
+        _cli_close_logfile
+    '
+    assert_success
+    # install has subcommands jar and war — both have # comments in config
+    assert_line --partial "jar"
+    assert_line --partial "war"
 }
 
 @test "zsh completions: arg completions include descriptions via _cli_complete_" {
