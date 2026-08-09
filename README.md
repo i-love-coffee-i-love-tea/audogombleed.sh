@@ -1,4 +1,11 @@
-[![Automated Bash Tests](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/main.yml)
+[![Tests](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/main.yml)
+[![Coverage](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/coverage.yml)
+[![ShellCheck](https://img.shields.io/badge/shellcheck-passing-brightgreen)](https://www.shellcheck.net/)
+[![License](https://img.shields.io/github/license/i-love-coffee-i-love-tea/audogombleed.sh)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/i-love-coffee-i-love-tea/audogombleed.sh)](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/releases/latest)
+[![GitHub Stars](https://img.shields.io/github/stars/i-love-coffee-i-love-tea/audogombleed.sh)](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/stargazers)
+[![bash](https://img.shields.io/badge/bash-4.2%2B-blue?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
+[![zsh](https://img.shields.io/badge/zsh-compatible-blue?logo=zsh&logoColor=white)](https://zsh.sourceforge.io/)
 
 # Audogombleed
 
