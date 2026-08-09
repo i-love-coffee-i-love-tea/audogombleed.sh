@@ -11,8 +11,7 @@
 set -euo pipefail
 
 if [ $# -ne 1 ]; then
-    echo "usage: $0 <config-file>"
-    exit 1
+    set -- example.conf
 fi
 
 config="$1"
