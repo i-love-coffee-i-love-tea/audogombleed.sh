@@ -70,6 +70,7 @@ setup() {
 @test "zsh: list-argument static -> elements with description" {
     load 'auto-completion-mock-setup-zsh'
 	run test_completion_zsh 4 "testcli" "list-argument" "static"
+	echo "# actual output: ${lines[*]}" >&3
 	assert_line "first-element[one of the following]"
 	assert_line "second[one of the following]"
 	assert_line "third[one of the following]"
