@@ -556,39 +556,19 @@ _cli_map_function_output_to_env_var() {
 # Combined init: command structure + word function names in one AWK pass
 # (commands list is still read separately via _cli_read_command_list)
 _cli_completion_init() {
-	local _cfg_file
-	_cli_global_val CONFIG_FILE _cfg_file
-	local _cfg_mtime
-	_cfg_mtime=$(_cli_mtime "$_cfg_file")
-
-	# If both are already cached, skip
-	if [ "$_cfg_mtime" = "$__CLI_COMP_INIT_MTIME" ] && \
-	   [ -n "$__CLI_CMD_STRUCT" ] && \
-	   [ "${__CLI_CMD_FUNCS_LOADED:-0}" = "1" ]; then
-		_cli_log 4 "using cached completion init"
-		return
-	fi
-
 	local _output
 	_output="$(_awk output=completion_init)"
 
 	# Split on markers using string manipulation (faster than bash loop)
-	local _funcs _struct
-	_funcs="${_output#*===word_functions===}"
-	_funcs="${_funcs%%===structure===*}"
+	local _struct
+	__CLI_CMD_FUNCS_LIST="${_output#*===word_functions===}"
+	__CLI_CMD_FUNCS_LIST="${__CLI_CMD_FUNCS_LIST%%===structure===*}"
 	_struct="${_output#*===structure===}"
 	# Trim trailing newlines
-	_funcs="${_funcs%"${_funcs##*[![:space:]]}"}"
+	__CLI_CMD_FUNCS_LIST="${__CLI_CMD_FUNCS_LIST%"${__CLI_CMD_FUNCS_LIST##*[![:space:]]}"}"
 	_struct="${_struct%"${_struct##*[![:space:]]}"}"
 
-	# Populate cache variables
-	__CLI_CMD_FUNCS_CACHED="$_funcs"
 	__CLI_CMD_STRUCT="$_struct"
-
-	# Set mtime stamps
-	__CLI_COMP_INIT_MTIME="$_cfg_mtime"
-	__CLI_CMD_STRUCT_MTIME="$_cfg_mtime"
-	__CLI_CMD_FUNCS_MTIME="$_cfg_mtime"
 }
 
 _cli_read_awk_script() {
@@ -3437,18 +3417,8 @@ _cli_first_word_equals() {
 _cli_load_command_word_functions() {
 	local fun
 	local funcs
-	# Cache: reuse function list if config hasn't changed
-	local _cfg_file
-	_cli_global_val CONFIG_FILE _cfg_file
-	local _cfg_mtime
-	_cfg_mtime=$(_cli_mtime "$_cfg_file")
-	if [ "$_cfg_mtime" = "$__CLI_CMD_FUNCS_MTIME" ] && [ -n "$__CLI_CMD_FUNCS_CACHED" ]; then
-		funcs="$__CLI_CMD_FUNCS_CACHED"
-	else
-		funcs="$(_awk output=command_word_functions)"
-		__CLI_CMD_FUNCS_MTIME="$_cfg_mtime"
-		__CLI_CMD_FUNCS_CACHED="$funcs"
-	fi
+	# Always re-read: function bodies in [env] can change between invocations
+	funcs="$(_awk output=command_word_functions)"
 	[ -z "$funcs" ] && return
 	while IFS= read -r fun; do
 		[ -z "$fun" ] && continue
