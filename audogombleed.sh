@@ -3073,7 +3073,7 @@ _cli_complete_arg() {
 				_svc_list=$(initctl list 2>/dev/null | _cli_cut 1 space)
 			fi
 			_cli_compgen -W "$_svc_list" "$word"
-			description="systemd service"
+			description="service"
 			;;
 	esac
 
