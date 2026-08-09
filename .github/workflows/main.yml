@@ -172,7 +172,7 @@ jobs:
           cd packaging/arch
           # Create a source tarball that matches GitHub's archive layout
           # (files inside an audogombleed.sh-X.Y.Z/ directory)
-          tar czf /tmp/audogombleed-2.0.0.tar.gz -C ../.. --transform='s,^\./,audogombleed.sh-2.0.0/,' .
+          tar czf /tmp/audogombleed-2.0.0.tar.gz -C ../.. --transform='s,^audogombleed\.sh$,audogombleed.sh-2.0.0,' audogombleed.sh
           # Update source to use local tarball
           sed -i "s|source=.*|source=(\"audogombleed-2.0.0.tar.gz::file:///tmp/audogombleed-2.0.0.tar.gz\")|" PKGBUILD
           sed -i "s|sha256sums=.*|sha256sums=('SKIP')|" PKGBUILD
@@ -226,7 +226,7 @@ jobs:
           dnf install -y rpm-build rpmdevtools
           rpmdev-setuptree
           # Create source tarball matching GitHub's archive layout
-          tar czf ~/rpmbuild/SOURCES/audogombleed-2.0.0.tar.gz -C .. --transform='s,^\./,audogombleed.sh-2.0.0/,' .
+          tar czf ~/rpmbuild/SOURCES/audogombleed-2.0.0.tar.gz -C .. --transform='s,^audogombleed\.sh$,audogombleed.sh-2.0.0,' audogombleed.sh
           rpmbuild -ba packaging/rpm/audogombleed.spec
           # Verify the RPM was built
           rpm -qip ~/rpmbuild/RPMS/noarch/audogombleed-2.0.0-1.*.rpm
