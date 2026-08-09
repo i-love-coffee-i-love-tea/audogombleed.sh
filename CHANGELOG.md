@@ -1,18 +1,26 @@
 # Changelog
 
-## 1.3.0
+## 2.0.0
 
 ### Features
 
+- Add FreeBSD support: platform detection, BSD `stat` syntax, portable shebang (`#!/usr/bin/env bash`), and `:arg:SERVICE` completion using `rc.d` scripts
 - Add help system enhancements: global header (`#` lines at top of `[commands]`), section headings, standalone command help, `##` detail comments
-- Add argument description syntax (`:name:type:description` and `:name:type:value:description`), shown as `[description]` suffixes in zsh completions
+- Add argument description syntax (`:name:type:description` and `:name:type:value:description`), shown as `[description]` suffixes in zsh completions at all nesting levels
 - Add file permission checks before sourcing config, source, and include files (rejects world-writable files, files owned by other users, and symlinks to unsafe targets)
 - Add CLI name validation (only letters, digits, and underscores allowed)
 - Add config caching (mtime-based, skips re-parsing unchanged config files)
-- Add macOS support (portable file modification time, Homebrew distribution)
+- Add scoped `&function` loading — only `&function` entries relevant to the matched command are called during completion, instead of all `&function` entries
+- Add macOS support (portable file modification time)
 - Add `.deb` packaging (`build-deb.sh`, `debian/` directory)
 - Add `release.sh` for version bump (updates `audogombleed.sh`, `audogombleed.1`, `debian/changelog`), commit, and tagging
 - Remove `CFG_EXEC_SUBPROCESS` option — redundant with the existing alias mode (`alias mycli='_cli_execute'`)
+
+### Performance
+
+- Eliminate subprocess forks and duplicate AWK calls in the completion path
+- Reduce external tool calls and subshells in hot paths
+- Optimize completion execution time across all command levels
 
 ### Fixes
 
@@ -20,6 +28,9 @@
 - Fix eval quoting bug in completion
 - Fix `include_commands_from` under zsh (word splitting via `SH_WORD_SPLIT`)
 - Fix tilde-in-quotes bug in test setup
+- Fix macOS portability: `stat`, `mktemp`, `sed -i`, `awk` (BWK vs gawk), and benchmark timing (`date +%s%N`)
+- Fix FreeBSD portability: `stat` syntax, shebang, and pipe/regex detection in zsh completion
+- Fix argument completion when preceding file argument has spaces in filename
 - Optimize exit 53 check (pure bash, no sed/grep)
 - Optimize zsh deep nesting completion
 
@@ -27,7 +38,7 @@
 
 - Rewrite manpage: add installation, security, shell compatibility, and troubleshooting sections
 - Add security documentation (trust model, `eval` implications, file permission checks, recommendations)
-- Add shell compatibility documentation (execution model, OS support, known limitations)
+- Add shell compatibility documentation (execution model, OS support including FreeBSD, known limitations)
 - Document argument description syntax in configuration reference and getting started guide
 - Document `&` prefix for function expansion of command words
 - Document `source` as the way to externalize `[env]` configuration
@@ -36,14 +47,21 @@
 
 ### Tests
 
-- Restructure test suite for dual bash/zsh coverage (358 tests, up from ~120)
+- Restructure test suite for dual bash/zsh coverage (358+ tests, up from ~120)
 - Add zsh counterparts for every test file (21 bash + 21 zsh test files)
-- Add CI job for zsh test suite
+- Add CI jobs for zsh, macOS, FreeBSD, Arch Linux, and WSL test suites
+- Add macOS CI with Homebrew bash and coreutils
+- Add FreeBSD CI job with fdescfs mount and gawk/coreutils
+- Add Arch Linux CI job with PKGBUILD build verification
+- Add WSL CI job testing under Windows Subsystem for Linux
 - Add comprehensive help tests (global header, sections, standalone commands, detail comments)
 - Add argument description tests (AWK parser + zsh completion descriptions)
-- Add benchmark tests
+- Add benchmark tests with OS-specific thresholds
 - Add exit code 52/53 tests
 - Add command-word expansion tests for `&function`
+- Add security, error handling, and execution edge case tests
+- Add AWK POSIX compatibility tests (gawk, mawk, nawk)
+- Add external state and variable/function update completion tests
 
 ## 1.2.0
 

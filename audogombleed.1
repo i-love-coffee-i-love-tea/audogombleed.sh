@@ -60,14 +60,7 @@ and
 .BR debhelper .
 After installation, the script is at
 .BR /usr/bin/audogombleed .
-.SS Option B: Homebrew (macOS)
-.RS
-.nf
-brew tap i\-love\-coffee\-i\-love\-tea/audogombleed
-brew install audogombleed
-.fi
-.RE
-.SS Option C: Manual download
+.SS Option B: Manual download
 Get
 .B audogombleed.sh
 into a directory of your choice (e\&.g\&.
@@ -460,7 +453,7 @@ host entries\&.
 Complete block device names\&.
 .TP
 .B :arg:SERVICE
-Complete systemd service names\&.
+Complete service names (systemd on Linux, rc\&.d on FreeBSD)\&.
 .PP
 Arguments can be made optional by appending
 .B ?
@@ -738,7 +731,7 @@ precedence over config file settings\&. Equivalent to setting:
 .B \-\-version
 Print the script version and exit\&.
 .TP
-.B ?\fR, \fB\-h\fR, \fB\-?\fR, \fB\?
+.B ?\fR, \fB\-h\fR, \fB\-?\fR, \fB\&?
 Display help for the current command or all available commands\&.
 .PP
 The following options are for development and debugging only:
@@ -1047,7 +1040,8 @@ is set to 4\&.
 .SS Supported shells
 .IP \(bu 2
 .B Linux:
-full native support\&. Tested with bash 4\&.2\-5\&.3 and zsh\&.
+full native support\&. Tested with bash 4\&.2\-5\&.3 and zsh on Ubuntu\&.
+Distribution via \&.deb package or direct install\&.
 .IP \(bu 2
 .B macOS:
 native support\&. macOS ships zsh as default, which is fully supported\&.
@@ -1057,9 +1051,17 @@ The system bash (3\&.2) is
 .B not
 supported\&.
 .IP \(bu 2
+.B FreeBSD:
+full native support\&. Tested with bash 4\&.2+ and zsh\&. The
+.B :arg:SERVICE
+argument type completes
+.B rc\&.d
+service names on FreeBSD\&.
+.IP \(bu 2
 .B Windows:
-supported via WSL (Windows Subsystem for Linux)\&. Git Bash / MSYS2 are
-not officially supported\&.
+tested via WSL (Windows Subsystem for Linux) with Ubuntu\&. Install a
+Linux distribution from the Microsoft Store, then follow the Linux
+install instructions\&. Git Bash / MSYS2 are not supported\&.
 .SS Known limitations
 .IP \(bu 2
 .B zsh \-c sourcing:
@@ -1072,6 +1074,11 @@ Workaround: use the alias or invoke the CLI directly\&.
 some argument types (FILE, DIR, ENVVAR, USER, GROUP, SSH_HOST, BLKDEV,
 SERVICE) may not complete as expected in zsh\&. These work fully in
 bash\&.
+.IP \(bu 2
+.B SERVICE completion is platform\-specific:
+uses systemd on Linux,
+.B rc\&.d
+on FreeBSD\&. macOS has no native service manager integration\&.
 .SH TROUBLESHOOTING
 .SS Why doesn't the command help print anything?
 Because of shell globbing, the

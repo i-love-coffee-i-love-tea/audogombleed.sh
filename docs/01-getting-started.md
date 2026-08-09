@@ -2,7 +2,7 @@
 
 ## 1. Install
 
-### Option A: .deb package
+### Option A: .deb package (Debian/Ubuntu)
 
 For local or private usage (unsigned):
 

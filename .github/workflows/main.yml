@@ -157,3 +157,93 @@ jobs:
           path: report-freebsd-zsh.xml
           reporter: java-junit
           fail-on-error: true
+
+  archlinux:
+    name: "Arch Linux PKGBUILD build"
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          submodules: true
+      - name: Install dependencies
+        run: pacman -Syu --noconfirm bash gawk git base-devel
+      - name: Test PKGBUILD build
+        run: |
+          cd packaging/arch
+          # Create a source tarball for local testing
+          tar czf /tmp/audogombleed-2.0.0.tar.gz -C ../.. .
+          # Update source to use local tarball
+          sed -i "s|source=.*|source=(\"audogombleed-2.0.0.tar.gz::file:///tmp/audogombleed-2.0.0.tar.gz\")|" PKGBUILD
+          sed -i "s|sha256sums=.*|sha256sums=('SKIP')|" PKGBUILD
+          # Build as non-root user
+          useradd -m builder
+          chown -R builder:builder /tmp/audogombleed-2.0.0.tar.gz /home/runner/work
+          su builder -c "makepkg --noconfirm --nodeps"
+
+  nix:
+    name: "Nix package build"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          submodules: true
+      - uses: cachix/install-nix-action@v30
+        with:
+          nix_path: nixpkgs=channel:nixpkgs-unstable
+      - name: Build Nix package
+        run: nix-build packaging/nix -A audogombleed --no-out-link
+        continue-on-error: true
+
+  wsl:
+    name: "WSL Ubuntu tests"
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          submodules: true
+      - name: Setup WSL
+        uses: Vampire/setup-wsl@v5
+        with:
+          distribution: Ubuntu-24.04
+      - name: Install dependencies in WSL
+        shell: wsl bash -e {0}
+        run: |
+          apt-get update -qq
+          apt-get install -y -qq bash zsh gawk git
+      - name: Smoke test in WSL
+        shell: wsl bash -e {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          ln -sf ./audogombleed.sh ./testcli
+          cp example.conf ~/.testcli.conf
+          bash ./testcli echo hello world
+          zsh ./testcli echo hello world
+          rm -f ./testcli ~/.testcli.conf
+      - name: Run bash tests in WSL
+        shell: wsl bash -e {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-wsl-bash.xml
+      - name: Run zsh tests in WSL
+        shell: wsl bash -e {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-wsl-zsh.xml
+      - name: Report (bash)
+        uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
+        if: always()
+        with:
+          name: "BATS Test Report (WSL bash)"
+          path: report-wsl-bash.xml
+          reporter: java-junit
+          fail-on-error: true
+      - name: Report (zsh)
+        uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
+        if: always()
+        with:
+          name: "BATS Test Report (WSL zsh)"
+          path: report-wsl-zsh.xml
+          reporter: java-junit
+          fail-on-error: true

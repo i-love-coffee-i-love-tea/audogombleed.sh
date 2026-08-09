@@ -147,12 +147,12 @@ unquoted variable is expanded.
 
 ## OS support
 
-Audogombleed runs on Linux, macOS, and Windows (via WSL).
+Audogombleed runs on Linux, macOS, FreeBSD, and Windows (via WSL).
 
 ### Linux
 
-Full native support. Tested with bash 4.2–5.3 and zsh. Distribution via
-`.deb` package or direct install.
+Full native support. Tested with bash 4.2–5.3 and zsh on Ubuntu.
+Distribution via `.deb` package or direct install.
 
 ### macOS
 
@@ -165,11 +165,17 @@ Distribution via Homebrew:
     brew tap i-love-coffee-i-love-tea/audogombleed
     brew install audogombleed
 
-### Windows
+### FreeBSD
 
-Supported via WSL (Windows Subsystem for Linux). Install a Linux
+Full native support. Tested with bash 4.2+ and zsh. The `:arg:SERVICE`
+argument type completes `rc.d` service names on FreeBSD. Distribution via
+direct install (same as Linux manual download).
+
+### Windows (WSL)
+
+Tested via WSL (Windows Subsystem for Linux) with Ubuntu. Install a Linux
 distribution from the Microsoft Store, then follow the Linux install
-instructions. Git Bash / MSYS2 are not officially supported.
+instructions. Git Bash / MSYS2 are not supported.
 
 ## Known limitations
 
@@ -182,3 +188,6 @@ instructions. Git Bash / MSYS2 are not officially supported.
   ENVVAR, USER, GROUP, SSH_HOST, BLKDEV, SERVICE) use bash's `compgen`
   for completion. These only work in bash completion context. In zsh,
   the script uses alternative completion mechanisms.
+
+- **SERVICE completion is platform-specific** — uses systemd on Linux,
+  `rc.d` on FreeBSD. macOS has no native service manager integration.

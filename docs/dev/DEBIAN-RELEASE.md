@@ -25,7 +25,7 @@ The `.deb` is placed in the parent directory:
 ## Full release workflow
 
     # 1. Bump versions, commit, tag
-    ./release.sh 1.3.0
+    ./release.sh 2.0.0
 
     # 2. Push source and tag
     git push && git push --tags
@@ -34,7 +34,7 @@ The `.deb` is placed in the parent directory:
     ./build-deb.sh --sign
 
     # 4. Upload to GitHub Releases
-    gh release create v1.3.0 ../audogombleed_1.3.0_all.deb
+    gh release create v2.0.0 ../audogombleed_2.0.0_all.deb
 
 ## Updating the maintainer email
 
@@ -43,7 +43,7 @@ This must match your GPG key for signed packages.
 
 ## Installing the .deb
 
-    sudo dpkg -i ../audogombleed_1.3.0_all.deb
+    sudo dpkg -i ../audogombleed_2.0.0_all.deb
 
 After installation, the script is at `/usr/bin/audogombleed`.
 Create CLI symlinks as usual:

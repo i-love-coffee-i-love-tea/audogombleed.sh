@@ -30,15 +30,11 @@ fi
 sed -i "s/^__CLI_VERSION=.*/__CLI_VERSION=\"$version\"/" "$script"
 sed -i "s/^\(\.TH [^ ]\+ [0-9]\+ \)\"[^\"]*\" \"[^\"]*\"/\1\"$(date +%Y)\" \"$version\"/" "$manpage"
 
-# Update debian/changelog: version in first line, date in maintainer line
-rfc_date=$(date -R)
-sed -i "1s/audogombleed ([^)]*)/audogombleed ($version)/" "$changelog"
-sed -i "1s/\* Release .*/\* Release $version/" "$changelog"
-sed -i "s/^ -- .*<.*>  .*$/ -- Steffen Kremsler <github.com@gobuki.org>  $rfc_date/" "$changelog"
+# Generate debian/changelog from CHANGELOG.md (single source of truth)
+./generate-debian-changelog.sh "$version"
 
 git add "$script" "$manpage" "$changelog"
 git commit -m "Bump version to $version"
 git tag "v$version"
 
 echo "Tagged v$version — run 'git push && git push --tags' to publish"
-echo "After pushing, update the Homebrew formula in audogombleed.sh-homebrew"

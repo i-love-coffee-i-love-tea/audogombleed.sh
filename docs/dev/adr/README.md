@@ -11,3 +11,4 @@
 | [007](007-safety-toggles-shell-env-only.md) | Safety toggles are shell-environment-only | Toggles moved out of config file into shell env vars; config cannot set them |
 | [008](008-remove-safe-mode-toggles.md) | Remove safe mode toggles | Toggles removed from main; code preserved in `security-toggles` branch for future whitelist integration |
 | [009](009-cli-name-whitelist.md) | CLI-name whitelist + lockdown toggles | Whitelist restricts which program can be invoked; completes the security model |
+| [010](010-scoped-function-loading.md) | Scoped &function loading | Only `&function` entries relevant to the matched command are called during completion; significantly reduces external command invocations |

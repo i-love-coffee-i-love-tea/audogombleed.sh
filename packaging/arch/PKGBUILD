@@ -1,0 +1,20 @@
+# Maintainer: Steffen Kremsler <github.com@gobuki.org>
+pkgname=audogombleed
+pkgver=2.0.0
+pkgrel=1
+pkgdesc="Create CLIs with auto-completion, abbreviation and built-in help from config"
+arch=('any')
+url="https://github.com/i-love-coffee-i-love-tea/audogombleed.sh"
+license=('BSD-2-Clause')
+depends=('bash' 'gawk')
+optdepends=('zsh: for zsh completion support')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+    cd "$srcdir/audogombleed.sh-$pkgver"
+
+    install -Dm755 audogombleed.sh "$pkgdir/usr/bin/audogombleed"
+    install -Dm644 audogombleed.1 "$pkgdir/usr/share/man/man1/audogombleed.1"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

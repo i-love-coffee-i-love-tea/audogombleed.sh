@@ -215,7 +215,7 @@ Optional arguments must come after all required arguments.
 | Group | `:arg:GROUP` | System group names |
 | SSH host | `:arg:SSH_HOST` | Hosts from `~/.ssh/config` |
 | Block device | `:arg:BLKDEV` | Block device names |
-| Service | `:arg:SERVICE` | systemd service names |
+| Service | `:arg:SERVICE` | service names (systemd / rc.d) |
 
 Any type can be made optional by appending `?` (e.g., `:arg:list?:val1|val2`).
 

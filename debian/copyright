@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: audogombleed
-Upstream-Contact: Steffen Kremsler <steffen@example.com>
+Upstream-Contact: Steffen Kremsler <debian@gobuki.org>
 Source: https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
 
 Files: *
