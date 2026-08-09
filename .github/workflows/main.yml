@@ -104,7 +104,7 @@ jobs:
         with:
           usesh: true
           prepare: |
-            pkg install -y bash git
+            pkg install -y bash git gawk coreutils
             mount -t fdescfs fdesc /dev/fd
           run: |
             # Smoke test
