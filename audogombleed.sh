@@ -941,7 +941,7 @@ BEGIN {
 			$1=""
 			cmd_exec=$0
 		} else if (type == "arg") {
-			split($0, cmd_arg, ":")
+			n_fields = split($0, cmd_arg, ":")
 			cmd_args[argind]=cmd_arg[3]
 
 			#if (length(cmd_details_help) > 0) {
@@ -950,11 +950,33 @@ BEGIN {
 			cmd_argname[argind]=cmd_arg[2]
 			cmd_argtype[argind]=cmd_arg[3]
 			argtype = cmd_argtype[argind]
-			if (argtype ~ "^list[?]{0,}$" || argtype ~ "^int_range[?]{0,}$" || argtype ~ "^eval[?]{0,}$" || argtype ~ "^FILE[?]{0,}$" || argtype ~ "^DIR[?]{0,}$" || argtype ~ "^FILE_OR_DIR[?]{0,}$") {
+			if (argtype ~ "^list[?]{0,}$" || argtype ~ "^int_range[?]{0,}$" || argtype ~ "^eval[?]{0,}$" || argtype ~ "^value[?]{0,}$" || argtype ~ "^FILE[?]{0,}$" || argtype ~ "^DIR[?]{0,}$" || argtype ~ "^FILE_OR_DIR[?]{0,}$") {
 				cmd_argvalue[argind]=cmd_arg[4]
-				cmd_argdesc[argind]=cmd_arg[5]
+				# Filter empty elements from pipe-separated lists
+				if (argtype ~ "^list") {
+					gsub(/^[|]/, "", cmd_argvalue[argind])
+					gsub(/[|]$/, "", cmd_argvalue[argind])
+					gsub(/[|][|]/, "|", cmd_argvalue[argind])
+				}
+				# Rejoin description fields that were split by colons
+				if (n_fields > 5) {
+					cmd_argdesc[argind]=cmd_arg[5]
+					for (_ci = 6; _ci <= n_fields; _ci++) {
+						cmd_argdesc[argind]=cmd_argdesc[argind] ":" cmd_arg[_ci]
+					}
+				} else {
+					cmd_argdesc[argind]=cmd_arg[5]
+				}
 			} else {
-				cmd_argdesc[argind]=cmd_arg[4]
+				# Rejoin description fields that were split by colons
+				if (n_fields > 4) {
+					cmd_argdesc[argind]=cmd_arg[4]
+					for (_ci = 5; _ci <= n_fields; _ci++) {
+						cmd_argdesc[argind]=cmd_argdesc[argind] ":" cmd_arg[_ci]
+					}
+				} else {
+					cmd_argdesc[argind]=cmd_arg[4]
+				}
 			}	
 			_fck=fullcmd; gsub(/:/, "", _fck)
 			if (argtype ~ "\\?") {
@@ -1828,6 +1850,9 @@ BEGIN {
 	# valid argument types for "did you mean?" suggestions
 	split("STRING INTEGER FILE DIR FILE_OR_DIR ENVVAR USER GROUP SSH_HOST BLKDEV SERVICE list int_range eval value", _types_arr, " ")
 	for (_ti in _types_arr) _valid_types[_types_arr[_ti]] = 1
+
+	# Track variables defined in [env] section
+	# Used to validate $variable and &function references in [commands]
 }
 
 function suggest_type(bad,    _t, _best, _best_score, _score) {
@@ -1917,6 +1942,14 @@ cfg_section == "env" {
 		for (i = 1; i <= n; i++) if (parts[i] != "") wc++
 		if (wc < 3) report_error(NR, "include_commands_from needs two arguments", "syntax: include_commands_from <file> <parent-command>")
 	}
+
+	# Track variable assignments: VAR=value or VAR="value"
+	if (!in_env_func && $0 ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
+		_env_varname = $0
+		sub(/=.*/, "", _env_varname)
+		env_vars[_env_varname] = 1
+	}
+
 	next
 }
 
@@ -1984,6 +2017,19 @@ cfg_section == "commands" {
 			report_error(NR, arg_type " argument needs a value field", "syntax: :name:" arg_type ":<value>")
 		}
 
+		# Validate int_range format: must be min-max with integers, min <= max
+		if (arg_type == "int_range" && n >= 4) {
+			range_val = parts[4]
+			if (range_val !~ /^[0-9]+-[0-9]+$/) {
+				report_error(NR, "invalid int_range format " C_BOLD range_val C_RED, "syntax: min-max (e.g. 1-65535)")
+			} else {
+				n = split(range_val, range_parts, "-")
+				if (range_parts[1]+0 > range_parts[2]+0) {
+					report_error(NR, "int_range min > max: " C_BOLD range_val C_RED, "min must be <= max")
+				}
+			}
+		}
+
 		next
 	}
 
@@ -1997,6 +2043,27 @@ cfg_section == "commands" {
 	gsub(/\|/, "", check_ident)
 	if (check_ident !~ /^[A-Za-z_][A-Za-z0-9._-]*$/) {
 		report_error(NR, "invalid identifier " C_BOLD ident C_RED, "use letters, digits, hyphens, underscores, dots")
+	}
+
+	# Check $variable references: must be defined in [env] or shell environment
+	if (content ~ /^\$/) {
+		_ref_varname = content
+		sub(/^\$/, "", _ref_varname)
+		sub(/[[:space:]]*:.*/, "", _ref_varname)
+		if (!(_ref_varname in env_vars) && ENVIRON[_ref_varname] == "") {
+			report_warn(NR, "undefined variable $" _ref_varname, "set in [env] or shell environment")
+		}
+	}
+
+	# Check &function references: _cli_<func>_result must be defined
+	if (content ~ /^&/) {
+		_ref_funcname = content
+		sub(/^&/, "", _ref_funcname)
+		sub(/[[:space:]]*:.*/, "", _ref_funcname)
+		_ref_result_var = "_cli_" _ref_funcname "_result"
+		if (!(_ref_result_var in env_vars) && ENVIRON[_ref_result_var] == "") {
+			report_warn(NR, "undefined function &" _ref_funcname, "set " _ref_result_var " in [env]")
+		}
 	}
 
 	if (content ~ /:/) {
@@ -3033,6 +3100,42 @@ _cli_execute_command() {
 				_cli_exit_if_not_sourced $exit_code
 				return "$exit_code"
 			fi
+		fi
+
+		# Inject default values from :value: args when user omits them.
+		# value-type args are always optional and have a default.
+		# This runs after exit 53 check so missing required args are caught first.
+		if [ "$args_length" -ge 0 ]; then
+			local _inject_out _inject_line _inject_type _inject_val _inject_idx
+			_inject_out="$(_awk output=commands command_filter="$cmd")"
+			_inject_idx=0
+			while IFS= read -r _inject_line; do
+				if [[ "$_inject_line" == __CMD_ARG_TYPE\[* ]]; then
+					_inject_type="${_inject_line#*=\"}"
+					_inject_type="${_inject_type%\"}"
+					if [[ "$_inject_type" == "value" ]]; then
+						if [ "$_inject_idx" -ge "$args_length" ]; then
+							# Find the default value for this arg
+							local _inject_vidx="${_inject_line%%\]*}"
+							_inject_vidx="${_inject_vidx##*\[}"
+							local _inject_vline
+							while IFS= read -r _inject_vline; do
+								if [[ "$_inject_vline" == __CMD_ARG_VALUE\["$_inject_vidx"\]=* ]]; then
+									_inject_val="${_inject_vline#*=\"}"
+									_inject_val="${_inject_val%\"}"
+									break
+								fi
+							done <<< "$_inject_out"
+							if [ -n "$_inject_val" ]; then
+								args+=("$_inject_val")
+								args_length="${#args[@]}"
+								_cli_log 4 "injected default for value arg $_inject_idx: $_inject_val"
+							fi
+						fi
+					fi
+					_inject_idx=$((_inject_idx+1))
+				fi
+			done <<< "$_inject_out"
 		fi
 
 		#if [ "${#args[@]}" -eq 0 ] || _cli_args_are_complete "$cmd" ${args[@]}; then

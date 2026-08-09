@@ -82,9 +82,10 @@ at the top of `mycli ?`).
 A command group is a line containing a single word (no colon). It creates
 a level in the command tree.
 
-    identifier = (ALPHA / DIGIT / "-" / "_" / ".") *CHAR
+    identifier = 1*(ALPHA / DIGIT / "-" / "_" / ".")
 
 Identifiers may contain letters, digits, hyphens, underscores, and dots.
+No other characters are allowed.
 
 ### Indentation
 
@@ -93,6 +94,9 @@ Identifiers may contain letters, digits, hyphens, underscores, and dots.
 Tabs count as 4 spaces. The first non-zero indentation detected sets the
 unit width for the rest of the file. All subsequent indentation MUST be an
 integer multiple of this unit.
+
+Do not mix tabs and spaces. Use either all-tabs or all-spaces for
+indentation within a file. The validator warns about mixed indentation.
 
 ### Commands
 
@@ -110,6 +114,10 @@ MUST be present.
     list-expansion = word 1*("|" word)
 
 Dynamic words expand one definition into many commands.
+
+If a `$variable` references an unset variable, or a `&function` references
+a function whose result variable is unset, the command produces no
+completions. The validator should warn about undefined references.
 
 ### Arguments
 
@@ -138,8 +146,14 @@ Syntax: `:name:type:value` or `:name:type:value:description`
 |------|-------------|---------|
 | list | `val1\|val2\|...` or `$VAR` or empty | `:env:list:staging\|prod` |
 | eval | function name | `:pod:eval:get_pods` |
-| int_range | `min-max` | `:port:int_range:1-65535` |
+| int_range | `min-max` (both integers, min ≤ max) | `:port:int_range:1-65535` |
 | value | default string | `:name:value:world` |
+
+`value` type provides a default for an optional argument. When the user
+omits the arg, the default is used for placeholder replacement. Useful
+as the last argument: `greet: echo \1` with `:msg:value:hello` means
+`greet` outputs "hello" and `greet world` outputs "world". The default
+is not shown in tab completion — only used at execution time.
 
 **Optional arguments** — append `?` to the type. Optional arguments MUST
 follow all required arguments.
