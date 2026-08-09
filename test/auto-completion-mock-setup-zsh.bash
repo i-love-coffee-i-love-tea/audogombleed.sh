@@ -27,6 +27,11 @@ test_completion_zsh() {
 		CURRENT=$1
 		shift
 		words=("$@")
+		# Ensure words[CURRENT] exists — real zsh completion always has
+		# an element at the cursor position (even if empty).
+		while [ "${#words[@]}" -lt "$CURRENT" ]; do
+			words+=("")
+		done
 
 		_cli_complete_
 
