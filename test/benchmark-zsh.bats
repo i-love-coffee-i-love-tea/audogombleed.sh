@@ -24,8 +24,6 @@ _now_ms() {
 	ns=${raw#* }
 	if [[ "$ns" =~ ^[0-9]+$ ]]; then
 		echo $(( s * 1000 + 10#$ns / 1000000 ))
-	elif command -v python3 &>/dev/null; then
-		python3 -c "import time; print(int(time.time()*1000))"
 	else
 		echo $(( s * 1000 ))
 	fi
@@ -62,8 +60,6 @@ _zsh_timed_completion() {
 			ns=${raw#* }
 			if [[ "$ns" =~ ^[0-9]+$ ]]; then
 				echo $(( s * 1000 + 10#$ns / 1000000 ))
-			elif command -v python3 &>/dev/null; then
-				python3 -c "import time; print(int(time.time()*1000))"
 			else
 				echo $(( s * 1000 ))
 			fi
