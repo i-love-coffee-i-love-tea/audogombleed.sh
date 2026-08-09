@@ -144,6 +144,11 @@ _cli_stat_perms() {
 	local _val
 	if [ "$__CLI_UNAME" = "Darwin" ]; then
 		_val=$(stat -L -f '%p' "$1" 2>/dev/null)
+		# macOS stat -f '%p' returns full mode including file type (e.g., 100777)
+		# Normalize to permission bits only (last 3 digits)
+		if [ -n "$_val" ] && [ "${#_val}" -gt 3 ]; then
+			_val="${_val:(-3)}"
+		fi
 	else
 		_val=$(stat -L -c '%a' "$1" 2>/dev/null)
 	fi
