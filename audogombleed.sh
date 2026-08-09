@@ -2987,7 +2987,7 @@ _cli_complete_arg() {
 					_cli_log 4 "var is not defined"
 				fi
 
-			elif [[ "$arg_list" =~ \| ]]; then
+			elif [[ "$arg_list" == *'|'* ]]; then
 				# list separated by |
 				arg_list=${arg_list//|/ }
 				_cli_log 4 "function arg_list, word: $arg_list, $word"
