@@ -53,6 +53,18 @@ _gawk_bin() {
 	fi
 }
 
+# Print path to nawk binary, or return 1 if not installed.
+# macOS ships BWK awk at /usr/bin/awk but has no nawk symlink.
+_nawk_bin() {
+	if [ -x /usr/bin/nawk ]; then
+		echo /usr/bin/nawk
+	elif [ -x /usr/bin/awk ]; then
+		echo /usr/bin/awk
+	else
+		return 1
+	fi
+}
+
 # ── Tests: substr(s, 0, 1) in $-prefixed arg values ────────────────
 #
 # print_command_environment_vars uses substr(cmd_argvalue[arg], 0, 1)
@@ -85,13 +97,13 @@ EOF
 }
 
 @test "awk: \$-prefixed arg value is backslash-escaped (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 dollar-arg: echo
 	:env:list:$MY_VAR
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=commands command_filter="dollar-arg"
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=commands command_filter="dollar-arg"
 	assert_success
 	assert_line '__CMD_ARG_VALUE[0]="\$MY_VAR"'
 }
@@ -147,7 +159,7 @@ EOF
 }
 
 @test "awk: nested command groups parse identically (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 alpha
@@ -155,7 +167,7 @@ alpha
 		charlie: echo hello
 		delta: echo world
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=command_names
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "alpha bravo charlie"
 	assert_line "alpha bravo delta"
@@ -201,7 +213,7 @@ EOF
 }
 
 @test "awk: deep backtrack produces correct paths (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 a
@@ -209,7 +221,7 @@ a
 		c: echo deep
 	d: echo shallow
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=command_names
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "a b c"
 	assert_line "a b d"
@@ -252,7 +264,7 @@ EOF
 }
 
 @test "awk: four-level nesting parses correctly (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 level1
@@ -260,7 +272,7 @@ level1
 		level3
 			level4: echo deep
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=command_names
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "level1 level2 level3 level4"
 	assert_equal "1" "${#lines[@]}"
@@ -305,7 +317,7 @@ EOF
 }
 
 @test "awk: indentation-based path trimming (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 x
@@ -313,7 +325,7 @@ x
 		z: echo deep
 	y2: echo mid
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=command_names
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "x y z"
 	assert_line "x y y2"
@@ -354,13 +366,13 @@ EOF
 }
 
 @test "awk: single-word commands parse correctly (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 foo: echo foo
 bar: echo bar
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=command_names
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "foo"
 	assert_line "bar"
@@ -414,14 +426,14 @@ EOF
 }
 
 @test "awk: command_filter exact match with args (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 echo: \0 \2 \1
 	:arg1:list:first
 	:arg2:list:second
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=commands command_filter="echo"
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=commands command_filter="echo"
 	assert_success
 	assert_line '__CMD="echo"'
 	assert_line '__CMD_ARG[0]="list"'
@@ -486,7 +498,7 @@ EOF
 }
 
 @test "awk: all argument types parse correctly (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 all-types: echo
@@ -495,7 +507,7 @@ all-types: echo
 	:f:FILE
 	:d:DIR
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=commands command_filter="all-types"
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=commands command_filter="all-types"
 	assert_success
 	assert_line '__CMD_ARG_TYPE[0]="list"'
 	assert_line '__CMD_ARG_VALUE[0]="a|b|c"'
@@ -544,14 +556,14 @@ EOF
 }
 
 @test "awk: optional args parsed correctly (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 opt-test: echo
 	:req:list:a|b
 	:maybe:list:x|y?
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=commands command_filter="opt-test"
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=commands command_filter="opt-test"
 	assert_success
 	assert_line '__CMD_ARG_NAME[0]="req"'
 	assert_line '__CMD_ARG_VALUE[0]="a|b"'
@@ -603,7 +615,7 @@ EOF
 }
 
 @test "awk: array state is cleared between commands (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 cmd-a: echo
@@ -612,7 +624,7 @@ cmd-a: echo
 cmd-b: echo
 	:only:list:solo
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=commands command_filter="cmd-b"
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=commands command_filter="cmd-b"
 	assert_success
 	assert_line '__CMD_ARG[0]="list"'
 	assert_line '__CMD_ARG_NAME[0]="only"'
@@ -657,12 +669,12 @@ EOF
 }
 
 @test "awk: command with no args produces empty arg fields (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 noargs: echo hello
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=commands command_filter="noargs"
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=commands command_filter="noargs"
 	assert_success
 	assert_line '__CMD="noargs"'
 	assert_line '__CMD_ARG=""'
@@ -716,7 +728,7 @@ EOF
 }
 
 @test "awk: variable expansion in command words (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [env]
 export __TEST_WORDS="alpha beta gamma"
@@ -726,7 +738,7 @@ vtest
 	$__TEST_WORDS: echo \0
 EOF
 	export __TEST_WORDS="alpha beta gamma"
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=command_names
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "vtest alpha"
 	assert_line "vtest beta"
@@ -768,13 +780,13 @@ EOF
 }
 
 @test "awk: pipe-separated list expansion (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 ltest
 	one|two|three: echo \0
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=command_names
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "ltest one"
 	assert_line "ltest two"
@@ -817,7 +829,7 @@ EOF
 }
 
 @test "awk: help output contains formatted command (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 # Group heading
@@ -825,7 +837,7 @@ deploy: echo deploy
 	# Deploy help text
 	:env:list:prod|staging
 EOF
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=help command_filter="" do_format=1
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=help command_filter="" do_format=1
 	assert_success
 	assert_output --partial "eploy"
 }
@@ -903,11 +915,11 @@ EOF
 }
 
 @test "awk: example.conf parses correctly (nawk)" {
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cp example.conf ~/.testcli.conf
 	export __VAR_EXPANSION_WORDS="first second"
 	export ARGUMENT_OPTIONS="option1 option2 option3"
-	run _run_awk_with /usr/bin/nawk "$HOME/.testcli.conf" output=command_names
+	run _run_awk_with "$_nawk" "$HOME/.testcli.conf" output=command_names
 	assert_success
 	assert_line "echo"
 	assert_line "install jar from file"
@@ -940,7 +952,7 @@ EOF
 
 @test "awk: gawk and nawk produce identical output for example.conf" {
 	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cp example.conf ~/.testcli.conf
 	local config="$HOME/.testcli.conf"
 	export __VAR_EXPANSION_WORDS="first second"
@@ -948,7 +960,7 @@ EOF
 
 	local gawk_out nawk_out
 	gawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=command_names 2>/dev/null | sort)
-	nawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | nawk -f - "$config" output=command_names 2>/dev/null | sort)
+	nawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_nawk" -f - "$config" output=command_names 2>/dev/null | sort)
 
 	assert_equal "$gawk_out" "$nawk_out"
 	unset __VAR_EXPANSION_WORDS ARGUMENT_OPTIONS
@@ -978,7 +990,7 @@ EOF
 
 @test "awk: gawk and nawk produce identical arg output" {
 	local _gawk; _gawk=$(_gawk_bin) || skip "gawk not installed"
-	[ -x /usr/bin/nawk ] || skip "nawk not installed"
+	local _nawk; _nawk=$(_nawk_bin) || skip "nawk not installed"
 	cat > ~/.testcli.conf <<'EOF'
 [commands]
 echo: \0 \2 \1
@@ -989,7 +1001,7 @@ EOF
 
 	local gawk_out nawk_out
 	gawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
-	nawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | nawk -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
+	nawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_nawk" -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
 
 	assert_equal "$gawk_out" "$nawk_out"
 }
