@@ -11,7 +11,7 @@ set -euo pipefail
 
 VERSION="${1:?Usage: bash test/bash-compat.sh <version>}"
 TARBALL="bash-${VERSION}.tar.gz"
-URL="https://ftp.gnu.org/gnu/bash/${TARBALL}"
+URL="https://ftpmirror.gnu.org/bash/${TARBALL}"
 BUILD_DIR="/tmp/bash-build-${VERSION}"
 PREFIX="${BUILD_DIR}/install"
 
@@ -24,7 +24,7 @@ echo "=== bash ${VERSION} ==="
 if [ ! -f "${BUILD_DIR}/${TARBALL}" ]; then
     mkdir -p "${BUILD_DIR}"
     echo "Downloading ${URL} ..."
-    curl -fLo "${BUILD_DIR}/${TARBALL}" "${URL}"
+    curl --retry 3 --retry-delay 5 --retry-all-errors -fLo "${BUILD_DIR}/${TARBALL}" "${URL}"
 fi
 
 # Extract
