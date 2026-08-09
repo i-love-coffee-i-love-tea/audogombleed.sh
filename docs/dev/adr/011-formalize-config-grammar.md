@@ -1,8 +1,10 @@
-# ADR-011: Formalize config file grammar
+---
+status: accepted
+date: 2026-08-09
+decision-makers: i-love-coffee-i-love-tea
+---
 
-* Status: Accepted
-* Date: 2026-08-09
-* Deciders: i-love-coffee-i-love-tea
+# Formalize config file grammar
 
 ## Context and Problem Statement
 
@@ -15,7 +17,7 @@ There is no way to validate a config file without running the tool. A
 config with a typo in an argument type or a malformed section header
 fails silently at runtime.
 
-How do we make the config format precise enough to validate and
+How to make the config format precise enough to validate and
 reimplement without ambiguity?
 
 ## Decision Drivers
@@ -34,13 +36,14 @@ reimplement without ambiguity?
 
 ## Decision Outcome
 
-Chosen option: **standalone grammar specification document**.
+Chosen option: **standalone grammar specification document**, because
+the grammar needs to be independently referenceable and maintainable.
 
-We create `docs/config-grammar.md` — a formal ABNF-like grammar covering
-the full config format: sections, identifiers, indentation rules,
-argument types, dynamic command words, comments, and placeholders.
+A formal ABNF-like grammar is created in `docs/config-grammar.md`,
+covering the full config format: sections, identifiers, indentation
+rules, argument types, dynamic command words, comments, and placeholders.
 
-We embed a validator in the main script (`_cli_read_validator_script`)
+A validator is embedded in the main script (`_cli_read_validator_script`)
 accessible via `--cli-validate-config`. Every derived CLI can validate
 its own config without knowing the filename:
 
@@ -52,17 +55,38 @@ The ADR records the decision; the grammar doc records the spec.
 
 ### Consequences
 
-* Good: any derived CLI can validate its own config.
-* Good: `validate-config.sh` is a thin wrapper — no separate AWK script.
-* Good: the grammar doc can evolve independently of the ADR.
-* Neutral: the grammar must be kept in sync with the AWK parser. The
-  release hook `11-validate-example-config.sh` catches drift.
+* Good, because any derived CLI can validate its own config.
+* Good, because `validate-config.sh` is a thin wrapper — no separate AWK script.
+* Good, because the grammar doc can evolve independently of the ADR.
+* Neutral, because the grammar must be kept in sync with the AWK parser.
+  The release hook `11-validate-example-config.sh` catches drift.
 
 ### Confirmation
 
 * `mycli --cli-validate-config` passes on a valid config.
 * `validate-config.sh example.conf` passes.
 * The grammar doc is reviewed when the AWK parser changes.
+
+## Pros and Cons of the Options
+
+### Create a standalone grammar specification document
+
+* Good, because the grammar is independently referenceable.
+* Good, because it can evolve without touching the ADR.
+* Neutral, because it must be kept in sync with the AWK parser.
+
+### Embed the grammar in ADR-006
+
+* Good, because design rationale and spec live together.
+* Bad, because ADR-006 would grow significantly and mix concerns.
+* Bad, because the grammar can't evolve independently.
+
+### Leave the format informal (status quo)
+
+* Good, because no additional work.
+* Bad, because ambiguity remains — a future reimplementation must
+  reverse-engineer the AWK parser.
+* Bad, because config errors fail silently at runtime.
 
 ## More Information
 
