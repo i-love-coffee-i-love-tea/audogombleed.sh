@@ -133,9 +133,9 @@ jobs:
             zsh ./testcli echo hello world
             rm -f ./testcli ~/.testcli.conf
             # Run bash tests (allow failures to capture report)
-            test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-freebsd-bash.xml || true
+            MAX_LARGE_COMPLETION_MS=500 test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-freebsd-bash.xml || true
             # Run zsh tests (allow failures to capture report)
-            test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-freebsd-zsh.xml || true
+            MAX_LARGE_COMPLETION_MS=500 test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-freebsd-zsh.xml || true
             } 2>&1
       - name: Report (bash)
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
