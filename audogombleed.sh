@@ -65,7 +65,7 @@
 #
 # 	Documentation is available here: https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
 #	
-__CLI_VERSION="2.0.0"
+__CLI_VERSION="2.1.0"
 
 # Cache uname once at source time — avoids subprocess fork in every stat call
 __CLI_UNAME="$(uname)"
@@ -224,6 +224,7 @@ _cli_global() {
 		# get value
 		var_name=__CLI_${_safe_progname}_${var_name}
 		if [ "$__CLI_IS_ZSH" = "1" ]; then
+			# shellcheck disable=SC2296
 			echo "${(P)var_name}"
 		else
 			echo "${!var_name}"
@@ -239,6 +240,7 @@ _cli_global() {
 _cli_global_val() {
 	local _gv_name=__CLI_${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}_$1
 	if [ "$__CLI_IS_ZSH" = "1" ]; then
+		# shellcheck disable=SC2296
 		printf -v "$2" '%s' "${(P)_gv_name}"
 	else
 		printf -v "$2" '%s' "${!_gv_name}"
@@ -250,6 +252,7 @@ _cli_global_is_set() {
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	var_name=__CLI_${_safe_progname}_${var_name}
 	if [ "$__CLI_IS_ZSH" = "1" ]; then
+		# shellcheck disable=SC2296
 		[ ! -z "${(P)var_name}" ]
 	else
 		[ ! -z "${!var_name}" ]
@@ -261,6 +264,7 @@ _cli_global_equals() {
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	var_name=__CLI_${_safe_progname}_${var_name}
 	if [ "$__CLI_IS_ZSH" = "1" ]; then
+		# shellcheck disable=SC2296
 		[ ! -z "${(P)var_name}" ] && [ "${(P)var_name}" = "$2" ]
 	else
 		# bash and maybe others?
@@ -274,6 +278,7 @@ _cli_log_level_is_enabled() {
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	var_name="__CLI_${_safe_progname}_CFG_LOG_LEVEL"
 	if [ "$__CLI_IS_ZSH" = "1" ]; then
+		# shellcheck disable=SC2296
 		[ ! -z "${(P)var_name}" ] && [ "${(P)var_name}" -ge "$log_level" ]
 	else
 		[ ! -z "${!var_name}" ] && [ "${!var_name}" -ge "$log_level" ]
@@ -286,6 +291,7 @@ _cli_config_file_is_present() {
 	local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
 	var_name="__CLI_${_safe_progname}_CONFIG_FILE"
 	if [ "$__CLI_IS_ZSH" = "1" ]; then
+		# shellcheck disable=SC2296
 		[ -f "${(P)var_name}" ]
 	else
 		[ -f "${!var_name}" ]
@@ -375,6 +381,7 @@ _cli_collapse_spaces() {
 		    shopt -u extglob
 		fi
 	elif _cli_shell_is_zsh; then
+		# shellcheck disable=SC2154
 		if [ "${options[extendedglob]}" = "off" ]; then
 			setopt extendedglob	
 			extglob_enabled=1
@@ -394,6 +401,7 @@ _cli_log() {
 	local _ll_var="__CLI_${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}_CFG_LOG_LEVEL"
 	local _ll_val
 	if [ "$__CLI_IS_ZSH" = "1" ]; then
+		# shellcheck disable=SC2296
 		_ll_val="${(P)_ll_var}"
 	else
 		_ll_val="${!_ll_var}"
@@ -425,6 +433,7 @@ _cli_log() {
 
 	local -a funcname
 	if [ "$__CLI_IS_ZSH" = "1" ]; then
+		# shellcheck disable=SC2154
 		funcname+=("${funcstack[2]}")
 		funcname+=("${funcstack[3]}")
 	else
@@ -526,6 +535,7 @@ _cli_read_command_list() {
 	fi
 	__CLI_CONFIG_MTIME="$_cfg_mtime"
 	if [ "$__CLI_IS_ZSH" = "1" ]; then
+		# shellcheck disable=SC2296
 		__CLI_CONFIG=("${(@f)$(_awk "output=commands")}")
 	else
 		mapfile -t __CLI_CONFIG < <(_awk "output=commands")
@@ -2059,7 +2069,7 @@ _awk() {
 		# write main config file to fifo
 		local tmpdir
 		tmpdir=$(mktemp -d)
-		trap "rm -rf '$tmpdir'" EXIT INT TERM
+		trap 'rm -rf "$tmpdir"' EXIT INT TERM
 		mkfifo "$tmpdir/main_config"
 		cat /dev/fd/4 > "$tmpdir/main_config" &
 
@@ -2080,8 +2090,10 @@ _awk() {
 			# write the [commands] content to the fifo
 			# the section is expected to be the last in the file
 			if [ "$include_parent_command" = "ROOT" ]; then
+				# shellcheck disable=SC2016
 				"$__CLI_AWK" '$1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print $0}}' "$include_file" > "$tmpdir/include_file_${fifo_idx}" &
 			else
+				# shellcheck disable=SC2016
 				"$__CLI_AWK" 'BEGIN {p=index(ARGV[2],"parent="); if(p>0) print substr(ARGV[2],p+7)}; $1 == "[commands]" { doprint=1; next}; $0 ~ /^[ \t]{0,}$/ {next} ; { if (doprint==1) {print "    " $0}}' "$include_file" parent="$include_parent_command" > "$tmpdir/include_file_${fifo_idx}" &
 			fi
 			fifo_idx=$((fifo_idx + 1))
@@ -2089,7 +2101,7 @@ _awk() {
 
 		# merge fifos
 		mkfifo "$tmpdir/merged_config"
-		_cli_log 4 "include fifos: ${include_fifos[@]}"
+		_cli_log 4 "include fifos: ${include_fifos[*]}"
 		cat "$tmpdir/main_config" "${include_fifos[@]}" > "$tmpdir/merged_config" &
 
 		# parse merged_config
@@ -2155,6 +2167,7 @@ _cli_command_is_exact_match() {
 
 _cli_load_completion_vars() {
 	[ "$1" = "" ] && return
+	# shellcheck disable=SC1090
 	source <(_awk output=commands command_filter="$1")
 }
 
@@ -2170,7 +2183,6 @@ _cli_load_config_environment() {
 	local cli_silent_arg
 	local newlevel
 	local script
-	local prev_cli_debug
 	local prev_log_level
 	local prev_cli_silent
 
@@ -2212,8 +2224,8 @@ _cli_load_config_environment() {
 					line_nr=$((line_nr + 1))
 					continue
 				fi
-				source "$src_file"
-				if [ $? -ne 0 ]; then
+				# shellcheck disable=SC1090
+				if ! source "$src_file"; then
 					_cli_error "config error: [env] line $line_nr: source file '$src_file' returned non-zero exit code"
 				fi
 			else
@@ -2235,6 +2247,8 @@ _cli_load_config_environment() {
 		else
 			# special handling for CLI config variable assignments
 			# beginning with __CLI_
+			# _cli_is_one_word needs word splitting to count args
+			# shellcheck disable=SC2086
 			if _cli_is_one_word $env_line; then
 				if [[ "$env_line" =~ __CLI_.*= ]]; then
 					varname="${env_line%%=*}"
@@ -2286,6 +2300,7 @@ $env_line"
 	done <<< "$_env_lines"
 
 	if [ ! -z "$script" ]; then
+		# shellcheck disable=SC1090
 		source <(printf '%s\n' "$script")
 	fi
 
@@ -2336,7 +2351,6 @@ _cli_is_command_complete() {
     local cmd=""
     local i
     local w
-    local new_line
     unset __CLI_CMD_WORDS
     while true; do
         _cli_count_matching_commands "$line"
@@ -2385,7 +2399,6 @@ _cli_match_command_with_structure() {
     local i
     local struct_line
     local static_prefix
-    local dynamic_word
 
     unset __CLI_CMD_MATCHED_PREFIX
     unset __CLI_CMD_DYNAMIC_FUNC
@@ -2399,7 +2412,7 @@ _cli_match_command_with_structure() {
             # shellcheck disable=SC2296
             words=("${(z)struct_line}")
         else
-            read -a words <<<"$struct_line"
+            read -ra words <<<"$struct_line"
         fi
         
         # Check if the last word is dynamic (&function, $var, or |list)
@@ -2491,7 +2504,7 @@ _cli_args_are_complete() {
 
 _cli_cut() {
     local pos="${1}"
-	pos=$(($pos - 1))
+	pos=$((pos - 1))
     local input
     case $2 in
         space)
@@ -2510,6 +2523,7 @@ _cli_cut() {
 		if _cli_shell_is_zsh; then
 			local -a a_input
 	        while read -r input; do
+				# shellcheck disable=SC2296
 				a_input=("${(z)input}")
         	    echo -E "${a_input[$pos]}"
    		    done
@@ -2522,6 +2536,7 @@ _cli_cut() {
 		if _cli_shell_is_zsh; then
 			local -a a_input
   	 	    while read -r input; do
+				# shellcheck disable=SC2296
 				a_input=("${(z)input}")
     	    	echo -E "${a_input[$pos]}"
        		done <<< "$3"
@@ -2549,6 +2564,7 @@ _cli_uniq_() {
 		while read -ra input_line; do
     		local line_already_seen=1
     		for e in "${lines[@]}"; do
+        		# shellcheck disable=SC2128
         		if [ "$e" = "$input_line" ]; then
           			line_already_seen=0
 	            	break
@@ -2558,6 +2574,7 @@ _cli_uniq_() {
 	  		if [ "$line_already_seen" = "0" ]; then
   		    	continue
 	   		else
+  		    	# shellcheck disable=SC2128
   		    	lines+=("$input_line")
 	    	fi
 		done
@@ -2642,6 +2659,7 @@ _cli_compgen() {
 	local flag="$1"; shift
 	case "$flag" in
 		-W)
+			# shellcheck disable=SC2178
 			local words="$1"; shift
 			local prefix="$1"
 			local w
@@ -2748,6 +2766,7 @@ _cli_compgen() {
 			case "$mode" in
 				variable)
 					if [ "$__CLI_IS_ZSH" = "1" ]; then
+						# shellcheck disable=SC2296,SC2086
 						[ ${(P)name+_} ] && echo "$name"
 					else
 						[ "${!name+_}" ] && echo "$name"
@@ -2816,6 +2835,7 @@ _cli_execute_safe() {
 	   [[ "$cmd_expr" == *'<'* ]] || [[ "$cmd_expr" == *'&&'* ]] || \
 	   [[ "$cmd_expr" == *'||'* ]] || [[ "$cmd_expr" == *';'* ]]; then
 		# Shell syntax — fall back to eval (backwards compatible)
+		# shellcheck disable=SC2086,SC2048
 		eval $cmd_expr ${user_args[*]}
 		return $?
 	fi
@@ -2888,9 +2908,10 @@ _cli_execute_command() {
 
 	if _cli_global_equals CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS "y"; then
 		if _cli_shell_is_zsh; then
-		  # shellcheck disable=SC2296
+		  # shellcheck disable=SC2296,SC2086
 			expanded_cmdline=$(_cli_expand_abbreviated_command ${(z)cmdline})
 		else
+			# shellcheck disable=SC2086
 			expanded_cmdline=$(_cli_expand_abbreviated_command $cmdline)
 		fi
 
@@ -2916,23 +2937,24 @@ _cli_execute_command() {
 		cmd="$__CLI_CMD_WORDS"
 		# remove command words from command line, to get args
 		if _cli_shell_is_zsh; then
-		  # shellcheck disable=SC2296
+		  # shellcheck disable=SC2296,SC2206
 			args=(${(z)cmdline#$cmd})
 		else
+			# shellcheck disable=SC2206,SC2295
 			args=(${cmdline#$cmd})
 		fi
 		if _cli_global_is_positive_bool CFG_EXEC_EXPAND_ABBREVIATED_ARGS; then
 			_cli_log 4 "trying to expand command args for cmd: $cmd, args: ${args[*]}" 
-			expanded_args=$(_cli_expand_abbreviated_args "$cmd" $args)
+			expanded_args=$(_cli_expand_abbreviated_args "$cmd" "${args[@]}")
 			if [ "${args[*]}" != "$expanded_args" ]; then
-				args="$expanded_args"
+				read -ra args <<< "$expanded_args"
 				_cli_log 4 "args expanded"
 				args_expanded="y"
 			fi
 		fi
 
 		args_length="${#args[@]}"
-        _cli_log 4 "cmd: $cmd, args: $args, length: ${#args[@]}"
+        _cli_log 4 "cmd: $cmd, args: ${args[*]}, length: ${#args[@]}"
 
 		# Exit 52: more placeholders in command expression than args provided.
 		# Only checked when at least 1 arg is provided (0 args falls through to exit 53).
@@ -3043,12 +3065,12 @@ _cli_execute_command() {
 				_cli_log 4 "args expanded: $args_expanded"
 				if [ "$cmd_expanded" = "y" ] || [ "$args_expanded" = "y" ]; then
 					if ! _cli_global_is_negative_bool CFG_EXEC_ACK_EXPANDED_COMMANDS; then
-						if ! _cli_yes_no_prompt "Execute expanded command? '$cmd $args' [Y/n]: "; then
+						if ! _cli_yes_no_prompt "Execute expanded command? '$cmd ${args[*]}' [Y/n]: "; then
 							return 1
 						fi
 					fi
 				fi
-				_cli_error "Executing command \"$cmd\" --> $cmd_expr $args"
+				_cli_error "Executing command \"$cmd\" --> $cmd_expr ${args[*]}"
 				
 				# execute via safe exec (tokenized exec for simple commands,
 				# falls back to eval for pipes/redirects/chaining)
@@ -3095,7 +3117,7 @@ _cli_is_integer() {
 _cli_complete_command() {
 	local pos=$1
 	shift
-    local line="$@"
+    local line="$*"
 	unset COMPREPLY
 	
 	if [ "$__CLI_IS_ZSH" != "1" ]; then
@@ -3116,11 +3138,12 @@ _cli_complete_command() {
 		  # shellcheck disable=SC2296
 			a_cmd=("${(z)_cmd_part}")
 		else
-			read -a a_cmd <<<"$_cmd_part"
+			read -ra a_cmd <<<"$_cmd_part"
 		fi
 		if [ -n "${a_cmd[$pos]}" ]; then
 			_word="${a_cmd[$pos]}"
 			_cli_log 4 "adding $_word"
+			# shellcheck disable=SC2076
 			if ! [[ " ${COMPREPLY[*]} " =~ " $_word " ]]; then
 				if [ "$__CLI_IS_ZSH" = "1" ]; then
 					# Look up description: try full path first, then word alone
@@ -3235,7 +3258,7 @@ _cli_complete_arg() {
 	
 	# parse special argument types 'list' and 'int_range'
 	if [ "$arg_type" = "list" ]; then
-		arg_list=(${__CMD_ARG_VALUE[$pos]})
+		arg_list="${__CMD_ARG_VALUE[$pos]}"
 	elif [ "$arg_type" = "int_range" ]; then
 		arg_list="${__CMD_ARG_VALUE[$pos]}"
 		arg_min="${arg_list%%-*}"
@@ -3262,6 +3285,7 @@ _cli_complete_arg() {
 				if _cli_is_env_var_defined "$var_name"; then
 					_cli_log 4 "var is defined"
 					if [ "$__CLI_IS_ZSH" = "1" ]; then
+						# shellcheck disable=SC2296
 						arg_list="${(P)var_name}"
 					else
 						arg_list="${!var_name}"
@@ -3277,19 +3301,19 @@ _cli_complete_arg() {
 				_cli_log 4 "function arg_list, word: $arg_list, $word"
 				_cli_compgen -W "$arg_list" "$word"
 			else
-				echo $arg_list
+				echo "$arg_list"
 			fi
 			description="one of the following"
 			;;
 		INTEGER) 
-			if _cli_is_integer $word; then
+			if _cli_is_integer "$word"; then
 				echo "$word"
 			fi
 			description="integer"
 			;;
 		int_range)
 			_cli_log 4 "int_range word: $word, $arg_min, $arg_max"
-			if [ "$word" != "" ] && _cli_is_integer $word; then
+			if [ "$word" != "" ] && _cli_is_integer "$word"; then
 				
 				if [ "$word" -ge "$arg_min" ] && [ "$word" -le "$arg_max" ]; then
 					echo "$word"
@@ -3297,7 +3321,7 @@ _cli_complete_arg() {
 			elif [ "$word" = "" ]; then
 				len=$((arg_max - arg_min + 1))
 				if [ "$len" -lt 20 ]; then
-					_cli_seq $arg_min $arg_max
+					_cli_seq "$arg_min" "$arg_max"
 				fi
 			fi
 			description="integer between $arg_min and $arg_max (inclusive)"
@@ -3337,8 +3361,8 @@ _cli_complete_arg() {
 			if _cli_shell_is_bash; then
 				BLKDEVS=$(lsblk -plin -o NAME 2>/dev/null)
 			else
-				# macOS: list disk devices
-				BLKDEVS=$(ls /dev/disk* 2>/dev/null | grep -E '^/dev/disk[0-9]+$')
+				# macOS: list disk devices (glob, no ls)
+				BLKDEVS=$(printf '%s\n' /dev/disk[0-9] /dev/disk[0-9][0-9] 2>/dev/null)
 			fi
 			_cli_compgen -W "$BLKDEVS" "$word"
 			description="block device"
@@ -3352,7 +3376,7 @@ _cli_complete_arg() {
 				_svc_list=$(launchctl list 2>/dev/null | awk 'NR>1 {print $3}')
 			elif [ "$__CLI_UNAME" = "FreeBSD" ]; then
 				# FreeBSD: list services from rc.d directories
-				_svc_list=$(ls /etc/rc.d/ /usr/local/etc/rc.d/ 2>/dev/null | sed 's/^rc.d\///' | sort -u)
+				_svc_list=$(printf '%s\n' /etc/rc.d/* /usr/local/etc/rc.d/* 2>/dev/null | sed 's|.*/||' | sort -u)
 			elif [[ -x /sbin/upstart-udev-bridge ]]; then
 				_svc_list=$(initctl list 2>/dev/null | _cli_cut 1 space)
 			fi
@@ -3440,11 +3464,14 @@ _cli_complete_()
     	word=${COMP_WORDS[COMP_CWORD]}
 	else
 		# zsh completion sets $words and $CURRENT
-		# shellcheck disable=SC2154
+		# shellcheck disable=SC2154,SC2128,SC2206
 		line="$words"
+		# zsh $words is an array; word-splitting to copy into COMP_WORDS is intentional
+		# shellcheck disable=SC2128,SC2206
 		COMP_WORDS=($words)
 		COMP_CWORD=$((CURRENT - 1))
 		word=${COMP_WORDS[COMP_CWORD+1]}
+		# shellcheck disable=SC2128
 		_cli_log 4 "words: $words"
 		_cli_log 4 "CURRENT=$CURRENT"
 	fi
@@ -3507,7 +3534,7 @@ _cli_complete_()
 			  # shellcheck disable=SC2296
 				a_complete_cmd=("${(z)__CLI_CMD_WORDS}")
 			else
-				read -a a_complete_cmd <<<"$__CLI_CMD_WORDS"
+				read -ra a_complete_cmd <<<"$__CLI_CMD_WORDS"
 			fi
 			cmd_word_count=${#a_complete_cmd[@]}
 
@@ -3572,7 +3599,7 @@ _cli_complete_()
 		fi
 	fi
 
-	if [ "$COMPREPLY" != "" ] && [ "$__CLI_IS_ZSH" = "1" ]; then
+	if [ "${#COMPREPLY[@]}" -gt 0 ] && [ "$__CLI_IS_ZSH" = "1" ]; then
 		#COMPREPLY+=("value_with_description[the description]")
 		_values "$description" "${COMPREPLY[@]}"
 	fi
@@ -3618,8 +3645,12 @@ _cli_expand_abbreviated_command() {
 		commands=("$(_cli_getmatchingcommands "$query" | cut -f"$i" -d' ' | uniq)")
 		_cli_log 4 "commands: '${commands[*]}'"
 		#_cli_log 4 "command: $i, $commands, current_word: '$1'"
+		# _cli_is_one_word needs word splitting to count args
+		# shellcheck disable=SC2048,SC2086
 		if _cli_is_one_word ${commands[*]}; then
 			#matched_word=$(_cli_cut $i space "$commands")
+			# $commands is a single-element array; first element is the match
+			# shellcheck disable=SC2128
 			matched_word=$(echo "$commands" | cut -f$i -d' ')
 			if [ "$matched_words" = "" ]; then
 				matched_words="$matched_word"
@@ -3633,7 +3664,7 @@ _cli_expand_abbreviated_command() {
 			return
 		fi
 		unset commands
-		i=$(($i + 1))
+		i=$((i + 1))
 		shift
 	done
 
@@ -3641,7 +3672,7 @@ _cli_expand_abbreviated_command() {
 		return 2
 	fi
 
-	echo $matched_words
+	echo "$matched_words"
 }
 
 _cli_expand_abbreviated_args() {
@@ -3655,14 +3686,15 @@ _cli_expand_abbreviated_args() {
 	_cli_log 4 "cmd: $cmd"
 	i=1
 	for arg in $args; do
-		expanded_arg=($(_cli_complete_arg $i $1 "$cmd"))
-		_cli_log 4 "\$1: $1, arg: $arg, expanded: $expanded_arg, ${#expanded_arg[@]}"
+		# shellcheck disable=SC2207
+		expanded_arg=($(_cli_complete_arg $i "$1" "$cmd"))
+		_cli_log 4 "\$1: $1, arg: $arg, expanded: ${expanded_arg[0]}, ${#expanded_arg[@]}"
 
 		if [ "${#expanded_arg[@]}" -eq 1 ]; then
 			if [ "$expanded_args" = "" ]; then
-				expanded_args="$expanded_arg"
+				expanded_args="${expanded_arg[0]}"
 			else
-				expanded_args="$expanded_args $expanded_arg"
+				expanded_args="$expanded_args ${expanded_arg[0]}"
 			fi
 		elif [ "${#expanded_arg[@]}" -eq 0 ]; then
 			if ! _cli_global_is_negative_bool CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY; then
@@ -3683,12 +3715,12 @@ _cli_expand_abbreviated_args() {
 		fi
 		
 		shift
-		expanded_arg=""
-		i=$(($i + 1))
+		expanded_arg=()
+		i=$((i + 1))
 	done
 
 	_cli_log 4 "args: $* "
-	echo $expanded_args $*
+	echo "$expanded_args" "$*"
 
 }
 
@@ -3887,7 +3919,7 @@ _cli_execute() {
 	  # shellcheck disable=SC2296
 		a_cmd_args=("${(z)cmd_args}")
 	else
-		read -a a_cmd_args <<<"$cmd_args"
+		read -ra a_cmd_args <<<"$cmd_args"
 	fi
 	for arg in "${a_cmd_args[@]}"; do
 		last_arg=$arg
@@ -3903,7 +3935,9 @@ _cli_execute() {
 			echo
 		else
 			local _had_shwordsplit=false
+			# shellcheck disable=SC2015
 			_cli_shell_is_zsh && { [[ -o SH_WORD_SPLIT ]] && _had_shwordsplit=true || setopt SH_WORD_SPLIT; }
+			# shellcheck disable=SC2086
 			CMD=$(_cli_remove_last_word $cmd_args)
 			_cli_shell_is_zsh && { $_had_shwordsplit || unsetopt SH_WORD_SPLIT; }
 			_awk output=help command_filter="$CMD" do_format=1
@@ -3949,6 +3983,7 @@ if ! _cli_is_sourced; then
 	fi
 	_cli_execute "$@"
 else 
+	# shellcheck disable=SC2154
 	if _cli_shell_is_bash; then
 		complete -F _cli_complete_ "$__CLI_PROGNAME"
 	elif _cli_shell_is_zsh && (( $+functions[compdef] )); then
