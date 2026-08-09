@@ -207,27 +207,26 @@ jobs:
         with:
           distribution: Ubuntu-24.04
       - name: Run tests in WSL
-        shell: wsl -d Ubuntu-24.04 -- bash -eo pipefail {0}
+        shell: powershell
         run: |
-          wsl_path=$(wslpath '${{ github.workspace }}')
-          cd "$wsl_path"
-
-          # Install dependencies
+          $wslWorkspace = wsl -d Ubuntu-24.04 -- wslpath '${{ github.workspace }}'
+          $scriptFile = [System.IO.Path]::GetTempFileName()
+          @"
+          set -eo pipefail
+          cd "$wslWorkspace"
           apt-get update -qq
           apt-get install -y -qq bash zsh gawk git
-
-          # Smoke test
           ln -sf ./audogombleed.sh ./testcli
           cp example.conf ~/.testcli.conf
           bash ./testcli echo hello world
           zsh ./testcli echo hello world
           rm -f ./testcli ~/.testcli.conf
-
-          # Run bash tests
           test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-wsl-bash.xml
-
-          # Run zsh tests
           test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-wsl-zsh.xml
+          "@ | Set-Content -Path $scriptFile -Encoding UTF8
+          $wslScriptFile = wsl -d Ubuntu-24.04 -- wslpath $scriptFile.Replace('\','\\')
+          wsl -d Ubuntu-24.04 -- bash $wslScriptFile
+          Remove-Item $scriptFile
       - name: Report (bash)
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
         if: always()
