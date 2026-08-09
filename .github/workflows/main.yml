@@ -31,7 +31,7 @@ jobs:
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
         if: always()
         with:
-          name: "BATS Test Report (bash ${{ matrix.bash-version }})"
+          name: "BATS Test Report (Ubuntu bash ${{ matrix.bash-version }})"
           path: report.xml
           reporter: java-junit
           fail-on-error: true
@@ -51,7 +51,7 @@ jobs:
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
         if: always()
         with:
-          name: "BATS Test Report (zsh)"
+          name: "BATS Test Report (Ubuntu zsh)"
           path: report-zsh.xml
           reporter: java-junit
           fail-on-error: true
@@ -104,7 +104,7 @@ jobs:
         with:
           usesh: true
           prepare: |
-            pkg install -y bash git gawk coreutils
+            pkg install -y bash zsh git gawk coreutils
             mount -t fdescfs fdesc /dev/fd
           run: |
             # Debug: check environment
@@ -112,6 +112,8 @@ jobs:
             uname -a
             echo "=== bash version ==="
             bash --version | head -1
+            echo "=== zsh version ==="
+            zsh --version
             echo "=== gawk version ==="
             gawk --version | head -1
             echo "=== gdate version ==="
@@ -127,14 +129,25 @@ jobs:
             ln -sf ./audogombleed.sh ./testcli
             cp example.conf ~/.testcli.conf
             bash ./testcli echo hello world
+            zsh ./testcli echo hello world
             rm -f ./testcli ~/.testcli.conf
             # Run bash tests (allow failures to capture report)
-            test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-freebsd.xml || true
-      - name: Report
+            test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-freebsd-bash.xml || true
+            # Run zsh tests (allow failures to capture report)
+            test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-freebsd-zsh.xml || true
+      - name: Report (bash)
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
         if: always()
         with:
-          name: "BATS Test Report (FreeBSD)"
-          path: report-freebsd.xml
+          name: "BATS Test Report (FreeBSD bash)"
+          path: report-freebsd-bash.xml
+          reporter: java-junit
+          fail-on-error: true
+      - name: Report (zsh)
+        uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
+        if: always()
+        with:
+          name: "BATS Test Report (FreeBSD zsh)"
+          path: report-freebsd-zsh.xml
           reporter: java-junit
           fail-on-error: true
