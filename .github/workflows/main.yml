@@ -170,8 +170,9 @@ jobs:
       - name: Test PKGBUILD build
         run: |
           cd packaging/arch
-          # Create a source tarball for local testing
-          tar czf /tmp/audogombleed-2.0.0.tar.gz -C ../.. .
+          # Create a source tarball that matches GitHub's archive layout
+          # (files inside an audogombleed.sh-X.Y.Z/ directory)
+          tar czf /tmp/audogombleed-2.0.0.tar.gz -C ../.. --transform='s,^.,audogombleed.sh-2.0.0,' .
           # Update source to use local tarball
           sed -i "s|source=.*|source=(\"audogombleed-2.0.0.tar.gz::file:///tmp/audogombleed-2.0.0.tar.gz\")|" PKGBUILD
           sed -i "s|sha256sums=.*|sha256sums=('SKIP')|" PKGBUILD
