@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Build a specific bash version from source and run the BATS test suite against it.
 #

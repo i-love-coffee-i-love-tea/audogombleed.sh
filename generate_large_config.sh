@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Generates a large config with 600+ commands, deep nesting, and lots of comments
 
 cat <<'EOF'
