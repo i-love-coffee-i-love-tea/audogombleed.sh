@@ -107,6 +107,22 @@ jobs:
             pkg install -y bash git gawk coreutils
             mount -t fdescfs fdesc /dev/fd
           run: |
+            # Debug: check environment
+            echo "=== FreeBSD version ==="
+            uname -a
+            echo "=== bash version ==="
+            bash --version | head -1
+            echo "=== gawk version ==="
+            gawk --version | head -1
+            echo "=== gdate version ==="
+            gdate --version | head -1
+            echo "=== stat test ==="
+            touch /tmp/test-stat.txt
+            chmod 777 /tmp/test-stat.txt
+            stat -L -f '%p' /tmp/test-stat.txt
+            echo "=== readlink test ==="
+            ln -sf /tmp/test-stat.txt /tmp/test-link.txt
+            readlink -f /tmp/test-link.txt
             # Smoke test
             ln -sf ./audogombleed.sh ./testcli
             cp example.conf ~/.testcli.conf
