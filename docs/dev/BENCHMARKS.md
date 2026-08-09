@@ -106,6 +106,27 @@ bash-native env extraction, combined completion_init, permission check caching).
 Simple config results are in the "very good" zone (<100ms).
 Large config results are in the "good" zone (<200ms).
 
+### Why benchmarks are slower despite optimizations
+
+The optimizations are real — AWK forks dropped from 4 to 2 on first TAB, and
+subshells were eliminated. But two subsequent changes added overhead that
+outweighs the gains:
+
+1. **File permission checks** (`bdd79e9`): Every AWK call and every `source`
+   now runs `_cli_check_file_permissions`, which calls `stat`, `readlink`, and
+   `id` to verify the config file is not world-writable and is owned by the
+   current user or root. This adds 3-4 external process forks per completion.
+
+2. **Removed function/env caching** (`dc55ae7`): Functions and the `[env]`
+   section depend on external state (shell variables, files, commands) that can
+   change between invocations without modifying the config file. Caching them
+   by mtime was incorrect — it caused stale completions. The fix: always
+   re-read the function list from AWK on every completion, adding back one
+   AWK fork that the optimizations had eliminated.
+
+Net effect: the optimizations reduced AWK forks from 4→2, but correctness and
+security added ~4 external tool calls back. The benchmarks reflect this trade-off.
+
 ## AWK call count per TAB press
 
 | Call | output= | Before | After |

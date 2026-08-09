@@ -482,7 +482,7 @@ _cli_complete_()
 ├─ 4. _cli_open_logfile()              ← if log level > 0
 ├─ 5. _cli_read_awk_script()           ← load embedded AWK (cached)
 ├─ 6. _cli_load_config_environment()   ← source [env], process includes
-├─ 7. _cli_load_command_word_functions()← run &functions, cache results
+├─ 7. _cli_load_command_word_functions()← run &functions (no cache)
 ├─ 8. _cli_read_command_list()         ← AWK → __CLI_CONFIG[] array
 │
 ├─ 9. Read COMP_LINE, COMP_CWORD, COMP_WORDS (bash)
@@ -784,9 +784,10 @@ script uses several caching strategies:
    config file's modification time. If unchanged, it reuses the cached
    `__CLI_CONFIG` array.
 
-3. **Command word function cache** — `_cli_load_command_word_functions()`
-   caches the function list and only re-runs functions if the config
-   mtime changed.
+3. **Command word functions** — `_cli_load_command_word_functions()` runs
+   on every completion. Functions depend on external state (shell variables,
+   files, commands) that can change between invocations without modifying
+   the config file. Caching them by mtime would cause stale completions.
 
 4. **Config environment** — `[env]` is re-sourced on every call (because
    it may contain dynamic state), but the overhead is minimal for
