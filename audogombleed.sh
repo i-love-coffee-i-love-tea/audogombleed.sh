@@ -65,7 +65,7 @@
 #
 # 	Documentation is available here: https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
 #	
-__CLI_VERSION="1.3.0"
+__CLI_VERSION="2.0.0"
 
 # Cache uname once at source time — avoids subprocess fork in every stat call
 __CLI_UNAME="$(uname)"
