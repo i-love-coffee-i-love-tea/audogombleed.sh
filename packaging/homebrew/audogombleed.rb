@@ -1,7 +1,7 @@
 class Audogombleed < Formula
   desc "Create CLIs with auto-completable command trees — no coding required"
   homepage "https://github.com/i-love-coffee-i-love-tea/audogombleed.sh"
-  url "https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.0.0.tar.gz"
+  url "https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.1.0.tar.gz"
   sha256 ""
   license "BSD-2-Clause"
 

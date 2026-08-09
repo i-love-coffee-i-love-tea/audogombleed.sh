@@ -23,6 +23,14 @@
 
 ### Fixes
 
+- Fix shellcheck warnings and errors in `audogombleed.sh`: resolve all findings (real bugs, style issues, and suppressions with explanations)
+- Fix `$args` array truncation in `_cli_execute_command()` — multi-arg abbreviation expansion was only passing the first argument
+- Fix `args="$expanded_args"` reassignment that corrupted the args array by leaking old elements
+- Fix `arg_list` array/string type confusion in `_cli_complete_arg()` that broke list argument completion
+- Fix `$expanded_arg` and `$COMPREPLY` array-without-index issues
+- Fix `ls | grep` patterns replaced with portable globs
+- Fix `trap` to defer variable expansion to signal time
+- Make release hooks 90 (commit) and 91 (tag) idempotent — re-running `release.sh` is now safe
 - Fix AWK heredoc anchors: use unique markers (`MAIN_AWK_EOF`, `VALIDATOR_AWK_EOF`) to prevent validator script from leaking into the main parser during sed extraction
 - Fix RPM tarball layout, Homebrew tap setup, Gentoo ebuild validation, Arch tarball layout
 - Fix WSL path conversion, CRLF handling, and script encoding
@@ -31,6 +39,7 @@
 
 - Add badge row to README (tests, coverage, shellcheck, license, release, stars, bash, zsh)
 - Add contributing guide with setup, testing, coding conventions, and MADR ADR reference
+- Document conventional commit message format in contributing guide
 - Convert ADR-011 and ADR-012 to MADR format (YAML front matter, Pros and Cons sections)
 - Add MADR convention documentation to ADR README with lint script reference
 - Update packaging files documentation
