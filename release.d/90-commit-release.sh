@@ -5,5 +5,5 @@
 #
 set -euo pipefail
 
-git add "$script" "$manpage" "$changelog" packaging/
-git commit -m "Bump version to $version"
+git add "$script" "$manpage" "$changelog" packaging/ CHANGELOG.md
+git commit -m "chore(release): bump version to $version"
