@@ -1,5 +1,40 @@
 # Changelog
 
+## 2.1.0
+
+### Features
+
+- Add release.d hook system: 19 hooks for validation, linting, version stamping, testing, and tagging (`release.sh` orchestrates the pipeline)
+- Add formal config grammar specification (`docs/config-grammar.md`) with embedded validator accessible via `--cli-validate-config`
+- Add code coverage workflow with kcov (CI artifact report + local `coverage.sh` script)
+- Add ADR-011 (config grammar) and ADR-012 (code coverage) in MADR format (ADR-011+ follow the [MADR spec](https://adr.github.io/madr/))
+- Add Homebrew formula, RPM spec, Gentoo ebuild, Nix expression packaging with CI verification
+- Add Arch Linux PKGBUILD with CI build verification
+- Add WSL test job (Ubuntu 24.04 under Windows)
+- Add contributing guide (`docs/CONTRIBUTING.md`)
+
+### CI
+
+- Add test jobs for WSL (bash + zsh)
+- Add package build jobs for Arch, Homebrew, RPM, Gentoo, Nix
+- Restructure job names with `test:` and `pkg:` prefixes
+- Use GNU mirror and curl retry for bash source downloads
+- Raise WSL benchmark thresholds (400ms exec, 400ms completion, 600ms large)
+
+### Fixes
+
+- Fix AWK heredoc anchors: use unique markers (`MAIN_AWK_EOF`, `VALIDATOR_AWK_EOF`) to prevent validator script from leaking into the main parser during sed extraction
+- Fix RPM tarball layout, Homebrew tap setup, Gentoo ebuild validation, Arch tarball layout
+- Fix WSL path conversion, CRLF handling, and script encoding
+
+### Documentation
+
+- Add badge row to README (tests, coverage, shellcheck, license, release, stars, bash, zsh)
+- Add contributing guide with setup, testing, coding conventions, and MADR ADR reference
+- Convert ADR-011 and ADR-012 to MADR format (YAML front matter, Pros and Cons sections)
+- Add MADR convention documentation to ADR README with lint script reference
+- Update packaging files documentation
+
 ## 2.0.0
 
 ### Features
