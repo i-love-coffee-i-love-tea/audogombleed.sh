@@ -100,8 +100,7 @@ validate_adr() {
 }
 
 if [ $# -eq 0 ]; then
-    echo "usage: $0 <adr-file-or-directory>" >&2
-    exit 1
+    set -- docs/dev/adr/
 fi
 
 # Collect all ADR files
