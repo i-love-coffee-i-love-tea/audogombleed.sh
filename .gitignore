@@ -14,3 +14,9 @@ debian/debhelper-build-stamp
 
 # AI session artifacts
 .mimocode/
+
+# Coverage reports
+coverage/
+
+# Exported AWK script (dev workflow)
+cli.awk

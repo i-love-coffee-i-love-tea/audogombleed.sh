@@ -1,0 +1,91 @@
+name: Code Coverage
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+
+jobs:
+  coverage:
+    name: "coverage: bash + zsh"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          submodules: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq binutils-dev libiberty-dev libdw-dev \
+            libcurl4-openssl-dev cmake zsh
+
+      - name: Build kcov
+        run: |
+          git clone --depth 1 https://github.com/SimonKagstrom/kcov.git /tmp/kcov
+          cd /tmp/kcov
+          cmake -B build -DCMAKE_INSTALL_PREFIX=/usr/local
+          cmake --build build -j"$(nproc)"
+          sudo cmake --install build
+          kcov --version
+
+      - name: Run bash tests with coverage
+        run: |
+          mkdir -p coverage/bash
+          kcov \
+            --bash-method=DEBUG \
+            --bash-parse-files-in-dir="$(pwd)" \
+            --include-pattern=audogombleed.sh \
+            --exclude-pattern=test,bats \
+            coverage/bash \
+            test/bats/bin/bats test/*-bash.bats test/*-all.bats
+
+      - name: Run zsh tests with coverage
+        run: |
+          mkdir -p coverage/zsh
+          # kcov doesn't support zsh natively. Run zsh tests normally to
+          # verify they pass; bash coverage already exercises the shared code.
+          test/bats/bin/bats test/*-zsh.bats test/*-all.bats
+
+      - name: Merge coverage data
+        run: |
+          # kcov writes per-bats-file results; merge them into one report
+          mkdir -p coverage/merged
+          kcov --merge coverage/merged coverage/bash
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@04b047e8bb82a0c002c8312c1c880fbc6a999d45 # v5
+        with:
+          files: coverage/merged/audogombleed.sh/coverage.json
+          flags: bash
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-report
+          path: coverage/merged/
+          retention-days: 30
+
+      - name: Summary
+        run: |
+          if [ -f coverage/merged/audogombleed.sh/coverage.json ]; then
+            pct=$(python3 -c "
+          import json, sys
+          d = json.load(open('coverage/merged/audogombleed.sh/coverage.json'))
+          print(f\"{d['percent_covered']:.1f}%\")
+          " 2>/dev/null || echo "N/A")
+            echo "## Coverage: $pct" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Report uploaded as artifact: \`coverage-report\`" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## Coverage: no data generated" >> "$GITHUB_STEP_SUMMARY"
+          fi
