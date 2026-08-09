@@ -3384,7 +3384,7 @@ _cli_expand_abbreviated_args() {
 				else
 					expanded_args="$expanded_args $1"
 				fi
-			elif ! [[ "$arg" =~ \?$ ]]; then
+			elif ! [[ "$arg" == *'?' ]]; then
 				_cli_error "command arg $i of type $arg can't be completed, because it's ambiguous: $1"
 				_cli_error "set CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY=n in config to allow this command"
 				return 2
