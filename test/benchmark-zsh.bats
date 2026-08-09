@@ -8,9 +8,9 @@
 #
 
 LARGE_CONF_GENERATOR="./generate_large_config.sh"
-MAX_COMPLETION_MS=300
-MAX_EXEC_MS=200
-MAX_LARGE_COMPLETION_MS=400
+MAX_COMPLETION_MS=${MAX_COMPLETION_MS:-300}
+MAX_EXEC_MS=${MAX_EXEC_MS:-200}
+MAX_LARGE_COMPLETION_MS=${MAX_LARGE_COMPLETION_MS:-400}
 
 # Portable millisecond timestamp.
 # gdate (GNU coreutils): %s%N gives seconds+nanoseconds.

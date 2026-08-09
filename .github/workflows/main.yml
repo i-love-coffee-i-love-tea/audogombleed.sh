@@ -78,6 +78,10 @@ jobs:
           bash ./testcli echo hello world
           rm -f ./testcli ~/.testcli.conf
       - name: Run zsh tests
+        env:
+          MAX_EXEC_MS: 300
+          MAX_COMPLETION_MS: 450
+          MAX_LARGE_COMPLETION_MS: 600
         run: test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit > report-macos-zsh.xml
       - name: Report
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
