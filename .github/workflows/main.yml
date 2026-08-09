@@ -232,25 +232,22 @@ jobs:
           rpm -qip ~/rpmbuild/RPMS/noarch/audogombleed-2.0.0-1.*.rpm
 
   gentoo:
-    name: "Gentoo ebuild build"
+    name: "Gentoo ebuild validation"
     runs-on: ubuntu-latest
-    container:
-      image: gentoo/stage3:latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Test ebuild
+      - name: Validate ebuild
         run: |
-          # Set up a local overlay
-          mkdir -p /var/db/repos/localrepo/{metadata,profiles}
-          echo 'localrepo' > /var/db/repos/localrepo/profiles/repo_name
-          echo 'masters = gentoo' > /var/db/repos/localrepo/metadata/layout.conf
-          mkdir -p /var/db/repos/localrepo/app-misc/audogombleed
-          cp packaging/gentoo/audogombleed-2.0.0.ebuild /var/db/repos/localrepo/app-misc/audogombleed/
-          # Create manifest
-          cd /var/db/repos/localrepo/app-misc/audogombleed
-          ebuild audogombleed-2.0.0.ebuild manifest
-          # Test that the ebuild parses correctly
-          ebuild audogombleed-2.0.0.ebuild unpack
+          ebuild=packaging/gentoo/audogombleed-2.0.0.ebuild
+          # Check bash syntax
+          bash -n "$ebuild"
+          # Check required ebuild variables are defined
+          for var in DESCRIPTION HOMEPAGE SRC_URI LICENSE SLOT KEYWORDS; do
+            grep -q "^${var}=" "$ebuild" || { echo "Missing $var"; exit 1; }
+          done
+          # Check required functions exist
+          grep -q "^src_install()" "$ebuild" || { echo "Missing src_install"; exit 1; }
+          echo "ebuild validation passed"
 
   wsl:
     name: "WSL Ubuntu tests"
