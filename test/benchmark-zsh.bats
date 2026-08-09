@@ -13,19 +13,13 @@ MAX_EXEC_MS=200
 MAX_LARGE_COMPLETION_MS=400
 
 # Portable millisecond timestamp.
-# On Linux (GNU date) uses nanosecond precision; on macOS falls back to seconds.
-# IMPORTANT: %s and %N MUST be read from the same date call to avoid a race
-# where the two calls straddle a second boundary, producing a negative delta.
 _now_ms() {
-	local raw
-	raw=$(date '+%s %N' 2>/dev/null)
-	local s ns
-	s=${raw%% *}
-	ns=${raw#* }
-	if [[ "$ns" =~ ^[0-9]+$ ]]; then
-		echo $(( s * 1000 + 10#$ns / 1000000 ))
+	local ns
+	ns=$(date '+%s%N' 2>/dev/null)
+	if [ "${#ns}" -gt 10 ]; then
+		echo $(( 10#$ns / 1000000 ))
 	else
-		echo $(( s * 1000 ))
+		echo $(( 10#$ns * 1000 ))
 	fi
 }
 
@@ -51,17 +45,14 @@ _zsh_timed_completion() {
 		shift
 		words=("$@")
 
-		# Portable millisecond timestamp — single date call to avoid second-boundary race
+		# Portable millisecond timestamp
 		_now_ms() {
-			local raw
-			raw="$(date +%s\ %N 2>/dev/null)"
-			local s ns
-			s=${raw%% *}
-			ns=${raw#* }
-			if [[ "$ns" =~ ^[0-9]+$ ]]; then
-				echo $(( s * 1000 + 10#$ns / 1000000 ))
+			local ns
+			ns=$(date '+%s%N' 2>/dev/null)
+			if [ "${#ns}" -gt 10 ]; then
+				echo $(( 10#$ns / 1000000 ))
 			else
-				echo $(( s * 1000 ))
+				echo $(( 10#$ns * 1000 ))
 			fi
 		}
 
