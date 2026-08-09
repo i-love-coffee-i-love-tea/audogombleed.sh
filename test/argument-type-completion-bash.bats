@@ -299,8 +299,10 @@ setup() {
 
 @test "SERVICE argument completion returns results" {
     load 'auto-completion-mock-setup'
-    if ! command -v systemctl >/dev/null 2>&1; then
-        skip "systemctl not available"
+    # Skip if no service manager is available
+    if ! command -v systemctl >/dev/null 2>&1 && \
+       ! [ -d /etc/rc.d ] && ! [ -d /usr/local/etc/rc.d ]; then
+        skip "no service manager available"
     fi
     result="$(test_completion 2 "testcli" "test-service")"
     [ -n "$result" ]

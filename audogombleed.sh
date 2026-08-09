@@ -3066,6 +3066,9 @@ _cli_complete_arg() {
 			elif command -v launchctl &>/dev/null; then
 				# macOS
 				_svc_list=$(launchctl list 2>/dev/null | awk 'NR>1 {print $3}')
+			elif [ "$__CLI_UNAME" = "FreeBSD" ]; then
+				# FreeBSD: list services from rc.d directories
+				_svc_list=$(ls /etc/rc.d/ /usr/local/etc/rc.d/ 2>/dev/null | sed 's/^rc.d\///' | sort -u)
 			elif [[ -x /sbin/upstart-udev-bridge ]]; then
 				_svc_list=$(initctl list 2>/dev/null | _cli_cut 1 space)
 			fi
