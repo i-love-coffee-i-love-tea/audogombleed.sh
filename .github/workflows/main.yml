@@ -267,18 +267,11 @@ jobs:
         env:
           WSLENV: GITHUB_WORKSPACE
         run: |
-          wsl -d Ubuntu-24.04 -- bash -c 'set -eo pipefail
-          cd "$(wslpath "$GITHUB_WORKSPACE")"
-          apt-get update -qq
-          apt-get install -y -qq bash zsh gawk git
-          ln -sf ./audogombleed.sh ./testcli
-          cp example.conf ~/.testcli.conf
-          bash ./testcli echo hello world
-          zsh ./testcli echo hello world
-          rm -f ./testcli ~/.testcli.conf
-          test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-wsl-bash.xml
-          test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-wsl-zsh.xml
-          '
+          $script = "set -eo pipefail`ncd `"$(wslpath `"${{ github.workspace }}`")`"`napt-get update -qq`napt-get install -y -qq bash zsh gawk git`nln -sf ./audogombleed.sh ./testcli`ncp example.conf ~/.testcli.conf`nbash ./testcli echo hello world`nzsh ./testcli echo hello world`nrm -f ./testcli ~/.testcli.conf`ntest/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-wsl-bash.xml`ntest/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-wsl-zsh.xml"
+          $script = $script -replace "`r`n","`n" -replace "`r","`n"
+          $bytes = [System.Text.Encoding]::UTF8.GetBytes($script)
+          $encoded = [Convert]::ToBase64String($bytes)
+          wsl -d Ubuntu-24.04 -- bash -c "echo '$encoded' | base64 -d | bash"
       - name: Report (bash)
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
         if: always()
