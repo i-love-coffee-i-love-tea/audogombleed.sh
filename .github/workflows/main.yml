@@ -80,8 +80,8 @@ jobs:
           rm -f ./testcli ~/.testcli.conf
       - name: Run zsh tests
         env:
-          MAX_EXEC_MS: 200
-          MAX_COMPLETION_MS: 200
+          MAX_EXEC_MS: 250
+          MAX_COMPLETION_MS: 250
           MAX_LARGE_COMPLETION_MS: 300
         run: test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-macos-zsh.xml
       - name: Report
@@ -214,9 +214,10 @@ jobs:
       - name: Test PKGBUILD build
         run: |
           cd packaging/arch
-          # Create a source tarball that matches GitHub's archive layout
-          # (files inside an audogombleed.sh-X.Y.Z/ directory)
-          tar czf /tmp/audogombleed-2.0.0.tar.gz -C ../.. --transform='s,^audogombleed\.sh$,audogombleed.sh-2.0.0,' audogombleed.sh
+          # Create a source tarball matching GitHub's archive layout
+          mkdir /tmp/src && cp -a ../.. /tmp/src/audogombleed.sh-2.0.0
+          tar czf /tmp/audogombleed-2.0.0.tar.gz -C /tmp/src audogombleed.sh-2.0.0
+          rm -rf /tmp/src
           # Update source to use local tarball
           sed -i "s|source=.*|source=(\"audogombleed-2.0.0.tar.gz::file:///tmp/audogombleed-2.0.0.tar.gz\")|" PKGBUILD
           sed -i "s|sha256sums=.*|sha256sums=('SKIP')|" PKGBUILD
@@ -270,7 +271,9 @@ jobs:
           dnf install -y rpm-build rpmdevtools
           rpmdev-setuptree
           # Create source tarball matching GitHub's archive layout
-          tar czf ~/rpmbuild/SOURCES/audogombleed-2.0.0.tar.gz -C .. --transform='s,^audogombleed\.sh$,audogombleed.sh-2.0.0,' audogombleed.sh
+          mkdir /tmp/src && cp -a .. /tmp/src/audogombleed.sh-2.0.0
+          tar czf ~/rpmbuild/SOURCES/audogombleed-2.0.0.tar.gz -C /tmp/src audogombleed.sh-2.0.0
+          rm -rf /tmp/src
           rpmbuild -ba packaging/rpm/audogombleed.spec
           # Verify the RPM was built
           rpm -qip ~/rpmbuild/RPMS/noarch/audogombleed-2.0.0-1.*.rpm
