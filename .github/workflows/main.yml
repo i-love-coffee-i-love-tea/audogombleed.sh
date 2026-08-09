@@ -106,6 +106,7 @@ jobs:
           prepare: |
             pkg install -y bash zsh git gawk coreutils
             mount -t fdescfs fdesc /dev/fd
+            git config --global --add safe.directory /home/runner/work/audogombleed.sh/audogombleed.sh
           run: |
             {
             echo "=== FreeBSD version ==="
