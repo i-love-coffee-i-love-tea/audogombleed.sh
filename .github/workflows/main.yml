@@ -65,9 +65,10 @@ jobs:
           submodules: true
       # macOS ships bash 3.2 at /bin/bash; bats needs 4.2+
       # Install awk variants so POSIX-compat tests actually run
-      - name: Install modern bash and awk variants
+      # Install coreutils for gdate (nanosecond precision in benchmarks)
+      - name: Install modern bash, awk variants, and coreutils
         run: |
-          brew install bash gawk mawk
+          brew install bash gawk mawk coreutils
           echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
       - name: Smoke test
         run: |

@@ -13,19 +13,17 @@ MAX_EXEC_MS=200
 MAX_LARGE_COMPLETION_MS=400
 
 # Portable millisecond timestamp.
-# On Linux (GNU date) uses nanosecond precision; on macOS falls back to seconds.
-# IMPORTANT: %s and %N MUST be read from the same date call to avoid a race
-# where the two calls straddle a second boundary, producing a negative delta.
+# gdate (GNU coreutils): %s%N gives seconds+nanoseconds.
+# date (GNU): same. macOS BSD date: %N not supported, fall back to perl.
 _now_ms() {
-	local raw
-	raw=$(date '+%s %N' 2>/dev/null)
-	local s ns
-	s=${raw%% *}
-	ns=${raw#* }
-	if [[ "$ns" =~ ^[0-9]+$ ]]; then
-		echo $(( s * 1000 + 10#$ns / 1000000 ))
+	local _date="date"
+	command -v gdate &>/dev/null && _date="gdate"
+	local ns
+	ns=$("$_date" '+%s%N' 2>/dev/null)
+	if [ "${#ns}" -gt 10 ]; then
+		echo $(( 10#$ns / 1000000 ))
 	else
-		echo $(( s * 1000 ))
+		perl -MTime::HiRes -e 'printf "%d\n", Time::HiRes::time()*1000'
 	fi
 }
 

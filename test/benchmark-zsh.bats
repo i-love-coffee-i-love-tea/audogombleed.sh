@@ -13,11 +13,13 @@ MAX_EXEC_MS=200
 MAX_LARGE_COMPLETION_MS=400
 
 # Portable millisecond timestamp.
-# GNU date: %s%N gives seconds+nanoseconds, divide by 1000000 for ms.
-# macOS date: %N not supported, fall back to perl (ships with macOS).
+# gdate (GNU coreutils): %s%N gives seconds+nanoseconds.
+# date (GNU): same. macOS BSD date: %N not supported, fall back to perl.
 _now_ms() {
+	local _date="date"
+	command -v gdate &>/dev/null && _date="gdate"
 	local ns
-	ns=$(date '+%s%N' 2>/dev/null)
+	ns=$("$_date" '+%s%N' 2>/dev/null)
 	if [ "${#ns}" -gt 10 ]; then
 		echo $(( 10#$ns / 1000000 ))
 	else
@@ -49,8 +51,10 @@ _zsh_timed_completion() {
 
 		# Portable millisecond timestamp
 		_now_ms() {
+			local _date="date"
+			command -v gdate &>/dev/null && _date="gdate"
 			local ns
-			ns=$(date "+%s%N" 2>/dev/null)
+			ns=$("$_date" "+%s%N" 2>/dev/null)
 			if [ "${#ns}" -gt 10 ]; then
 				echo $(( 10#$ns / 1000000 ))
 			else
