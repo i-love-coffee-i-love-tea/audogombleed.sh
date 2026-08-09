@@ -39,7 +39,7 @@ setup() {
 _run_awk_with() {
 	local awk_bin="$1" config="$2"
 	shift 2
-	sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$awk_bin" -f - "$config" "$@"
+	sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^#!\/usr\/bin\/awk -f$/d; /^MAIN_AWK_EOF$/d; p; }' audogombleed.sh | "$awk_bin" -f - "$config" "$@"
 }
 
 # Print path to gawk binary, or return 1 if not installed.
@@ -943,8 +943,8 @@ EOF
 	export ARGUMENT_OPTIONS="option1 option2 option3"
 
 	local gawk_out mawk_out
-	gawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=command_names 2>/dev/null | sort)
-	mawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | mawk -f - "$config" output=command_names 2>/dev/null | sort)
+	gawk_out=$(sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^#!\/usr\/bin\/awk -f$/d; /^MAIN_AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=command_names 2>/dev/null | sort)
+	mawk_out=$(sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^#!\/usr\/bin\/awk -f$/d; /^MAIN_AWK_EOF$/d; p; }' audogombleed.sh | mawk -f - "$config" output=command_names 2>/dev/null | sort)
 
 	assert_equal "$gawk_out" "$mawk_out"
 	unset __VAR_EXPANSION_WORDS ARGUMENT_OPTIONS
@@ -959,8 +959,8 @@ EOF
 	export ARGUMENT_OPTIONS="option1 option2 option3"
 
 	local gawk_out nawk_out
-	gawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=command_names 2>/dev/null | sort)
-	nawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_nawk" -f - "$config" output=command_names 2>/dev/null | sort)
+	gawk_out=$(sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^#!\/usr\/bin\/awk -f$/d; /^MAIN_AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=command_names 2>/dev/null | sort)
+	nawk_out=$(sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^#!\/usr\/bin\/awk -f$/d; /^MAIN_AWK_EOF$/d; p; }' audogombleed.sh | "$_nawk" -f - "$config" output=command_names 2>/dev/null | sort)
 
 	assert_equal "$gawk_out" "$nawk_out"
 	unset __VAR_EXPANSION_WORDS ARGUMENT_OPTIONS
@@ -982,8 +982,8 @@ EOF
 	local config="$HOME/.testcli.conf"
 
 	local gawk_out mawk_out
-	gawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
-	mawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | mawk -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
+	gawk_out=$(sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^#!\/usr\/bin\/awk -f$/d; /^MAIN_AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
+	mawk_out=$(sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^#!\/usr\/bin\/awk -f$/d; /^MAIN_AWK_EOF$/d; p; }' audogombleed.sh | mawk -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
 
 	assert_equal "$gawk_out" "$mawk_out"
 }
@@ -1000,8 +1000,8 @@ EOF
 	local config="$HOME/.testcli.conf"
 
 	local gawk_out nawk_out
-	gawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
-	nawk_out=$(sed -n '/^#!\/usr\/bin\/awk -f$/,/^AWK_EOF$/{ /^#!\/usr\/bin\/awk -f$/d; /^AWK_EOF$/d; p; }' audogombleed.sh | "$_nawk" -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
+	gawk_out=$(sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^#!\/usr\/bin\/awk -f$/d; /^MAIN_AWK_EOF$/d; p; }' audogombleed.sh | "$_gawk" -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
+	nawk_out=$(sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^#!\/usr\/bin\/awk -f$/d; /^MAIN_AWK_EOF$/d; p; }' audogombleed.sh | "$_nawk" -f - "$config" output=commands command_filter="echo" 2>/dev/null | sort)
 
 	assert_equal "$gawk_out" "$nawk_out"
 }

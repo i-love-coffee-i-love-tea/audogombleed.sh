@@ -603,7 +603,8 @@ _cli_read_awk_script() {
 	# Cache: skip if already read
 	[ ${#__CLI_AWK_SCRIPT} -gt 0 ] && return
 	_cli_log 4 "reading awk script"
-	read -r -d '' __CLI_AWK_SCRIPT <<'AWK_EOF'
+	read -r -d '' __CLI_AWK_SCRIPT <<'MAIN_AWK_EOF'
+# __MAIN_AWK_PARSER__
 #!/usr/bin/awk -f
 #
 # Parses a command tree config file
@@ -1778,12 +1779,12 @@ function _strip_from_last_colon(s) {
 # Portable array clear: BWK awk (macOS) does not support bare "delete array"
 function clear_array(a,    k) { for (k in a) delete a[k] }
 
-AWK_EOF
+MAIN_AWK_EOF
 }
 
 _cli_read_validator_script() {
 	[ ${#__CLI_VALIDATOR_SCRIPT} -gt 0 ] && return
-	read -r -d '' __CLI_VALIDATOR_SCRIPT <<'AWK_EOF'
+	read -r -d '' __CLI_VALIDATOR_SCRIPT <<'VALIDATOR_AWK_EOF'
 #!/usr/bin/awk -f
 # Config file validator — checks structure against the config grammar.
 # Usage: awk -f validator.awk <config-file>
@@ -2010,7 +2011,7 @@ END {
 		printf "%s  config is valid%s\n", C_GREEN, C_RESET > "/dev/stderr"
 	}
 }
-AWK_EOF
+VALIDATOR_AWK_EOF
 }
 
 _cli_validate_config() {
