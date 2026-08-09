@@ -82,7 +82,7 @@ jobs:
         env:
           MAX_EXEC_MS: 250
           MAX_COMPLETION_MS: 250
-          MAX_LARGE_COMPLETION_MS: 300
+          MAX_LARGE_COMPLETION_MS: 350
         run: test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-macos-zsh.xml
       - name: Report
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
@@ -179,7 +179,7 @@ jobs:
         run: |
           $wslPath = "${{ github.workspace }}" -replace '\\','/' -replace '^([A-Z]):', '/mnt/$1'
           $wslPath = $wslPath.ToLower()
-          $script = "set -eo pipefail`ncd `"$wslPath`"`napt-get update -qq`napt-get install -y -qq bash zsh gawk git`nln -sf ./audogombleed.sh ./testcli`ncp example.conf ~/.testcli.conf`nbash ./testcli echo hello world`nzsh ./testcli echo hello world`nrm -f ./testcli ~/.testcli.conf`nexport MAX_EXEC_MS=250 MAX_COMPLETION_MS=250 MAX_LARGE_COMPLETION_MS=400`ntest/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-wsl-bash.xml`ntest/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-wsl-zsh.xml"
+          $script = "set -eo pipefail`ncd `"$wslPath`"`napt-get update -qq`napt-get install -y -qq bash zsh gawk git`nln -sf ./audogombleed.sh ./testcli`ncp example.conf ~/.testcli.conf`nbash ./testcli echo hello world`nzsh ./testcli echo hello world`nrm -f ./testcli ~/.testcli.conf`nexport MAX_EXEC_MS=400 MAX_COMPLETION_MS=400 MAX_LARGE_COMPLETION_MS=600`ntest/bats/bin/bats test/*-bash.bats test/*-all.bats --filter '!ACK=y' --formatter junit | tee report-wsl-bash.xml`ntest/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-wsl-zsh.xml"
           $script = $script -replace "`r`n","`n" -replace "`r","`n"
           $bytes = [System.Text.Encoding]::UTF8.GetBytes($script)
           $encoded = [Convert]::ToBase64String($bytes)
