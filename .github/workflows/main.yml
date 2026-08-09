@@ -205,29 +205,27 @@ jobs:
         uses: Vampire/setup-wsl@v5
         with:
           distribution: Ubuntu-24.04
-      - name: Install dependencies in WSL
-        shell: wsl bash -e {0}
+      - name: Run tests in WSL
+        shell: wsl -d Ubuntu-24.04 -- bash -eo pipefail {0}
         run: |
+          wsl_path=$(wslpath '${{ github.workspace }}')
+          cd "$wsl_path"
+
+          # Install dependencies
           apt-get update -qq
           apt-get install -y -qq bash zsh gawk git
-      - name: Smoke test in WSL
-        shell: wsl bash -e {0}
-        run: |
-          cd "$GITHUB_WORKSPACE"
+
+          # Smoke test
           ln -sf ./audogombleed.sh ./testcli
           cp example.conf ~/.testcli.conf
           bash ./testcli echo hello world
           zsh ./testcli echo hello world
           rm -f ./testcli ~/.testcli.conf
-      - name: Run bash tests in WSL
-        shell: wsl bash -e {0}
-        run: |
-          cd "$GITHUB_WORKSPACE"
+
+          # Run bash tests
           test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-wsl-bash.xml
-      - name: Run zsh tests in WSL
-        shell: wsl bash -e {0}
-        run: |
-          cd "$GITHUB_WORKSPACE"
+
+          # Run zsh tests
           test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-wsl-zsh.xml
       - name: Report (bash)
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
