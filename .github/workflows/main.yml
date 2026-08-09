@@ -105,6 +105,7 @@ jobs:
           usesh: true
           prepare: |
             pkg install -y bash git
+            mount -t fdescfs fdesc /dev/fd
           run: |
             set -e
             # Smoke test
