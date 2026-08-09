@@ -225,8 +225,8 @@ jobs:
         run: |
           dnf install -y rpm-build rpmdevtools
           rpmdev-setuptree
-          # Create source tarball
-          tar czf ~/rpmbuild/SOURCES/audogombleed-2.0.0.tar.gz -C .. --transform='s,^.,audogombleed.sh-2.0.0,' audogombleed.sh
+          # Create source tarball matching GitHub's archive layout
+          tar czf ~/rpmbuild/SOURCES/audogombleed-2.0.0.tar.gz -C .. --transform='s,^.,audogombleed.sh-2.0.0,' .
           rpmbuild -ba packaging/rpm/audogombleed.spec
           # Verify the RPM was built
           rpm -qip ~/rpmbuild/RPMS/noarch/audogombleed-2.0.0-1.*.rpm
