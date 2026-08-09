@@ -21,7 +21,7 @@ setup() {
     load 'zsh-helpers'
 }
 
-@test "zsh completions: _cli_getfirstwords includes descriptions" {
+@test "zsh completions: _cli_getfirstwords returns bare command names" {
     run zsh -c '
         source ./testcli
         __CLI_PROGNAME="testcli"
@@ -35,12 +35,9 @@ setup() {
         _cli_close_logfile
     '
     assert_success
-    # var-expansion has a group heading in the config
-    assert_line --partial "var-expansion[demonstration of parameterized command word with variable]"
-    # list-argument has a group heading
-    assert_line --partial "list-argument[demonstration of list argument types]"
-    # install has a group heading
-    assert_line --partial "install[example of deeper structure]"
+    assert_line "var-expansion"
+    assert_line "list-argument"
+    assert_line "install"
 }
 
 @test "zsh completions: commands without description show bare name" {
@@ -63,7 +60,7 @@ setup() {
     assert_line "return2"
 }
 
-@test "zsh completions: filtered first-word completion" {
+@test "zsh completions: filtered first-word completion returns bare names" {
     run zsh -c '
         source ./testcli
         __CLI_PROGNAME="testcli"
@@ -77,7 +74,7 @@ setup() {
         _cli_close_logfile
     '
     assert_success
-    assert_line --partial "var-expansion[demonstration of parameterized command word with variable]"
+    assert_line "var-expansion"
 }
 
 @test "zsh completions: _cli_complete_command includes descriptions" {

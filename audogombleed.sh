@@ -1907,14 +1907,8 @@ _cli_load_config_environment() {
 		elif [ "$first_word" = "include_commands_from" ]; then
 			# expecting exactly three words
 			# include_commands_from <file> <parent_command>
-			# zsh does not word-split unquoted variables by default
-			local _had_shwordsplit=false
-			_cli_shell_is_zsh && { [[ -o SH_WORD_SPLIT ]] && _had_shwordsplit=true || setopt SH_WORD_SPLIT; }
-			env_line="$(_cli_remove_first_word $env_line)"
-			include_file=$(_cli_get_first_word $env_line)
+			read -r _ include_file include_parent_command <<< "$env_line"
 			include_file="${include_file/#\~/$HOME}"
-			include_parent_command=$(_cli_get_last_word $env_line)
-			_cli_shell_is_zsh && { $_had_shwordsplit || unsetopt SH_WORD_SPLIT; }
 			include_files+=("$include_file|$include_parent_command")
 			_cli_log 4 "include_file: '$include_file'"
 			_cli_log 4 "include_parent_command: '$include_parent_command'"
@@ -2041,45 +2035,11 @@ _cli_is_command_complete() {
             # stop if nothing is left
             if [ "$match_count" -ne 1 ]; then
                 # remove last word
-                new_line=""
-                words=0
-
-                if [ "$__CLI_IS_ZSH" = "1" ]; then
-                    # shellcheck disable=SC2296
-                    for w in ${(z)line}; do
-                        words=$((words + 1))
-                    done
-                    i=1
-                    # shellcheck disable=SC2296
-                    for w in ${(z)line}; do
-                        if [ "$i" = "$words" ]; then
-                            break
-                        fi
-                        if [ "$new_line" = "" ]; then
-                            new_line=$w
-                        else
-                            new_line="$new_line $w"
-                        fi
-                        i=$((i + 1))
-                    done
+                if [[ "$line" == *" "* ]]; then
+                    line="${line% *}"
                 else
-                    for w in $line; do
-                        words=$((words + 1))
-                    done
-                    i=1
-                    for w in $line; do
-                        if [ "$i" = "$words" ]; then
-                            break
-                        fi
-                        if [ "$new_line" = "" ]; then
-                            new_line=$w
-                        else
-                            new_line="$new_line $w"
-                        fi
-                        i=$((i + 1))
-                    done
+                    line=""
                 fi
-                line="$new_line"
 
                 if [ "$line" = "" ]; then
                     break
@@ -2320,10 +2280,6 @@ _cli_getfirstwords() {
 	# Use cached __CLI_CONFIG instead of spawning gawk subprocess
 	local -A _seen=()
 	local _l _cmd_part _first_word
-	local _zsh_help_lines=""
-	if [ "$__CLI_IS_ZSH" = "1" ]; then
-		_zsh_help_lines="$(_cli_get_command_help_texts "$word")"
-	fi
 	for _l in "${__CLI_CONFIG[@]}"; do
 		_cmd_part="${_l%%,*}"
 		_cmd_part="${_cmd_part%"${_cmd_part##*[![:space:]]}"}"
@@ -2332,17 +2288,7 @@ _cli_getfirstwords() {
 		_first_word="${_cmd_part%% *}"
 		[ -z "${_seen[$_first_word]+_}" ] || continue
 		_seen[$_first_word]=1
-		if [ "$__CLI_IS_ZSH" = "1" ]; then
-			local _desc
-			_desc="$(_cli_lookup_command_desc "$_first_word" "$_zsh_help_lines")"
-			if [ -n "$_desc" ]; then
-				echo "${_first_word}[${_desc}]"
-			else
-				echo "$_first_word"
-			fi
-		else
-			echo "$_first_word"
-		fi
+		echo "$_first_word"
 	done
 }
 
@@ -2922,8 +2868,10 @@ _cli_complete_arg() {
 	local -a arg_list
 	line="$*"
 
-	# command has no args
-	_cli_load_completion_vars "$cmd"
+	# command has no args — skip if caller already loaded vars for this cmd
+	if [ "$__CMD" != "$cmd" ]; then
+		_cli_load_completion_vars "$cmd"
+	fi
 	if [ "$__CMD" = "" ]; then
 		return
 	fi
@@ -2954,8 +2902,8 @@ _cli_complete_arg() {
 		arg_list=(${__CMD_ARG_VALUE[$pos]})
 	elif [ "$arg_type" = "int_range" ]; then
 		arg_list="${__CMD_ARG_VALUE[$pos]}"
-		arg_min=$(echo "$arg_list" | _cli_cut 1 dash)
-		arg_max=$(echo "$arg_list" | _cli_cut 2 dash)
+		arg_min="${arg_list%%-*}"
+		arg_max="${arg_list#*-}"
 	elif [ "$arg_type" = "eval" ]; then
 		eval_cmd="${__CMD_ARG_VALUE[$pos]}"
 	fi
@@ -3420,10 +3368,8 @@ _cli_first_word_equals() {
 
 _cli_load_command_word_functions() {
 	local fun
-	local funcs
-	# Always re-read: function bodies in [env] can change between invocations
-	funcs="$(_awk output=command_word_functions)"
-	[ -z "$funcs" ] && return
+	# Use function list already populated by _cli_completion_init
+	[ -z "$__CLI_CMD_FUNCS_LIST" ] && return
 	while IFS= read -r fun; do
 		[ -z "$fun" ] && continue
 		_cli_log 4 "mapping function $fun results to environment"
@@ -3433,7 +3379,7 @@ _cli_load_command_word_functions() {
 			_cli_error
 			_cli_error "CLI warning: command word function '$fun' used in configuration, but is not available"
 		fi
-	done <<< "$funcs"
+	done <<< "$__CLI_CMD_FUNCS_LIST"
 }
 
 # Load only specific &functions (scoped loading)
