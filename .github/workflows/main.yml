@@ -5,8 +5,9 @@ permissions:
   contents: read
   checks: write
 jobs:
-  bash-compat:
-    name: "Ubuntu bash ${{ matrix.bash-version }}"
+  # ── Test jobs ──────────────────────────────────────────────────────
+  test-ubuntu-bash:
+    name: "test: Ubuntu bash ${{ matrix.bash-version }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -36,8 +37,8 @@ jobs:
           reporter: java-junit
           fail-on-error: true
 
-  zsh-compat:
-    name: "Ubuntu zsh tests"
+  test-ubuntu-zsh:
+    name: "test: Ubuntu zsh"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -56,8 +57,8 @@ jobs:
           reporter: java-junit
           fail-on-error: true
 
-  macos:
-    name: "macOS zsh tests"
+  test-macos:
+    name: "test: macOS zsh"
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -92,8 +93,8 @@ jobs:
           reporter: java-junit
           fail-on-error: true
 
-  freebsd:
-    name: "FreeBSD bash+zsh tests"
+  test-freebsd:
+    name: "test: FreeBSD bash+zsh"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -158,101 +159,12 @@ jobs:
           reporter: java-junit
           fail-on-error: true
 
-  archlinux:
-    name: "Arch Linux PKGBUILD build"
-    runs-on: ubuntu-latest
-    container:
-      image: archlinux:latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Install dependencies
-        run: pacman -Syu --noconfirm bash gawk git base-devel
-      - name: Test PKGBUILD build
-        run: |
-          cd packaging/arch
-          # Create a source tarball that matches GitHub's archive layout
-          # (files inside an audogombleed.sh-X.Y.Z/ directory)
-          tar czf /tmp/audogombleed-2.0.0.tar.gz -C ../.. --transform='s,^audogombleed\.sh$,audogombleed.sh-2.0.0,' audogombleed.sh
-          # Update source to use local tarball
-          sed -i "s|source=.*|source=(\"audogombleed-2.0.0.tar.gz::file:///tmp/audogombleed-2.0.0.tar.gz\")|" PKGBUILD
-          sed -i "s|sha256sums=.*|sha256sums=('SKIP')|" PKGBUILD
-          # Build as non-root user (makepkg refuses to run as root)
-          useradd -m builder
-          chown -R builder:builder /tmp/audogombleed-2.0.0.tar.gz "$GITHUB_WORKSPACE"
-          su builder -c "cd $GITHUB_WORKSPACE/packaging/arch && makepkg --noconfirm --nodeps"
-
-  nix:
-    name: "Nix package build"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          submodules: true
-      - uses: cachix/install-nix-action@v30
-        with:
-          nix_path: nixpkgs=channel:nixpkgs-unstable
-      - name: Build Nix package
-        run: nix-build packaging/nix -A audogombleed --no-out-link
-        continue-on-error: true
-
-  homebrew:
-    name: "Homebrew formula build"
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Test formula install
-        run: |
-          # Create a proper tap
-          brew tap-new i-love-coffee-i-love-tea/audogombleed
-          cp packaging/homebrew/audogombleed.rb "$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-audogombleed/Formula/"
-          # Replace the GitHub URL with a local path for testing
-          tar czf /tmp/audogombleed-2.0.0.tar.gz .
-          sha=$(shasum -a 256 /tmp/audogombleed-2.0.0.tar.gz | cut -d' ' -f1)
-          formula="$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-audogombleed/Formula/audogombleed.rb"
-          sed -i '' "s|url .*|url \"file:///tmp/audogombleed-2.0.0.tar.gz\"|" "$formula"
-          sed -i '' "s|sha256 .*|sha256 \"$sha\"|" "$formula"
-          brew install --build-from-source i-love-coffee-i-love-tea/audogombleed/audogombleed
-          audogombleed --version
-
-  rpm:
-    name: "RPM package build"
-    runs-on: ubuntu-latest
-    container:
-      image: fedora:latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Build RPM
-        run: |
-          dnf install -y rpm-build rpmdevtools
-          rpmdev-setuptree
-          # Create source tarball matching GitHub's archive layout
-          tar czf ~/rpmbuild/SOURCES/audogombleed-2.0.0.tar.gz -C .. --transform='s,^audogombleed\.sh$,audogombleed.sh-2.0.0,' audogombleed.sh
-          rpmbuild -ba packaging/rpm/audogombleed.spec
-          # Verify the RPM was built
-          rpm -qip ~/rpmbuild/RPMS/noarch/audogombleed-2.0.0-1.*.rpm
-
-  gentoo:
-    name: "Gentoo ebuild validation"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Validate ebuild
-        run: |
-          ebuild=packaging/gentoo/audogombleed-2.0.0.ebuild
-          # Check bash syntax
-          bash -n "$ebuild"
-          # Check required ebuild variables are defined
-          for var in DESCRIPTION HOMEPAGE SRC_URI LICENSE SLOT KEYWORDS; do
-            grep -q "^${var}=" "$ebuild" || { echo "Missing $var"; exit 1; }
-          done
-          # Check required functions exist
-          grep -q "^src_install()" "$ebuild" || { echo "Missing src_install"; exit 1; }
-          echo "ebuild validation passed"
-
-  wsl:
-    name: "WSL Ubuntu tests"
+  test-wsl:
+    name: "test: WSL Ubuntu bash+zsh"
     runs-on: windows-latest
     steps:
+      - name: Disable CRLF conversion
+        run: git config --global core.autocrlf input
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           submodules: true
@@ -288,3 +200,95 @@ jobs:
           path: report-wsl-zsh.xml
           reporter: java-junit
           fail-on-error: true
+
+  # ── Package build jobs ─────────────────────────────────────────────
+  pkg-arch:
+    name: "pkg: Arch Linux PKGBUILD"
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install dependencies
+        run: pacman -Syu --noconfirm bash gawk git base-devel
+      - name: Test PKGBUILD build
+        run: |
+          cd packaging/arch
+          # Create a source tarball that matches GitHub's archive layout
+          # (files inside an audogombleed.sh-X.Y.Z/ directory)
+          tar czf /tmp/audogombleed-2.0.0.tar.gz -C ../.. --transform='s,^audogombleed\.sh$,audogombleed.sh-2.0.0,' audogombleed.sh
+          # Update source to use local tarball
+          sed -i "s|source=.*|source=(\"audogombleed-2.0.0.tar.gz::file:///tmp/audogombleed-2.0.0.tar.gz\")|" PKGBUILD
+          sed -i "s|sha256sums=.*|sha256sums=('SKIP')|" PKGBUILD
+          # Build as non-root user (makepkg refuses to run as root)
+          useradd -m builder
+          chown -R builder:builder /tmp/audogombleed-2.0.0.tar.gz "$GITHUB_WORKSPACE"
+          su builder -c "cd $GITHUB_WORKSPACE/packaging/arch && makepkg --noconfirm --nodeps"
+
+  pkg-nix:
+    name: "pkg: Nix"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          submodules: true
+      - uses: cachix/install-nix-action@v30
+        with:
+          nix_path: nixpkgs=channel:nixpkgs-unstable
+      - name: Build Nix package
+        run: nix-build packaging/nix -A audogombleed --no-out-link
+        continue-on-error: true
+
+  pkg-homebrew:
+    name: "pkg: Homebrew formula"
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Test formula install
+        run: |
+          # Create a proper tap
+          brew tap-new i-love-coffee-i-love-tea/audogombleed
+          cp packaging/homebrew/audogombleed.rb "$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-audogombleed/Formula/"
+          # Replace the GitHub URL with a local path for testing
+          tar czf /tmp/audogombleed-2.0.0.tar.gz .
+          sha=$(shasum -a 256 /tmp/audogombleed-2.0.0.tar.gz | cut -d' ' -f1)
+          formula="$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-audogombleed/Formula/audogombleed.rb"
+          sed -i '' "s|url .*|url \"file:///tmp/audogombleed-2.0.0.tar.gz\"|" "$formula"
+          sed -i '' "s|sha256 .*|sha256 \"$sha\"|" "$formula"
+          brew install --build-from-source i-love-coffee-i-love-tea/audogombleed/audogombleed
+          audogombleed --version
+
+  pkg-rpm:
+    name: "pkg: RPM (Fedora)"
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Build RPM
+        run: |
+          dnf install -y rpm-build rpmdevtools
+          rpmdev-setuptree
+          # Create source tarball matching GitHub's archive layout
+          tar czf ~/rpmbuild/SOURCES/audogombleed-2.0.0.tar.gz -C .. --transform='s,^audogombleed\.sh$,audogombleed.sh-2.0.0,' audogombleed.sh
+          rpmbuild -ba packaging/rpm/audogombleed.spec
+          # Verify the RPM was built
+          rpm -qip ~/rpmbuild/RPMS/noarch/audogombleed-2.0.0-1.*.rpm
+
+  pkg-gentoo:
+    name: "pkg: Gentoo ebuild"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Validate ebuild
+        run: |
+          ebuild=packaging/gentoo/audogombleed-2.0.0.ebuild
+          # Check bash syntax
+          bash -n "$ebuild"
+          # Check required ebuild variables are defined
+          for var in DESCRIPTION HOMEPAGE SRC_URI LICENSE SLOT KEYWORDS; do
+            grep -q "^${var}=" "$ebuild" || { echo "Missing $var"; exit 1; }
+          done
+          # Check required functions exist
+          grep -q "^src_install()" "$ebuild" || { echo "Missing src_install"; exit 1; }
+          echo "ebuild validation passed"
