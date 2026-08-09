@@ -208,12 +208,11 @@ jobs:
           distribution: Ubuntu-24.04
       - name: Run tests in WSL
         shell: powershell
+        env:
+          WSLENV: GITHUB_WORKSPACE
         run: |
-          $wslWorkspace = wsl -d Ubuntu-24.04 -- wslpath '${{ github.workspace }}'
-          $scriptFile = [System.IO.Path]::GetTempFileName()
-          @"
-          set -eo pipefail
-          cd "$wslWorkspace"
+          wsl -d Ubuntu-24.04 -- bash -c 'set -eo pipefail
+          cd "$(wslpath "$GITHUB_WORKSPACE")"
           apt-get update -qq
           apt-get install -y -qq bash zsh gawk git
           ln -sf ./audogombleed.sh ./testcli
@@ -223,10 +222,7 @@ jobs:
           rm -f ./testcli ~/.testcli.conf
           test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-wsl-bash.xml
           test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-wsl-zsh.xml
-          "@ | Set-Content -Path $scriptFile -Encoding UTF8
-          $wslScriptFile = wsl -d Ubuntu-24.04 -- wslpath $scriptFile.Replace('\','\\')
-          wsl -d Ubuntu-24.04 -- bash $wslScriptFile
-          Remove-Item $scriptFile
+          '
       - name: Report (bash)
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
         if: always()
