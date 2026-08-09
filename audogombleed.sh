@@ -85,11 +85,7 @@ declare -A __CLI_STAT_UID 2>/dev/null
 # Prefer gawk over system awk (BWK on macOS) when available.
 # Exported so subshells and tests can inspect the choice.
 _cli_detect_awk() {
-	if command -v gawk &>/dev/null; then
-		__CLI_AWK="gawk"
-	else
-		__CLI_AWK="awk"
-	fi
+	__CLI_AWK="awk"
 	export __CLI_AWK
 }
 _cli_detect_awk
