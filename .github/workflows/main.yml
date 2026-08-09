@@ -202,15 +202,16 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Test formula install
         run: |
-          # Create a local tap from our formula
-          mkdir -p /tmp/homebrew-audogombleed/Formula
-          cp packaging/homebrew/audogombleed.rb /tmp/homebrew-audogombleed/Formula/
+          # Create a proper tap
+          brew tap-new i-love-coffee-i-love-tea/audogombleed
+          cp packaging/homebrew/audogombleed.rb "$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-audogombleed/Formula/"
           # Replace the GitHub URL with a local path for testing
           tar czf /tmp/audogombleed-2.0.0.tar.gz .
           sha=$(shasum -a 256 /tmp/audogombleed-2.0.0.tar.gz | cut -d' ' -f1)
-          sed -i '' "s|url .*|url \"file:///tmp/audogombleed-2.0.0.tar.gz\"|" /tmp/homebrew-audogombleed/Formula/audogombleed.rb
-          sed -i '' "s|sha256 .*|sha256 \"$sha\"|" /tmp/homebrew-audogombleed/Formula/audogombleed.rb
-          brew install --build-from-source /tmp/homebrew-audogombleed/Formula/audogombleed.rb
+          formula="$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-audogombleed/Formula/audogombleed.rb"
+          sed -i '' "s|url .*|url \"file:///tmp/audogombleed-2.0.0.tar.gz\"|" "$formula"
+          sed -i '' "s|sha256 .*|sha256 \"$sha\"|" "$formula"
+          brew install --build-from-source i-love-coffee-i-love-tea/audogombleed/audogombleed
           audogombleed --version
 
   rpm:
