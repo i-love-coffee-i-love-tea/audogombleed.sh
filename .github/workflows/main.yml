@@ -131,13 +131,6 @@ jobs:
             cp example.conf ~/.testcli.conf
             bash ./testcli echo hello world
             zsh ./testcli echo hello world
-            # Debug: test permission check directly
-            echo "=== Testing permission check ==="
-            touch /tmp/test-perm.conf
-            chmod 600 /tmp/test-perm.conf
-            ln -sf /tmp/test-perm.conf ~/.testcli2.conf
-            bash -c 'source ./audogombleed.sh; _cli_check_file_permissions ~/.testcli2.conf "test"' && echo "PASS" || echo "FAIL"
-            rm -f /tmp/test-perm.conf ~/.testcli2.conf
             rm -f ./testcli ~/.testcli.conf
             # Run bash tests (allow failures to capture report)
             test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-freebsd-bash.xml || true
