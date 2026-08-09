@@ -78,13 +78,70 @@ EOF
 	cat >> ~/.testcli.conf <<'EOF'
 
 test-desc-file: echo
-	:path:FILE:path to input
+	:path:FILE::path to input
 EOF
 	run ./testcli --cli-run-awk-command output=commands command_filter="test-desc-file"
 	assert_success
 	assert_line '__CMD_ARG_NAME[0]="path"'
 	assert_line '__CMD_ARG_TYPE[0]="FILE"'
+	assert_line '__CMD_ARG_VALUE[0]=""'
 	assert_line '__CMD_ARG_DESC[0]="path to input"'
+}
+
+@test "FILE type with glob filter is parsed as value" {
+	cat >> ~/.testcli.conf <<'EOF'
+
+test-file-glob: echo
+	:path:FILE:*.txt
+EOF
+	run ./testcli --cli-run-awk-command output=commands command_filter="test-file-glob"
+	assert_success
+	assert_line '__CMD_ARG_NAME[0]="path"'
+	assert_line '__CMD_ARG_TYPE[0]="FILE"'
+	assert_line '__CMD_ARG_VALUE[0]="*.txt"'
+	assert_line '__CMD_ARG_DESC[0]=""'
+}
+
+@test "FILE type with glob filter and description" {
+	cat >> ~/.testcli.conf <<'EOF'
+
+test-file-glob-desc: echo
+	:path:FILE:*.txt:text files
+EOF
+	run ./testcli --cli-run-awk-command output=commands command_filter="test-file-glob-desc"
+	assert_success
+	assert_line '__CMD_ARG_NAME[0]="path"'
+	assert_line '__CMD_ARG_TYPE[0]="FILE"'
+	assert_line '__CMD_ARG_VALUE[0]="*.txt"'
+	assert_line '__CMD_ARG_DESC[0]="text files"'
+}
+
+@test "DIR type with glob filter is parsed as value" {
+	cat >> ~/.testcli.conf <<'EOF'
+
+test-dir-glob: echo
+	:path:DIR:*test*
+EOF
+	run ./testcli --cli-run-awk-command output=commands command_filter="test-dir-glob"
+	assert_success
+	assert_line '__CMD_ARG_NAME[0]="path"'
+	assert_line '__CMD_ARG_TYPE[0]="DIR"'
+	assert_line '__CMD_ARG_VALUE[0]="*test*"'
+	assert_line '__CMD_ARG_DESC[0]=""'
+}
+
+@test "FILE_OR_DIR type with glob filter and description" {
+	cat >> ~/.testcli.conf <<'EOF'
+
+test-file-or-dir-glob: echo
+	:path:FILE_OR_DIR:*.log:log files
+EOF
+	run ./testcli --cli-run-awk-command output=commands command_filter="test-file-or-dir-glob"
+	assert_success
+	assert_line '__CMD_ARG_NAME[0]="path"'
+	assert_line '__CMD_ARG_TYPE[0]="FILE_OR_DIR"'
+	assert_line '__CMD_ARG_VALUE[0]="*.log"'
+	assert_line '__CMD_ARG_DESC[0]="log files"'
 }
 
 @test "custom argument descriptions are parsed for int_range type" {

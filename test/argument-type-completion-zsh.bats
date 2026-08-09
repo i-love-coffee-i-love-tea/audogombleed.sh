@@ -2,7 +2,7 @@
 
 #
 # Tests tab completion and execution for argument types under zsh:
-# FILE, DIR, STRING, INTEGER, int_range, ENVVAR, USER, GROUP, SSH_HOST, BLKDEV, SERVICE
+# FILE, DIR, FILE_OR_DIR, STRING, INTEGER, int_range, ENVVAR, USER, GROUP, SSH_HOST, BLKDEV, SERVICE
 #
 
 setup_file() {
@@ -47,6 +47,9 @@ test-blkdev-zsh: echo
 
 test-service-zsh: echo
     :svc:SERVICE
+
+test-file-or-dir-zsh: echo
+    :path:FILE_OR_DIR
 EOF
 
     # Create SSH config for SSH_HOST tests
@@ -111,6 +114,34 @@ setup() {
     assert_success
     assert_output "/tmp/test-dir-arg-type-zsh"
     rm -rf /tmp/test-dir-arg-type-zsh
+}
+
+# --- FILE_OR_DIR ---
+
+@test "zsh: FILE_OR_DIR argument execution passes file path" {
+    touch /tmp/test-file-or-dir-type-zsh.txt
+    run _zsh_run test-file-or-dir-zsh /tmp/test-file-or-dir-type-zsh.txt
+    assert_success
+    assert_output "/tmp/test-file-or-dir-type-zsh.txt"
+    rm -f /tmp/test-file-or-dir-type-zsh.txt
+}
+
+@test "zsh: FILE_OR_DIR argument execution passes directory path" {
+    mkdir -p /tmp/test-file-or-dir-type-zsh
+    run _zsh_run test-file-or-dir-zsh /tmp/test-file-or-dir-type-zsh
+    assert_success
+    assert_output "/tmp/test-file-or-dir-type-zsh"
+    rm -rf /tmp/test-file-or-dir-type-zsh
+}
+
+@test "zsh: FILE_OR_DIR argument completion includes both files and directories" {
+    mkdir -p /tmp/test-file-or-dir-completion-zsh
+    touch /tmp/test-file-or-dir-completion-zsh/somefile.txt
+    mkdir -p /tmp/test-file-or-dir-completion-zsh/somedir
+    result="$(_zsh_complete testcli test-file-or-dir-zsh /tmp/test-file-or-dir-completion-zsh/)"
+    [[ "$result" == *"somefile.txt"* ]]
+    [[ "$result" == *"somedir"* ]]
+    rm -rf /tmp/test-file-or-dir-completion-zsh
 }
 
 # --- STRING ---

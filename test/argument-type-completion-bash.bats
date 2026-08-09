@@ -15,7 +15,7 @@ setup_file() {
 
 # --- argument type completion tests ---
 
-test-file: echo
+test-a-file: echo
     :path:FILE
 
 test-dir: echo
@@ -47,6 +47,15 @@ test-blkdev: echo
 
 test-service: echo
     :svc:SERVICE
+
+test-file-or-dir: echo
+    :path:FILE_OR_DIR
+
+test-glob-a-file: echo
+    :path:FILE:*.txt
+
+test-glob-file-or-dir: echo
+    :path:FILE_OR_DIR:*.txt
 
 file-then-string: echo
     :file:FILE
@@ -90,7 +99,7 @@ setup() {
 
 @test "FILE argument execution passes file path" {
     touch /tmp/test-file-arg-type.txt
-    run ./testcli test-file /tmp/test-file-arg-type.txt
+    run ./testcli test-a-file /tmp/test-file-arg-type.txt
     assert_success
     assert_output "/tmp/test-file-arg-type.txt"
     rm -f /tmp/test-file-arg-type.txt
@@ -98,7 +107,7 @@ setup() {
 
 @test "FILE argument completion returns results" {
     load 'auto-completion-mock-setup'
-    result="$(test_completion 2 "testcli" "test-file")"
+    result="$(test_completion 2 "testcli" "test-a-file")"
     [ -n "$result" ]
 }
 
@@ -107,7 +116,7 @@ setup() {
     mkdir -p /tmp/test-completion-spaces
     touch "/tmp/test-completion-spaces/my file.txt"
     touch "/tmp/test-completion-spaces/normal.txt"
-    result="$(test_completion 2 "testcli" "test-file" "/tmp/test-completion-spaces/")"
+    result="$(test_completion 2 "testcli" "test-a-file" "/tmp/test-completion-spaces/")"
     # Files with spaces should appear in completions (raw path, no literal quotes)
     [[ "$result" == *"my file.txt"* ]]
     # Normal files should also appear
@@ -177,6 +186,80 @@ setup() {
     load 'auto-completion-mock-setup'
     result="$(test_completion 2 "testcli" "test-dir")"
     [ -n "$result" ]
+}
+
+# --- FILE_OR_DIR ---
+
+@test "FILE_OR_DIR argument execution passes file path" {
+    touch /tmp/test-file-or-dir-type.txt
+    run ./testcli test-file-or-dir /tmp/test-file-or-dir-type.txt
+    assert_success
+    assert_output "/tmp/test-file-or-dir-type.txt"
+    rm -f /tmp/test-file-or-dir-type.txt
+}
+
+@test "FILE_OR_DIR argument execution passes directory path" {
+    mkdir -p /tmp/test-file-or-dir-type
+    run ./testcli test-file-or-dir /tmp/test-file-or-dir-type
+    assert_success
+    assert_output "/tmp/test-file-or-dir-type"
+    rm -rf /tmp/test-file-or-dir-type
+}
+
+@test "FILE_OR_DIR argument completion returns results" {
+    load 'auto-completion-mock-setup'
+    result="$(test_completion 2 "testcli" "test-file-or-dir")"
+    [ -n "$result" ]
+}
+
+@test "FILE_OR_DIR argument completion includes both files and directories" {
+    load 'auto-completion-mock-setup'
+    mkdir -p /tmp/test-file-or-dir-completion
+    touch /tmp/test-file-or-dir-completion/somefile.txt
+    mkdir -p /tmp/test-file-or-dir-completion/somedir
+    result="$(test_completion 2 "testcli" "test-file-or-dir" "/tmp/test-file-or-dir-completion/")"
+    [[ "$result" == *"somefile.txt"* ]]
+    [[ "$result" == *"somedir"* ]]
+    rm -rf /tmp/test-file-or-dir-completion
+}
+
+# --- FILE/FILE_OR_DIR glob filter ---
+
+@test "FILE with glob filter only returns matching files" {
+    load 'auto-completion-mock-setup'
+    mkdir -p /tmp/test-glob-filter
+    touch /tmp/test-glob-filter/readme.txt
+    touch /tmp/test-glob-filter/data.log
+    touch /tmp/test-glob-filter/notes.txt
+    result="$(test_completion 2 "testcli" "test-glob-a-file" "/tmp/test-glob-filter/")"
+    [[ "$result" == *"readme.txt"* ]]
+    [[ "$result" == *"notes.txt"* ]]
+    [[ "$result" != *"data.log"* ]]
+    rm -rf /tmp/test-glob-filter
+}
+
+@test "FILE_OR_DIR with glob filter only returns matching entries" {
+    load 'auto-completion-mock-setup'
+    mkdir -p /tmp/test-glob-file-or-dir
+    touch /tmp/test-glob-file-or-dir/file.txt
+    touch /tmp/test-glob-file-or-dir/file.log
+    mkdir -p /tmp/test-glob-file-or-dir/subdir
+    result="$(test_completion 2 "testcli" "test-glob-file-or-dir" "/tmp/test-glob-file-or-dir/")"
+    [[ "$result" == *"file.txt"* ]]
+    [[ "$result" != *"file.log"* ]]
+    [[ "$result" != *"subdir"* ]]
+    rm -rf /tmp/test-glob-file-or-dir
+}
+
+@test "FILE with no glob filter returns all files" {
+    load 'auto-completion-mock-setup'
+    mkdir -p /tmp/test-no-glob
+    touch /tmp/test-no-glob/a.txt
+    touch /tmp/test-no-glob/b.log
+    result="$(test_completion 2 "testcli" "test-a-file" "/tmp/test-no-glob/")"
+    [[ "$result" == *"a.txt"* ]]
+    [[ "$result" == *"b.log"* ]]
+    rm -rf /tmp/test-no-glob
 }
 
 # --- STRING ---

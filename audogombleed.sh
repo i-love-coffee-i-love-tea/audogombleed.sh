@@ -950,7 +950,7 @@ BEGIN {
 			cmd_argname[argind]=cmd_arg[2]
 			cmd_argtype[argind]=cmd_arg[3]
 			argtype = cmd_argtype[argind]
-			if (argtype ~ "^list[?]{0,}$" || argtype ~ "^int_range[?]{0,}$" || argtype ~ "^eval[?]{0,}$") {
+			if (argtype ~ "^list[?]{0,}$" || argtype ~ "^int_range[?]{0,}$" || argtype ~ "^eval[?]{0,}$" || argtype ~ "^FILE[?]{0,}$" || argtype ~ "^DIR[?]{0,}$" || argtype ~ "^FILE_OR_DIR[?]{0,}$") {
 				cmd_argvalue[argind]=cmd_arg[4]
 				cmd_argdesc[argind]=cmd_arg[5]
 			} else {
@@ -1826,7 +1826,7 @@ BEGIN {
 	}
 
 	# valid argument types for "did you mean?" suggestions
-	split("STRING INTEGER FILE DIR ENVVAR USER GROUP SSH_HOST BLKDEV SERVICE IP MAC list int_range eval value", _types_arr, " ")
+	split("STRING INTEGER FILE DIR FILE_OR_DIR ENVVAR USER GROUP SSH_HOST BLKDEV SERVICE list int_range eval value", _types_arr, " ")
 	for (_ti in _types_arr) _valid_types[_types_arr[_ti]] = 1
 }
 
@@ -2678,6 +2678,7 @@ _cli_compgen() {
 			;;
 		-f)
 			local word="$1"
+			local glob="$2"
 			local entry
 			# zsh: make unmatched globs (e.g. .*) return empty instead of erroring
 			[ "$__CLI_IS_ZSH" = "1" ] && setopt localoptions null_glob
@@ -2687,6 +2688,10 @@ _cli_compgen() {
 			if [ -d "$word" ]; then
 				for entry in "$word"/* "$word"/.*; do
 					[ -e "$entry" ] || continue
+					if [ -n "$glob" ]; then
+						local _gname="${entry##*/}"
+						[[ "$_gname" == $glob ]] || continue
+					fi
 					echo "$entry"
 				done
 			else
@@ -2698,6 +2703,9 @@ _cli_compgen() {
 						[ -e "$entry" ] || continue
 						local name="${entry##*/}"
 						if [[ "$name" == "$base"* ]]; then
+							if [ -n "$glob" ]; then
+								[[ "$name" == $glob ]] || continue
+							fi
 							echo "$entry"
 						fi
 					done
@@ -2706,6 +2714,7 @@ _cli_compgen() {
 			;;
 		-d)
 			local word="$1"
+			local glob="$2"
 			local entry
 			# zsh: make unmatched globs (e.g. .*) return empty instead of erroring
 			[ "$__CLI_IS_ZSH" = "1" ] && setopt localoptions null_glob
@@ -2713,9 +2722,15 @@ _cli_compgen() {
 				word="."
 			fi
 			if [ -d "$word" ]; then
-				echo "$word"
+				if [ -z "$glob" ] || [[ "$word" == *"/" && "${word##*/}" == $glob ]] || [[ "${word##*/}" == $glob ]]; then
+					echo "$word"
+				fi
 				for entry in "$word"/* "$word"/.*; do
 					[ -d "$entry" ] || continue
+					if [ -n "$glob" ]; then
+						local _gname="${entry##*/}"
+						[[ "$_gname" == $glob ]] || continue
+					fi
 					echo "$entry"
 				done
 			else
@@ -2727,6 +2742,9 @@ _cli_compgen() {
 						[ -d "$entry" ] || continue
 						local name="${entry##*/}"
 						if [[ "$name" == "$base"* ]]; then
+							if [ -n "$glob" ]; then
+								[[ "$name" == $glob ]] || continue
+							fi
 							echo "$entry"
 						fi
 					done
@@ -3265,6 +3283,8 @@ _cli_complete_arg() {
 		arg_max="${arg_list#*-}"
 	elif [ "$arg_type" = "eval" ]; then
 		eval_cmd="${__CMD_ARG_VALUE[$pos]}"
+	elif [ "$arg_type" = "FILE" ] || [ "$arg_type" = "DIR" ] || [ "$arg_type" = "FILE_OR_DIR" ]; then
+		_glob_filter="${__CMD_ARG_VALUE[$pos]}"
 	fi
 
 	_cli_log 4 "arg type: $arg_type"
@@ -3330,15 +3350,17 @@ _cli_complete_arg() {
 			arg_list=$(eval "$eval_cmd")
 			_cli_compgen -W "$arg_list" "$word"
 			;;	
-		IP) ;;
-		MAC) ;;
 	    FILE)
-			_cli_compgen -f "$word"
+			_cli_compgen -f "$word" "$_glob_filter"
 			description="file"
 			;;
         DIR)
-			_cli_compgen -d "$word"
+			_cli_compgen -d "$word" "$_glob_filter"
 			description="directory"
+			;;
+		FILE_OR_DIR)
+			_cli_compgen -f "$word" "$_glob_filter"
+			description="file or directory"
 			;;
 		ENVVAR)
 			_cli_compgen -e "$word"
@@ -3558,7 +3580,7 @@ _cli_complete_()
 					# Tell readline to handle filename quoting (spaces, special chars)
 					local _arg_type="${__CMD_ARG_TYPE[$arg_pos]%%\?}"
 					case "$_arg_type" in
-						FILE|DIR) compopt -o filenames 2>/dev/null ;;
+						FILE|DIR|FILE_OR_DIR) compopt -o filenames 2>/dev/null ;;
 					esac
 				fi
 				# append [description] to arg completions for zsh
@@ -3574,6 +3596,7 @@ _cli_complete_()
 							eval) _arg_desc="" ;;
 							FILE) _arg_desc="file" ;;
 							DIR) _arg_desc="directory" ;;
+							FILE_OR_DIR) _arg_desc="file or directory" ;;
 							ENVVAR) _arg_desc="environment variable" ;;
 							USER) _arg_desc="system user" ;;
 							GROUP) _arg_desc="system group" ;;

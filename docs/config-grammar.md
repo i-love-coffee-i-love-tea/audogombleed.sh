@@ -122,10 +122,9 @@ Dynamic words expand one definition into many commands.
 
 **Simple types** (no value field):
 
-    simple-type = "STRING" / "INTEGER" / "FILE" / "DIR" /
+    simple-type = "STRING" / "INTEGER" / "FILE" / "DIR" / "FILE_OR_DIR" /
                   "ENVVAR" / "USER" / "GROUP" /
-                  "SSH_HOST" / "BLKDEV" / "SERVICE" /
-                  "IP" / "MAC"
+                  "SSH_HOST" / "BLKDEV" / "SERVICE"
 
 Syntax: `:name:type` or `:name:type:description`
 
