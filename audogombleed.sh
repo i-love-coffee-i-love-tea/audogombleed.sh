@@ -3268,7 +3268,7 @@ _cli_complete_()
 							GROUP) _arg_desc="system group" ;;
 							SSH_HOST) _arg_desc="SSH host" ;;
 							BLKDEV) _arg_desc="block device" ;;
-							SERVICE) _arg_desc="systemd service" ;;
+							SERVICE) _arg_desc="service" ;;
 						esac
 					fi
 					if [ -n "$_arg_desc" ]; then
