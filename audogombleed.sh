@@ -123,7 +123,7 @@ _cli_mtime() {
 		return
 	fi
 	local _val
-	if [ "$__CLI_UNAME" = "Darwin" ]; then
+	if [ "$__CLI_UNAME" = "Darwin" ] || [ "$__CLI_UNAME" = "FreeBSD" ]; then
 		_val=$(stat -f %m "$1" 2>/dev/null)
 	else
 		_val=$(stat -c %Y "$1" 2>/dev/null)
@@ -138,9 +138,9 @@ _cli_stat_perms() {
 		return
 	fi
 	local _val
-	if [ "$__CLI_UNAME" = "Darwin" ]; then
+	if [ "$__CLI_UNAME" = "Darwin" ] || [ "$__CLI_UNAME" = "FreeBSD" ]; then
 		_val=$(stat -L -f '%p' "$1" 2>/dev/null)
-		# macOS stat -f '%p' returns full mode including file type (e.g., 100777)
+		# macOS/FreeBSD stat -f '%p' returns full mode including file type (e.g., 100777)
 		# Normalize to permission bits only (last 3 digits)
 		if [ -n "$_val" ] && [ "${#_val}" -gt 3 ]; then
 			_val="${_val:(-3)}"
@@ -158,7 +158,7 @@ _cli_stat_uid() {
 		return
 	fi
 	local _val
-	if [ "$__CLI_UNAME" = "Darwin" ]; then
+	if [ "$__CLI_UNAME" = "Darwin" ] || [ "$__CLI_UNAME" = "FreeBSD" ]; then
 		_val=$(stat -L -f '%u' "$1" 2>/dev/null)
 	else
 		_val=$(stat -L -c '%u' "$1" 2>/dev/null)
