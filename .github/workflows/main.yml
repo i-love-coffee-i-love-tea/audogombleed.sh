@@ -195,6 +195,62 @@ jobs:
         run: nix-build packaging/nix -A audogombleed --no-out-link
         continue-on-error: true
 
+  homebrew:
+    name: "Homebrew formula build"
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Test formula install
+        run: |
+          # Create a local tap from our formula
+          mkdir -p /tmp/homebrew-audogombleed/Formula
+          cp packaging/homebrew/audogombleed.rb /tmp/homebrew-audogombleed/Formula/
+          # Replace the GitHub URL with a local path for testing
+          tar czf /tmp/audogombleed-2.0.0.tar.gz .
+          sha=$(shasum -a 256 /tmp/audogombleed-2.0.0.tar.gz | cut -d' ' -f1)
+          sed -i '' "s|url .*|url \"file:///tmp/audogombleed-2.0.0.tar.gz\"|" /tmp/homebrew-audogombleed/Formula/audogombleed.rb
+          sed -i '' "s|sha256 .*|sha256 \"$sha\"|" /tmp/homebrew-audogombleed/Formula/audogombleed.rb
+          brew install --build-from-source /tmp/homebrew-audogombleed/Formula/audogombleed.rb
+          audogombleed --version
+
+  rpm:
+    name: "RPM package build"
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Build RPM
+        run: |
+          dnf install -y rpm-build rpmdevtools
+          rpmdev-setuptree
+          # Create source tarball
+          tar czf ~/rpmbuild/SOURCES/audogombleed-2.0.0.tar.gz -C .. --transform='s,^.,audogombleed.sh-2.0.0,' audogombleed.sh
+          rpmbuild -ba packaging/rpm/audogombleed.spec
+          # Verify the RPM was built
+          rpm -qip ~/rpmbuild/RPMS/noarch/audogombleed-2.0.0-1.*.rpm
+
+  gentoo:
+    name: "Gentoo ebuild build"
+    runs-on: ubuntu-latest
+    container:
+      image: gentoo/stage3:latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Test ebuild
+        run: |
+          # Set up a local overlay
+          mkdir -p /var/db/repos/localrepo/{metadata,profiles}
+          echo 'localrepo' > /var/db/repos/localrepo/profiles/repo_name
+          echo 'masters = gentoo' > /var/db/repos/localrepo/metadata/layout.conf
+          mkdir -p /var/db/repos/localrepo/app-misc/audogombleed
+          cp packaging/gentoo/audogombleed-2.0.0.ebuild /var/db/repos/localrepo/app-misc/audogombleed/
+          # Create manifest
+          cd /var/db/repos/localrepo/app-misc/audogombleed
+          ebuild audogombleed-2.0.0.ebuild manifest
+          # Test that the ebuild parses correctly
+          ebuild audogombleed-2.0.0.ebuild unpack
+
   wsl:
     name: "WSL Ubuntu tests"
     runs-on: windows-latest
