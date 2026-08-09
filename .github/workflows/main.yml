@@ -64,8 +64,11 @@ jobs:
         with:
           submodules: true
       # macOS ships bash 3.2 at /bin/bash; bats needs 4.2+
-      - name: Install modern bash
-        run: brew install bash && echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+      # Install awk variants so POSIX-compat tests actually run
+      - name: Install modern bash and awk variants
+        run: |
+          brew install bash gawk mawk
+          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
       - name: Smoke test
         run: |
           ln -sf ./audogombleed.sh ./testcli
