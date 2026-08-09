@@ -11,30 +11,12 @@ version="$1"
 script="audogombleed.sh"
 manpage="audogombleed.1"
 changelog="debian/changelog"
+hook_dir="release.d"
 
-if ! grep -q "^__CLI_VERSION=" "$script"; then
-    echo "error: __CLI_VERSION not found in $script"
-    exit 1
-fi
+export version script manpage changelog
 
-if ! grep -q '^\.TH ' "$manpage"; then
-    echo "error: .TH header not found in $manpage"
-    exit 1
-fi
-
-if [ ! -f "$changelog" ]; then
-    echo "error: $changelog not found"
-    exit 1
-fi
-
-sed -i "s/^__CLI_VERSION=.*/__CLI_VERSION=\"$version\"/" "$script"
-sed -i "s/^\(\.TH [^ ]\+ [0-9]\+ \)\"[^\"]*\" \"[^\"]*\"/\1\"$(date +%Y)\" \"$version\"/" "$manpage"
-
-# Generate debian/changelog from CHANGELOG.md (single source of truth)
-./generate-debian-changelog.sh "$version"
-
-git add "$script" "$manpage" "$changelog"
-git commit -m "Bump version to $version"
-git tag "v$version"
-
-echo "Tagged v$version — run 'git push && git push --tags' to publish"
+for hook in "$hook_dir"/*.sh; do
+    [ -x "$hook" ] || continue
+    echo "Running hook: $(basename "$hook")"
+    "$hook"
+done
