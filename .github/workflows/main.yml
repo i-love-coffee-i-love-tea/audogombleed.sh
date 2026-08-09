@@ -91,3 +91,34 @@ jobs:
           path: report-macos-zsh.xml
           reporter: java-junit
           fail-on-error: true
+
+  freebsd:
+    name: "FreeBSD tests"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          submodules: true
+      - name: Test on FreeBSD
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y bash git
+          run: |
+            set -e
+            # Smoke test
+            ln -sf ./audogombleed.sh ./testcli
+            cp example.conf ~/.testcli.conf
+            bash ./testcli echo hello world
+            rm -f ./testcli ~/.testcli.conf
+            # Run bash tests
+            test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit > report-freebsd.xml
+      - name: Report
+        uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
+        if: always()
+        with:
+          name: "BATS Test Report (FreeBSD)"
+          path: report-freebsd.xml
+          reporter: java-junit
+          fail-on-error: true
