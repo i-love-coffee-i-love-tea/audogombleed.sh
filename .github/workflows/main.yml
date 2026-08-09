@@ -79,9 +79,9 @@ jobs:
           rm -f ./testcli ~/.testcli.conf
       - name: Run zsh tests
         env:
-          MAX_EXEC_MS: 300
-          MAX_COMPLETION_MS: 450
-          MAX_LARGE_COMPLETION_MS: 600
+          MAX_EXEC_MS: 200
+          MAX_COMPLETION_MS: 200
+          MAX_LARGE_COMPLETION_MS: 300
         run: test/bats/bin/bats test/*-zsh.bats test/*-all.bats --formatter junit | tee report-macos-zsh.xml
       - name: Report
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
@@ -133,7 +133,9 @@ jobs:
             zsh ./testcli echo hello world
             rm -f ./testcli ~/.testcli.conf
             # Benchmark thresholds (VM is slower than native)
-            export MAX_LARGE_COMPLETION_MS=500
+            export MAX_EXEC_MS=200
+            export MAX_COMPLETION_MS=200
+            export MAX_LARGE_COMPLETION_MS=300
             # Run bash tests (allow failures to capture report)
             test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit | tee report-freebsd-bash.xml || true
             # Run zsh tests (allow failures to capture report)
