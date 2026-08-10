@@ -609,6 +609,41 @@ end
 
 # ── Abbreviation expansion ──
 
+function _cli_expand_abbreviated_args
+    set -l cmd $argv[1]
+    set -l args $argv[2..-1]
+
+    set -l arg_defs (_cli_get_command_args "$cmd")
+    set -g __CLI_EXPANDED_ARGS
+    set -l i 1
+
+    for arg_def in $arg_defs
+        if test $i -gt (count $args)
+            break
+        end
+        set -l arg_val $args[$i]
+        # _cli_complete_arg uses 0-based indexing
+        set -l pos (math $i - 1)
+        set -l matches (_cli_complete_arg $pos "$arg_val" $cmd)
+        set -l match_count (count $matches)
+
+        if test $match_count -eq 1
+            set -a __CLI_EXPANDED_ARGS $matches[1]
+        else if test $match_count -eq 0
+            set -a __CLI_EXPANDED_ARGS $arg_val
+        else
+            echo "command arg $i of type $arg_def can't be completed, because it is ambiguous: $arg_val" >&2
+            return 2
+        end
+        set i (math $i + 1)
+    end
+
+    # Append any remaining args beyond the defined ones
+    for j in (seq (math $i) (count $args))
+        set -a __CLI_EXPANDED_ARGS $args[$j]
+    end
+end
+
 function _cli_expand_abbreviated_command
     set -l matched_words ""
     set -l remaining $argv
@@ -727,6 +762,19 @@ function _cli_execute
     if _cli_is_command_complete (string join ' ' -- $cmdline)
         set -l cmd $__CLI_CMD_WORDS
         set -l args $cmdline[(math (count (string split ' ' -- $cmd)) + 1)..-1]
+
+        # Expand abbreviated args if enabled
+        if _cli_is_true "$__CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS"
+            _cli_load_command_word_functions
+            _cli_expand_abbreviated_args "$cmd" $args
+            set -l expand_rc $status
+            if test $expand_rc -ne 0
+                return $expand_rc
+            end
+            if test (count $__CLI_EXPANDED_ARGS) -gt 0
+                set args $__CLI_EXPANDED_ARGS
+            end
+        end
 
         # Get the command expression
         set -l cmd_expr (_cli_get_command_expr "$cmd")
