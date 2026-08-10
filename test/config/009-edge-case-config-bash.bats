@@ -56,7 +56,7 @@ _fuzz_with_header() {
 # ===================================================================
 
 # bats test_tags=id:bash-125
-@test "bash: fuzz: random 500-byte config does not crash" {
+@test "bash: edge-case: random 500-byte config does not crash" {
 	_fuzz_with_header 500
 	source ./testcli
 	# exit code doesn't matter — we just want no crash/hang
@@ -65,7 +65,7 @@ _fuzz_with_header() {
 }
 
 # bats test_tags=id:bash-126
-@test "bash: fuzz: random 2000-byte config does not crash" {
+@test "bash: edge-case: random 2000-byte config does not crash" {
 	_fuzz_with_header 2000
 	source ./testcli
 	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1
@@ -73,7 +73,7 @@ _fuzz_with_header() {
 }
 
 # bats test_tags=id:bash-127
-@test "bash: fuzz: random 5000-byte config does not crash" {
+@test "bash: edge-case: random 5000-byte config does not crash" {
 	_fuzz_with_header 5000
 	source ./testcli
 	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1
@@ -85,7 +85,7 @@ _fuzz_with_header() {
 # ===================================================================
 
 # bats test_tags=id:bash-128
-@test "bash: fuzz: config with only special characters does not crash" {
+@test "bash: edge-case: config with only special characters does not crash" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 !@#$%^&*()_+-=[]{}|;':",./<>?
@@ -96,7 +96,7 @@ CONF
 }
 
 # bats test_tags=id:bash-129
-@test "bash: fuzz: config with deeply nested braces does not crash" {
+@test "bash: edge-case: config with deeply nested braces does not crash" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 a
@@ -116,7 +116,7 @@ CONF
 }
 
 # bats test_tags=id:bash-130
-@test "bash: fuzz: config with only colons does not crash" {
+@test "bash: edge-case: config with only colons does not crash" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 ::::::::::::::::::::::::::::::::
@@ -127,7 +127,7 @@ CONF
 }
 
 # bats test_tags=id:bash-131
-@test "bash: fuzz: config with only pipes does not crash" {
+@test "bash: edge-case: config with only pipes does not crash" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 test-cmd: echo \1
@@ -139,7 +139,7 @@ CONF
 }
 
 # bats test_tags=id:bash-132
-@test "bash: fuzz: config with backslash-heavy values does not crash" {
+@test "bash: edge-case: config with backslash-heavy values does not crash" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 test-cmd: echo \\\\\\\\\\\\\\\\\\\\\\\\
@@ -151,7 +151,7 @@ CONF
 }
 
 # bats test_tags=id:bash-133
-@test "bash: fuzz: config with quote-heavy values does not crash" {
+@test "bash: edge-case: config with quote-heavy values does not crash" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 test-cmd: echo """""""""""""""""
@@ -167,7 +167,7 @@ CONF
 # ===================================================================
 
 # bats test_tags=id:bash-134
-@test "bash: fuzz: config with [commands] appearing multiple times" {
+@test "bash: edge-case: config with [commands] appearing multiple times" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 cmd-a: echo a
@@ -180,7 +180,7 @@ CONF
 }
 
 # bats test_tags=id:bash-135
-@test "bash: fuzz: config with [env] after [commands]" {
+@test "bash: edge-case: config with [env] after [commands]" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 cmd-a: echo a
@@ -194,7 +194,7 @@ CONF
 }
 
 # bats test_tags=id:bash-136
-@test "bash: fuzz: config with no newline at end" {
+@test "bash: edge-case: config with no newline at end" {
 	printf '[commands]\nhello: echo "world"' > ~/.testcli.conf
 	source ./testcli
 	run ./testcli hello
@@ -203,7 +203,7 @@ CONF
 }
 
 # bats test_tags=id:bash-137
-@test "bash: fuzz: config with only newlines" {
+@test "bash: edge-case: config with only newlines" {
 	printf '\n\n\n\n\n\n\n\n\n\n' > ~/.testcli.conf
 	source ./testcli
 	timeout 5 ./testcli hello >/dev/null 2>&1
@@ -211,7 +211,7 @@ CONF
 }
 
 # bats test_tags=id:bash-138
-@test "bash: fuzz: config with tab-only indentation" {
+@test "bash: edge-case: config with tab-only indentation" {
 	printf '[commands]\n\t\t\thello: echo "world"\n' > ~/.testcli.conf
 	source ./testcli
 	timeout 5 ./testcli hello >/dev/null 2>&1
@@ -219,7 +219,7 @@ CONF
 }
 
 # bats test_tags=id:bash-139
-@test "bash: fuzz: config with mixed tabs and spaces" {
+@test "bash: edge-case: config with mixed tabs and spaces" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
   cmd-a: echo a
@@ -236,7 +236,7 @@ CONF
 # ===================================================================
 
 # bats test_tags=id:bash-140
-@test "bash: fuzz: empty args to awk parser does not hang" {
+@test "bash: edge-case: empty args to awk parser does not hang" {
 	cp example.conf ~/.testcli.conf
 	source ./testcli
 	timeout 5 ./testcli --cli-run-awk-command >/dev/null 2>&1
@@ -244,7 +244,7 @@ CONF
 }
 
 # bats test_tags=id:bash-141
-@test "bash: fuzz: empty command_filter does not hang" {
+@test "bash: edge-case: empty command_filter does not hang" {
 	cp example.conf ~/.testcli.conf
 	source ./testcli
 	timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="" >/dev/null 2>&1
@@ -252,7 +252,7 @@ CONF
 }
 
 # bats test_tags=id:bash-142
-@test "bash: fuzz: invalid output mode does not hang" {
+@test "bash: edge-case: invalid output mode does not hang" {
 	cp example.conf ~/.testcli.conf
 	source ./testcli
 	timeout 5 ./testcli --cli-run-awk-command output=invalid >/dev/null 2>&1

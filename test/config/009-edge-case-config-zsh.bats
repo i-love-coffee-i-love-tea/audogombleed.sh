@@ -44,14 +44,14 @@ _fuzz_with_header() {
 # ===================================================================
 
 # bats test_tags=id:zsh-088
-@test "zsh: fuzz: random 500-byte config does not crash" {
+@test "zsh: edge-case: random 500-byte config does not crash" {
 	_fuzz_with_header 500
 	timeout 5 zsh -c 'source ./testcli; testcli nonexistent-cmd' >/dev/null 2>&1
 	true
 }
 
 # bats test_tags=id:zsh-089
-@test "zsh: fuzz: random 2000-byte config does not crash" {
+@test "zsh: edge-case: random 2000-byte config does not crash" {
 	_fuzz_with_header 2000
 	timeout 5 zsh -c 'source ./testcli; testcli nonexistent-cmd' >/dev/null 2>&1
 	true
@@ -62,7 +62,7 @@ _fuzz_with_header() {
 # ===================================================================
 
 # bats test_tags=id:zsh-090
-@test "zsh: fuzz: config with only special characters does not crash" {
+@test "zsh: edge-case: config with only special characters does not crash" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 !@#$%^&*()_+-=[]{}|;':",./<>?
@@ -72,7 +72,7 @@ CONF
 }
 
 # bats test_tags=id:zsh-091
-@test "zsh: fuzz: config with deeply nested braces does not crash" {
+@test "zsh: edge-case: config with deeply nested braces does not crash" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 a
@@ -91,7 +91,7 @@ CONF
 }
 
 # bats test_tags=id:zsh-092
-@test "zsh: fuzz: config with only colons does not crash" {
+@test "zsh: edge-case: config with only colons does not crash" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 ::::::::::::::::::::::::::::::::
@@ -101,7 +101,7 @@ CONF
 }
 
 # bats test_tags=id:zsh-093
-@test "zsh: fuzz: config with no newline at end" {
+@test "zsh: edge-case: config with no newline at end" {
 	printf '[commands]\nhello: echo "world"' > ~/.testcli.conf
 	run _zsh_run hello
 	assert_success
@@ -109,21 +109,21 @@ CONF
 }
 
 # bats test_tags=id:zsh-094
-@test "zsh: fuzz: config with only newlines" {
+@test "zsh: edge-case: config with only newlines" {
 	printf '\n\n\n\n\n\n\n\n\n\n' > ~/.testcli.conf
 	timeout 5 zsh -c 'source ./testcli; testcli hello' >/dev/null 2>&1
 	true
 }
 
 # bats test_tags=id:zsh-095
-@test "zsh: fuzz: empty command_filter does not hang" {
+@test "zsh: edge-case: empty command_filter does not hang" {
 	cp example.conf ~/.testcli.conf
 	timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command output=commands command_filter=""' >/dev/null 2>&1
 	true
 }
 
 # bats test_tags=id:zsh-096
-@test "zsh: fuzz: invalid output mode does not hang" {
+@test "zsh: edge-case: invalid output mode does not hang" {
 	cp example.conf ~/.testcli.conf
 	timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command output=invalid' >/dev/null 2>&1
 	true
