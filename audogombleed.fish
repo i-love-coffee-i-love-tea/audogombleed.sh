@@ -11,6 +11,13 @@
 # The CLI name is derived from the symlink filename (same as bash/zsh).
 # Config file: ~/.<name>.conf
 
+# ── Helpers ──
+
+function _cli_is_true
+    set -l val (string lower -- $argv[1])
+    test "$val" = "y" -o "$val" = "yes" -o "$val" = "true" -o "$val" = "1"
+end
+
 # ── AWK script extraction ──
 
 # Extract the embedded AWK parser from audogombleed.sh.
@@ -137,9 +144,15 @@ function _cli_load_config_environment
                 continue
             end
 
-            # include_commands_from
+            # include_commands_from <file> <parent_command>
             if string match -qr '^include_commands_from\s' -- $line
-                # Handled by AWK merge logic — skip here
+                set -l parts (string split ' ' -- $line)
+                set -l inc_file $parts[2]
+                set -l inc_parent $parts[3]
+                set inc_file (string replace '~' $HOME -- $inc_file)
+                if test -f "$inc_file"
+                    set -g __CLI_INCLUDE_FILES $__CLI_INCLUDE_FILES "$inc_file|$inc_parent"
+                end
                 continue
             end
 
@@ -162,7 +175,64 @@ function _cli_read_command_list
     if not test -f "$__CLI_CONFIG_FILE"
         return
     end
-    set -g __CLI_CONFIG (_awk output=commands)
+
+    # Process include_commands_from: create merged config file
+    if set -q __CLI_INCLUDE_FILES; and test (count $__CLI_INCLUDE_FILES) -gt 0
+        set -l merged (mktemp /tmp/fish-merged-XXXXXX.conf)
+        # Copy main config up to (but not including) [commands]
+        set -l past_commands 0
+        set -l main_lines (string split \n -- (cat "$__CLI_CONFIG_FILE" | string collect))
+        for mline in $main_lines
+            if test "$mline" = "[commands]"
+                set past_commands 1
+                printf '%s\n' "[commands]" >> $merged
+                continue
+            end
+            if test $past_commands -eq 0
+                printf '%s\n' "$mline" >> $merged
+            end
+        end
+        # Append included commands
+        for inc_entry in $__CLI_INCLUDE_FILES
+            set -l inc_parts (string split '|' -- $inc_entry)
+            set -l inc_file $inc_parts[1]
+            set -l inc_parent $inc_parts[2]
+            if not test -f "$inc_file"
+                continue
+            end
+            set -l in_commands 0
+            set -l inc_lines (string split \n -- (cat "$inc_file" | string collect))
+            if test "$inc_parent" != "ROOT"
+                printf '%s\n' "$inc_parent" >> $merged
+            end
+            for iline in $inc_lines
+                if test "$iline" = "[commands]"
+                    set in_commands 1
+                    continue
+                end
+                if string match -q '[[]*' -- $iline
+                    set in_commands 0
+                    continue
+                end
+                if test $in_commands -eq 1
+                    string match -qr '^\s*$' -- $iline; and continue
+                    string match -q '#*' -- $iline; and continue
+                    if test "$inc_parent" != "ROOT"
+                        printf '%s	%s\n' "" "$iline" >> $merged
+                    else
+                        printf '%s\n' "$iline" >> $merged
+                    end
+                end
+            end
+        end
+        set -g __CLI_ORIG_CONFIG_FILE $__CLI_CONFIG_FILE
+        set -g __CLI_CONFIG_FILE $merged
+        set -g __CLI_CONFIG (_awk output=commands)
+        rm -f $merged
+        set -g __CLI_CONFIG_FILE $__CLI_ORIG_CONFIG_FILE
+    else
+        set -g __CLI_CONFIG (_awk output=commands)
+    end
 end
 
 # ── Command word functions ──
@@ -314,7 +384,7 @@ end
 function _cli_getmatchingcommands
     set -l cmdline $argv[1]
     for l in $__CLI_CONFIG
-        string match -q "$cmdline*" -- $l; and echo $l
+        string match -q -- "$cmdline*" $l; and echo $l
     end
 end
 
@@ -323,7 +393,7 @@ function _cli_count_matching_commands
     set -l n 0
     set -g __CLI_EXACT_MATCH 0
     for l in $__CLI_CONFIG
-        if string match -q "$cmdline*" -- $l
+        if string match -q -- "$cmdline*" $l
             set n (math $n + 1)
             if test $__CLI_EXACT_MATCH -eq 0
                 set -l cmd_part (string split ',' -- $l)[1]
@@ -370,7 +440,7 @@ end
 function _cli_get_command_expr
     set -l cmd $argv[1]
     for l in $__CLI_CONFIG
-        if string match -q "$cmd*" -- $l
+        if string match -q -- "$cmd*" $l
             # Extract 3rd comma-field: "cmd , args, expr"
             set -l rest (string split ',' -- $l)[2..-1]
             set -l expr (string join ',' -- $rest[2..-1])
@@ -384,7 +454,7 @@ end
 function _cli_get_command_args
     set -l cmd $argv[1]
     for l in $__CLI_CONFIG
-        if string match -q "$cmd*" -- $l
+        if string match -q -- "$cmd*" $l
             set -l rest (string split ',' -- $l)[2..-1]
             set -l args_str (string trim -- $rest[1])
             for w in (string split ' ' -- $args_str)
@@ -452,16 +522,23 @@ function _cli_complete_arg
                 set -l var_val $$varname
                 if test -n "$var_val"
                     for w in (string split ' ' -- $var_val)
-                        string match -qr "^"(string escape --style=regex -- $word) -- $w; and echo $w
+                        if test -z "$word"; or string match -qr "^"(string escape --style=regex -- $word) -- $w
+                            echo $w
+                        end
                     end
                 end
             else if string match -q '*|*' -- $arg_value
                 # Pipe-separated list
                 for w in (string split '|' -- $arg_value)
-                    string match -qr "^"(string escape --style=regex -- $word) -- $w; and echo $w
+                    if test -z "$word"; or string match -qr "^"(string escape --style=regex -- $word) -- $w
+                        echo $w
+                    end
                 end
             else
-                echo $arg_value
+                # Single value
+                if test -z "$word"; or string match -qr "^"(string escape --style=regex -- $word) -- $arg_value
+                    echo $arg_value
+                end
             end
 
         case eval
@@ -592,6 +669,33 @@ end
 
 function _cli_execute
     set -l cmdline $argv
+    set -l batch_mode 0
+
+    # Handle CLI flags
+    if test (count $cmdline) -gt 0
+        switch "$cmdline[1]"
+            case --version
+                echo "audogombleed.sh 2.1.0 (fish)"
+                return 0
+            case --cli-print-awk-script
+                printf '%s\n' $__CLI_AWK_SCRIPT
+                return 0
+            case --cli-run-awk-command
+                _awk $cmdline[2..-1]
+                return $status
+            case --cli-print-env
+                _awk output=env
+                return $status
+        end
+    end
+
+    # Handle batch mode flags
+    if test (count $cmdline) -gt 0
+        if test "$cmdline[1]" = "-b"; or test "$cmdline[1]" = "--batch"
+            set batch_mode 1
+            set cmdline $cmdline[2..-1]
+        end
+    end
 
     if test -z "$cmdline"
         echo "no command supplied" >&2
@@ -601,7 +705,7 @@ function _cli_execute
 
     # Check for help triggers before anything else
     set -l last_arg $cmdline[-1]
-    if test "$last_arg" = '?' || test "$last_arg" = '-h' || test "$last_arg" = '--help'
+    if test "$last_arg" = '?'; or test "$last_arg" = '-h'; or test "$last_arg" = '--help'; or test "$last_arg" = '-?'
         set -l filter (string join ' ' -- $cmdline[1..-2])
         if test -z "$filter"
             _awk output=help command_filter="" do_format=1
@@ -611,10 +715,12 @@ function _cli_execute
         return 0
     end
 
-    # Expand abbreviations
-    set -l expanded (_cli_expand_abbreviated_command $cmdline)
-    if test -n "$expanded"
-        set cmdline (string split ' ' -- $expanded)
+    # Expand abbreviations (disabled in batch mode)
+    if test $batch_mode -eq 0
+        set -l expanded (_cli_expand_abbreviated_command $cmdline)
+        if test -n "$expanded"
+            set cmdline (string split ' ' -- $expanded)
+        end
     end
 
     # Check if command is complete
@@ -624,27 +730,115 @@ function _cli_execute
 
         # Get the command expression
         set -l cmd_expr (_cli_get_command_expr "$cmd")
+
+        # Empty expression: command succeeds silently
         if test -z "$cmd_expr"
-            echo "not a recognized command: '$cmdline'" >&2
-            return 51
+            return 0
         end
 
-        # Replace placeholders
+        # Count placeholders in expression and check for mismatch (exit 52)
+        # This must run before exit 53 check
+        set -l placeholder_count 0
+        for n in 1 2 3 4 5 6 7 8 9
+            if string match -q -- "*\\$n*" "$cmd_expr"
+                set placeholder_count $n
+            end
+        end
+        set -l args_count (count $args)
+        if test $args_count -gt 0 && test $placeholder_count -gt $args_count
+            return 52
+        end
+
+        # Exit 53: command has required args but not enough were provided
+        set -l awk_out (_awk output=commands command_filter="$cmd")
+        set -l required_count 0
+        set -l total_arg_count 0
+        for aline in $awk_out
+            if string match -q '__CMD_ARG_TYPE[*]=*' -- $aline
+                set -l atype (string trim -c '"' -- (string split '=' -- $aline)[2])
+                set total_arg_count (math $total_arg_count + 1)
+                # value type args have a default and are always optional
+                if test "$atype" = "value"
+                    continue
+                end
+                # check for ? suffix (optional marker) on the value
+                set -l vidx (string match -r '\[(\d+)\]' -- $aline)[2]
+                set -l is_optional 0
+                for vline in $awk_out
+                    if string match -q "__CMD_ARG_VALUE[$vidx]=*" -- $vline
+                        set -l aval (string trim -c '"' -- (string split '=' -- $vline)[2..-1])
+                        if string match -q '*?' -- $aval
+                            set is_optional 1
+                        end
+                        break
+                    end
+                end
+                if test $is_optional -eq 0
+                    set required_count (math $required_count + 1)
+                end
+            end
+        end
+        if test $total_arg_count -gt 0 && test $args_count -lt $required_count
+            return 53
+        end
+
+        # Inject default values for value-type args when user omits them
+        set -l inject_idx 0
+        for aline in $awk_out
+            if string match -q '__CMD_ARG_TYPE[*]=*' -- $aline
+                set -l atype (string trim -c '"' -- (string split '=' -- $aline)[2])
+                if test "$atype" = "value"
+                    if test $inject_idx -ge $args_count
+                        # Find the default value
+                        set -l vidx (string match -r '\[(\d+)\]' -- $aline)[2]
+                        for vline in $awk_out
+                            if string match -q "__CMD_ARG_VALUE[$vidx]=*" -- $vline
+                                set -l defval (string trim -c '"' -- (string split '=' -- $vline)[2..-1])
+                                # Strip trailing ? (optional marker)
+                                set defval (string replace -r '\?$' '' -- $defval)
+                                if test -n "$defval"
+                                    set -a args $defval
+                                    set args_count (count $args)
+                                end
+                                break
+                            end
+                        end
+                    end
+                end
+                set inject_idx (math $inject_idx + 1)
+            end
+        end
+
+        # Replace placeholders, tracking consumed args
         set -l last_word (string split ' ' -- $cmd)[-1]
         set cmd_expr (string replace '\\0' $last_word -- $cmd_expr)
 
+        set -l remaining_args
         set -l i 1
         for arg in $args
-            set cmd_expr (string replace "\\$i" $arg -- $cmd_expr)
+            if string match -q -- "*\\$i*" "$cmd_expr"
+                set cmd_expr (string replace "\\$i" $arg -- $cmd_expr)
+            else
+                set -a remaining_args $arg
+            end
             set i (math $i + 1)
         end
 
+        # Append remaining args
+        if test (count $remaining_args) -gt 0
+            set cmd_expr "$cmd_expr "(string join ' ' -- $remaining_args)
+        end
+
         # Execute
-        if not test "$__CLI_CFG_EXEC_SILENT" = "y"
+        if not _cli_is_true "$__CLI_CFG_EXEC_SILENT"
             echo "Executing command \"$cmd\" --> $cmd_expr" >&2
         end
         fish -c "$cmd_expr"
-        return $status
+        set -l exit_code $status
+        if _cli_is_true "$__CLI_CFG_EXEC_ALWAYS_RETURN_0"
+            return 0
+        end
+        return $exit_code
     else
         echo "not a recognized command: '$cmdline'" >&2
         return 51

@@ -92,3 +92,29 @@ CONF
     assert_line "hello from sourced script"
     rm -f /tmp/test-source-script-zsh.sh
 }
+
+# [env] section is optional
+
+# bats test_tags=id:zsh-078
+@test "zsh: config without [env] section works" {
+    cat > ~/.testcli.conf <<'CONF'
+[commands]
+test-cmd: echo "no-env"
+CONF
+    source ./testcli
+    run ./testcli test-cmd
+    assert_success
+    assert_line "no-env"
+}
+
+# bats test_tags=id:zsh-079
+@test "zsh: config with neither [env] nor anything else works" {
+    cat > ~/.testcli.conf <<'CONF'
+[commands]
+test-cmd: echo "bare-minimum"
+CONF
+    source ./testcli
+    run ./testcli test-cmd
+    assert_success
+    assert_line "bare-minimum"
+}

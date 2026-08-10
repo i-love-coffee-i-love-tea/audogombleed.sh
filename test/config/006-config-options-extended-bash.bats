@@ -102,3 +102,29 @@ CONF
     assert_line "hello from sourced script"
     rm -f /tmp/test-source-script.sh
 }
+
+# [env] section is optional
+
+# bats test_tags=id:bash-106
+@test "bash: config without [env] section works" {
+    cat > ~/.testcli.conf <<'CONF'
+[commands]
+test-cmd: echo "no-env"
+CONF
+    source ./testcli
+    run ./testcli test-cmd
+    assert_success
+    assert_line "no-env"
+}
+
+# bats test_tags=id:bash-107
+@test "bash: config with neither [env] nor anything else works" {
+    cat > ~/.testcli.conf <<'CONF'
+[commands]
+test-cmd: echo "bare-minimum"
+CONF
+    source ./testcli
+    run ./testcli test-cmd
+    assert_success
+    assert_line "bare-minimum"
+}
