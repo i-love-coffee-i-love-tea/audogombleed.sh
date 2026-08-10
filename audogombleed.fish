@@ -726,6 +726,7 @@ if not set -q __CLI_SOURCED
     if test (count $cmd_args) -gt 0
         _cli_load_command_word_functions
         _cli_execute $cmd_args
+        exit $status
     end
 end
 

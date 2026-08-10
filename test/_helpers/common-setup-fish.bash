@@ -7,7 +7,10 @@ _common_setup_fish() {
 	local optname
 	local optvalue
 
-	# create a wrapper that invokes the script under fish
+	# Remove any existing testcli (may be a symlink to audogombleed.sh)
+	# before creating the fish wrapper — otherwise cat follows the symlink
+	# and overwrites the bash script.
+	rm -f ./testcli
 	cat > ./testcli <<'WRAPPER'
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME testcli
