@@ -82,6 +82,61 @@ CONF
 }
 
 # ===================================================================
+# Path traversal in source/include directives
+# ===================================================================
+
+@test "zsh: source with path traversal to /etc/passwd reports errors" {
+	cat > ~/.testcli.conf <<'CONF'
+[env]
+source ../../../etc/passwd
+
+[commands]
+test-cmd: echo "works"
+CONF
+	run _zsh_run test-cmd 2>&1
+	assert_line --partial "config error"
+	assert_output --partial "works"
+}
+
+# ===================================================================
+# Special characters in paths (source/include)
+# ===================================================================
+
+@test "zsh: source file with spaces in path reports error (known limitation)" {
+	local tmpscript="/tmp/err test source.sh"
+	cat > "$tmpscript" <<'SCRIPT'
+export SPACE_VAR="expanded"
+SCRIPT
+	cat > ~/.testcli.conf <<CONF
+[env]
+source "$tmpscript"
+
+[commands]
+space-cmd: echo \$SPACE_VAR
+CONF
+	run _zsh_run space-cmd 2>&1
+	assert_line --partial "config error"
+	rm -f "$tmpscript"
+}
+
+@test "zsh: source file with single quotes in path is handled" {
+	local tmpscript="/tmp/err-test-it's-a-test.sh"
+	cat > "$tmpscript" <<'SCRIPT'
+export QUOTE_VAR="expanded"
+SCRIPT
+	cat > ~/.testcli.conf <<CONF
+[env]
+source '$tmpscript'
+
+[commands]
+quote-cmd: echo \$QUOTE_VAR
+CONF
+	run _zsh_run quote-cmd 2>&1
+	[ "$status" -le 53 ]
+	rm -f "$tmpscript"
+}
+
+# ===================================================================
 # Null byte handling
 # ===================================================================
 

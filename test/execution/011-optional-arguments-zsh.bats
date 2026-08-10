@@ -46,6 +46,14 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     assert_output "alpha x"
 }
 
+@test "zsh: missing required arg fails when optional arg is defined" {
+    echo 'test-mixed3-zsh: echo' >> ~/.testcli.conf
+    echo '    :required:list:alpha|beta' >> ~/.testcli.conf
+    echo '    :optional:list:x|y|z?' >> ~/.testcli.conf
+    run _zsh_run test-mixed3-zsh
+    assert_failure 53
+}
+
 # bats test_tags=id:zsh-164
 @test "zsh: missing second required arg fails with optional arg defined" {
     echo 'test-two-req-zsh: echo' >> ~/.testcli.conf

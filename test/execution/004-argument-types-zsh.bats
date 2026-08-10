@@ -40,3 +40,10 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     assert_output "custom-val"
 }
 
+@test "zsh: value argument type with no argument succeeds" {
+    echo 'test-value-default-zsh: echo' >> ~/.testcli.conf
+    echo '    :arg:value:my-default' >> ~/.testcli.conf
+    run _zsh_run test-value-default-zsh
+    assert_success
+}
+

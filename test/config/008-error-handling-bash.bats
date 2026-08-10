@@ -24,31 +24,37 @@ teardown() {
 # CLI name validation
 # ===================================================================
 
-# bats test_tags=id:bash-114
-@test "bash: CLI name with dots is rejected by _cli_validate_progname" {
-    source ./testcli
-    # Simulate an invalid progname
-    __CLI_PROGNAME="my.cli"
-    run _cli_validate_progname
-    assert_failure
-    assert_line --partial "invalid characters"
-}
-
-# bats test_tags=id:bash-115
-@test "bash: CLI name with dashes is rejected by _cli_validate_progname" {
-    source ./testcli
-    __CLI_PROGNAME="my-cli"
-    run _cli_validate_progname
-    assert_failure
-    assert_line --partial "invalid characters"
-}
-
-# bats test_tags=id:bash-116
-@test "bash: CLI name with underscores is accepted by _cli_validate_progname" {
-    source ./testcli
-    __CLI_PROGNAME="my_cli"
-    run _cli_validate_progname
+@test "bash: CLI name with dots is accepted and executes" {
+    ln -sf audogombleed.sh ./my.cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my.cli.conf
+    run ./my.cli greet
     assert_success
+    assert_output "hello"
+    rm -f ./my.cli ~/.my.cli.conf
+}
+
+@test "bash: CLI name with dashes is accepted and executes" {
+    ln -sf audogombleed.sh ./my-cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my-cli.conf
+    run ./my-cli greet
+    assert_success
+    assert_output "hello"
+    rm -f ./my-cli ~/.my-cli.conf
+}
+
+@test "bash: CLI name with underscores is accepted and executes" {
+    ln -sf audogombleed.sh ./my_cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my_cli.conf
+    run ./my_cli greet
+    assert_success
+    assert_output "hello"
+    rm -f ./my_cli ~/.my_cli.conf
+}
+
+@test "bash: direct execution as audogombleed.sh exits 49" {
+    run ./audogombleed.sh greet
+    assert_failure 49
+    assert_line --partial "not intended to be called directly"
 }
 
 # ===================================================================

@@ -49,3 +49,9 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     assert_success
     assert_line "zsh detected"
 }
+
+@test "zsh: direct execution shows usage message" {
+    run zsh ./audogombleed.sh
+    assert_failure
+    assert_line "This script is not intended to be called directly."
+}

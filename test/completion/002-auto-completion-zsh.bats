@@ -81,6 +81,15 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	assert_line "opt2"
 }
 
+# list args — from-variable
+@test "zsh: list-argument from-variable -> option1 option2 option3" {
+    load '../_helpers/auto-completion-mock-setup-zsh'
+	run test_completion_zsh 4 "testcli" "list-argument" "from-variable"
+	assert_line --partial "option1"
+	assert_line --partial "option2"
+	assert_line --partial "option3"
+}
+
 # commands without args
 # bats test_tags=id:zsh-021
 @test "zsh: returns empty completion for command without args: false" {

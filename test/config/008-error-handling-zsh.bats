@@ -24,15 +24,13 @@ teardown() {
 # ===================================================================
 
 # bats test_tags=id:zsh-082
-@test "zsh: CLI name with dashes is rejected by _cli_validate_progname" {
-    # Restore bash symlink for sourcing
-    rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
-    source ./testcli
-    __CLI_PROGNAME="my-cli"
-    run _cli_validate_progname
-    assert_failure
-    assert_line --partial "invalid characters"
+@test "zsh: CLI name with dashes is accepted and executes" {
+    ln -sf audogombleed.sh ./my-cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my-cli.conf
+    run zsh ./my-cli greet
+    assert_success
+    assert_output "hello"
+    rm -f ./my-cli ~/.my-cli.conf
 }
 
 # bats test_tags=id:zsh-083
@@ -128,4 +126,100 @@ CONF
     assert_output "expanded"
 
     rm -f "$tmpscript"
+}
+
+# ===================================================================
+# CLI name validation (dots)
+# ===================================================================
+
+# bats test_tags=id:zsh-089
+@test "zsh: CLI name with dots is accepted and executes" {
+    ln -sf audogombleed.sh ./my.cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my.cli.conf
+    run zsh ./my.cli greet
+    assert_success
+    assert_output "hello"
+    rm -f ./my.cli ~/.my.cli.conf
+}
+
+@test "zsh: direct execution as audogombleed.sh exits 49" {
+    run zsh ./audogombleed.sh greet
+    assert_failure 49
+    assert_line --partial "not intended to be called directly"
+}
+
+# ===================================================================
+# Variable name validation in [env]
+# ===================================================================
+
+# bats test_tags=id:zsh-090
+@test "zsh: invalid __CLI_ variable name is rejected" {
+    cat > ~/.testcli.conf <<'CONF'
+[env]
+__CLI_CFG.BAD=n
+
+[commands]
+test-cmd: echo "should still work"
+CONF
+    rm -f ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+
+    run _zsh_run test-cmd
+    # Should print error about invalid variable name
+    assert_line --partial "invalid variable name"
+}
+
+# bats test_tags=id:zsh-091
+@test "zsh: valid __CLI_ variable name is accepted" {
+    cat > ~/.testcli.conf <<'CONF'
+[env]
+__CLI_CFG_EXEC_SILENT="y"
+__CLI_CFG_GOOD_VALUE="test"
+
+[commands]
+test-cmd: echo "works"
+CONF
+
+    run _zsh_run test-cmd
+    assert_success
+    assert_output "works"
+}
+
+# ===================================================================
+# Source directive error handling
+# ===================================================================
+
+# bats test_tags=id:zsh-092
+@test "zsh: source file with non-zero exit reports error" {
+    local tmpscript="/tmp/err-test-badexit.sh"
+    cat > "$tmpscript" <<'SCRIPT'
+return 42
+SCRIPT
+
+    cat > ~/.testcli.conf <<CONF
+[env]
+source $tmpscript
+
+[commands]
+test-cmd: echo "still runs"
+CONF
+
+    run _zsh_run test-cmd
+    assert_line --partial "non-zero exit code"
+
+    rm -f "$tmpscript"
+}
+
+# ===================================================================
+# Include config error handling
+# ===================================================================
+
+# bats test_tags=id:zsh-093
+@test "zsh: _cli_check_file_permissions rejects nonexistent file" {
+    rm -f ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+    source ./testcli
+    run _cli_check_file_permissions "/nonexistent/module.conf" "include file"
+    assert_failure
+    assert_line --partial "not a regular file"
 }

@@ -47,6 +47,26 @@ CONF
 }
 
 # ===================================================================
+# Symlink to world-executable target
+# ===================================================================
+
+@test "zsh: symlink to world-executable target is rejected" {
+    local tmpdir="/tmp/perm-test-dir-$$"
+    mkdir -p "$tmpdir"
+    local tmpconf="$tmpdir/target.conf"
+    cat > "$tmpconf" <<'CONF'
+[commands]
+build: make -j$(nproc)
+test: make test
+CONF
+    chmod 777 "$tmpconf"
+    ln -sf "$tmpconf" ~/.testcli.conf
+
+    run _zsh_run build
+    assert_failure
+}
+
+# ===================================================================
 # Symlink to non-regular-file
 # ===================================================================
 
@@ -189,4 +209,18 @@ CONF
     source ./testcli
     run _cli_check_file_permissions "$tmpfile" "include file"
     assert_success
+}
+
+# ===================================================================
+# Non-regular file as config (directory)
+# ===================================================================
+
+@test "zsh: config pointing to directory is rejected" {
+    local tmpdir="/tmp/perm-test-dir-config"
+    mkdir -p "$tmpdir"
+    rm -f ~/.testcli.conf
+    ln -sf "$tmpdir" ~/.testcli.conf
+
+    run _zsh_run deploy-staging
+    assert_failure
 }

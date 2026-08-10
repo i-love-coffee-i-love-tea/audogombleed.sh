@@ -42,3 +42,18 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     run _zsh_run return2
     assert_failure 2
 }
+
+@test "zsh: exit code 52: more placeholders than args" {
+    echo 'test-placeholders: echo \1 \2 \3' >> ~/.testcli.conf
+    echo '    :arg1:list:one|two' >> ~/.testcli.conf
+    echo '    :arg2:list:alpha|beta' >> ~/.testcli.conf
+    echo '    :arg3:list:x|y' >> ~/.testcli.conf
+
+    run _zsh_run test-placeholders one alpha
+    assert_failure 52
+}
+
+@test "zsh: exit code 53: command with missing required args" {
+    run _zsh_run echo
+    assert_failure 53
+}

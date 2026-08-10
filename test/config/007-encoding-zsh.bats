@@ -86,3 +86,42 @@ CONF
 	assert_success
 	assert_output --partial "café"
 }
+
+@test "zsh: config with BOM in [env] section still parses [commands]" {
+	printf '\xEF\xBB\xBF[env]\n__CLI_CFG_EXEC_SILENT="y"\n\n[commands]\nhello: echo "world"\n' > ~/.testcli.conf
+	run _zsh_run hello 2>&1
+	assert_success
+	assert_output --partial "world"
+}
+
+@test "zsh: list values with UTF-8 characters complete correctly" {
+	cat > ~/.testcli.conf <<'CONF'
+[commands]
+pick: echo \1
+	:choice:list:café|naïve|résumé
+CONF
+	run _zsh_run --cli-run-awk-command output=commands command_filter="pick"
+	assert_success
+	assert_line --partial 'café|naïve|résumé'
+}
+
+@test "zsh: command with empty argument value is handled" {
+	cat > ~/.testcli.conf <<'CONF'
+[commands]
+test-cmd: echo \1
+	:arg:list:
+CONF
+	run _zsh_run --cli-run-awk-command output=commands command_filter="test-cmd"
+	assert_success
+}
+
+@test "zsh: command with only whitespace in help is handled" {
+	cat > ~/.testcli.conf <<'CONF'
+[commands]
+#   
+test-cmd: echo "hello"
+CONF
+	run _zsh_run test-cmd
+	assert_success
+	assert_output --partial "hello"
+}

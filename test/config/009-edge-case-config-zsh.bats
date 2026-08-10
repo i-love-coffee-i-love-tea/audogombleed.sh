@@ -116,3 +116,110 @@ CONF
 	run timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command output=invalid'
 	[ "$status" -ne 124 ]
 }
+
+# ===================================================================
+# Additional random ASCII content
+# ===================================================================
+
+# bats test_tags=id:zsh-097
+@test "zsh: edge-case: random 5000-byte config does not crash" {
+	_fuzz_with_header 5000
+	run timeout 5 zsh -c 'source ./testcli; testcli nonexistent-cmd'
+	[ "$status" -ne 124 ]
+}
+
+# ===================================================================
+# Additional adversarial AWK patterns
+# ===================================================================
+
+# bats test_tags=id:zsh-098
+@test "zsh: edge-case: config with only pipes does not crash" {
+	cat > ~/.testcli.conf <<'CONF'
+[commands]
+test-cmd: echo \1
+	:arg:list:||||||||||||||||||
+CONF
+	run timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command output=commands command_filter="test-cmd"'
+	[ "$status" -ne 124 ]
+}
+
+# bats test_tags=id:zsh-099
+@test "zsh: edge-case: config with backslash-heavy values does not crash" {
+	cat > ~/.testcli.conf <<'CONF'
+[commands]
+test-cmd: echo \\\\\\\\\\\\\\\\\\\\\\\\
+	:arg:list:\\\\\\\\\\\\\\\\
+CONF
+	run timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command output=commands command_filter="test-cmd"'
+	[ "$status" -ne 124 ]
+}
+
+# bats test_tags=id:zsh-100
+@test "zsh: edge-case: config with quote-heavy values does not crash" {
+	cat > ~/.testcli.conf <<'CONF'
+[commands]
+test-cmd: echo """""""""""""""""
+	:arg:list:"""""""""""""""""
+CONF
+	run timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command output=commands command_filter="test-cmd"'
+	[ "$status" -ne 124 ]
+}
+
+# ===================================================================
+# Structural edge cases
+# ===================================================================
+
+# bats test_tags=id:zsh-101
+@test "zsh: edge-case: config with [commands] appearing multiple times" {
+	cat > ~/.testcli.conf <<'CONF'
+[commands]
+cmd-a: echo a
+[commands]
+cmd-b: echo b
+CONF
+	run timeout 5 zsh -c 'source ./testcli; testcli cmd-b'
+	[ "$status" -ne 124 ]
+}
+
+# bats test_tags=id:zsh-102
+@test "zsh: edge-case: config with [env] after [commands]" {
+	cat > ~/.testcli.conf <<'CONF'
+[commands]
+cmd-a: echo a
+
+[env]
+__CLI_CFG_EXEC_SILENT="y"
+CONF
+	run timeout 5 zsh -c 'source ./testcli; testcli cmd-a'
+	[ "$status" -ne 124 ]
+}
+
+# bats test_tags=id:zsh-103
+@test "zsh: edge-case: config with tab-only indentation" {
+	printf '[commands]\n\t\t\thello: echo "world"\n' > ~/.testcli.conf
+	run timeout 5 zsh -c 'source ./testcli; testcli hello'
+	[ "$status" -ne 124 ]
+}
+
+# bats test_tags=id:zsh-104
+@test "zsh: edge-case: config with mixed tabs and spaces" {
+	cat > ~/.testcli.conf <<'CONF'
+[commands]
+  cmd-a: echo a
+  	cmd-b: echo b
+ 	  cmd-c: echo c
+CONF
+	run timeout 5 zsh -c 'source ./testcli; testcli cmd-a'
+	[ "$status" -ne 124 ]
+}
+
+# ===================================================================
+# Timeout stress tests — verify no infinite loops
+# ===================================================================
+
+# bats test_tags=id:zsh-105
+@test "zsh: edge-case: empty args to awk parser does not hang" {
+	cp example.conf ~/.testcli.conf
+	run timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command'
+	[ "$status" -ne 124 ]
+}

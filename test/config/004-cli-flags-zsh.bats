@@ -43,6 +43,12 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     assert_line "install war from maven"
 }
 
+@test "zsh: --cli-run-awk-command output=env prints env section" {
+    run _zsh_run --cli-run-awk-command output=env
+    assert_success
+    assert_line --partial "__CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS"
+}
+
 # bats test_tags=id:zsh-070
 @test "zsh: --cli-print-env prints env section" {
     run _zsh_run --cli-print-env

@@ -62,6 +62,32 @@ CONF
 }
 
 # ===================================================================
+# Tokenized exec — single-quoted strings and tab-separated tokens
+# ===================================================================
+
+@test "zsh: tokenized exec handles single-quoted strings" {
+    cat > ~/.testcli.conf <<'CONF'
+[commands]
+greet: echo 'hello world'
+CONF
+
+    run _zsh_run greet
+    assert_success
+    assert_line "hello world"
+}
+
+@test "zsh: tokenized exec handles tab-separated tokens" {
+    cat > ~/.testcli.conf <<'CONF'
+[commands]
+greet: echo	hello	world
+CONF
+
+    run _zsh_run greet
+    assert_success
+    assert_line "hello world"
+}
+
+# ===================================================================
 # Boolean variant parsing
 # ===================================================================
 
@@ -94,6 +120,20 @@ CONF
     run _zsh_run mypipe
     assert_success
     assert_line --partial "hello"
+}
+
+@test "zsh: CFG_EXEC_SILENT=true treated as positive boolean" {
+    cat > ~/.testcli.conf <<'CONF'
+[env]
+__CLI_CFG_EXEC_SILENT=true
+
+[commands]
+test-cmd: echo "visible"
+CONF
+
+    run _zsh_run test-cmd
+    assert_success
+    refute_line --partial "Executing command"
 }
 
 # ===================================================================

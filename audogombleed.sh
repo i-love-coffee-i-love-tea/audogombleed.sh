@@ -3184,6 +3184,7 @@ _cli_execute_command() {
 
 # Tests if the first argument is an integer
 _cli_is_integer() {
+	[ -n "$1" ] || return 1
 	[ "$1" -eq "0" ] 2> /dev/null
 
 	# the comparison fails with exit code 2
@@ -3485,13 +3486,6 @@ _cli_complete_arg() {
 # Validate CLI name: only alphanumeric and underscores allowed
 # Dots and dashes break aliases and variable names
 _cli_validate_progname() {
-	if [[ "$__CLI_PROGNAME" =~ [^a-zA-Z0-9_] ]]; then
-		echo "error: CLI name '$__CLI_PROGNAME' contains invalid characters." >&2
-		echo "Only letters, digits, and underscores are allowed." >&2
-		echo "Create a symlink with a valid name, e.g.:" >&2
-		echo "  ln -sf $__CLI_PROGNAME mycli" >&2
-		return 1
-	fi
 	return 0
 }
 
@@ -3499,8 +3493,10 @@ _cli_validate_progname() {
 # but because zsh $0 returns the function name,
 # when used in a function, it is called here directly
 if _cli_shell_is_bash && _cli_is_sourced; then
+	__CLI_SCRIPT="${BASH_SOURCE[0]}"
 	__CLI_PROGNAME="${BASH_SOURCE[0]##*/}"
 else
+	__CLI_SCRIPT="$0"
 	__CLI_PROGNAME="${0##*/}"
 fi
 

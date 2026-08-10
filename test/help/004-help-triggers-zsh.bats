@@ -37,6 +37,12 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     assert_output --partial "example of deeper structure"
 }
 
+@test "zsh: help trigger \\? shows all commands" {
+    run _zsh_run '?'
+    assert_success
+    assert_output --partial "[cho]"
+}
+
 # bats test_tags=id:zsh-197
 @test "zsh: help trigger command -h shows command help" {
     run _zsh_run install -h
@@ -67,4 +73,10 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     assert_line "    i[nstall] j[ar] f[rom] m[aven] <mvn-coords>"
     assert_line "    i[nstall] w[ar] f[rom] f[ile] <war-file>"
     assert_line "    i[nstall] w[ar] f[rom] m[aven] <mvn-coords>"
+}
+
+@test "zsh: help trigger command \\? shows command help" {
+    run _zsh_run install '?'
+    assert_success
+    assert_output --partial "example of deeper structure"
 }
