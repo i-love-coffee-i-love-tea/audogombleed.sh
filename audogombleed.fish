@@ -222,11 +222,41 @@ function _cli_completion_init
     set -g __CLI_CMD_STRUCT (string split \n -- $struct)
 end
 
+# ── Command descriptions ──
+
+function _cli_load_cmd_descriptions
+    if set -q __CLI_CMD_DESCRIPTIONS
+        return
+    end
+    set -g __CLI_CMD_DESCRIPTIONS
+    for line in (_awk output=cmd_descriptions)
+        # Split on tab character
+        set -l parts (string split \t -- $line)
+        if test (count $parts) -ge 2
+            set -a __CLI_CMD_DESCRIPTIONS $parts
+        end
+    end
+end
+
+function _cli_get_description
+    set -l cmd $argv[1]
+    set -l i 1
+    while test $i -le (count $__CLI_CMD_DESCRIPTIONS)
+        if test "$__CLI_CMD_DESCRIPTIONS[$i]" = "$cmd"
+            echo $__CLI_CMD_DESCRIPTIONS[(math $i + 1)]
+            return
+        end
+        set i (math $i + 2)
+    end
+end
+
 # ── First-word completion ──
 
 function _cli_getfirstwords
     set -l word $argv[1]
     test -z "$word"; and set word ""
+
+    _cli_load_cmd_descriptions
 
     set -l _seen
     for line in $__CLI_CONFIG
@@ -241,7 +271,12 @@ function _cli_getfirstwords
         # Deduplicate
         contains -- $first_word $_seen; and continue
         set -a _seen $first_word
-        echo $first_word
+        set -l desc (_cli_get_description $first_word)
+        if test -n "$desc"
+            printf '%s\t%s\n' $first_word $desc
+        else
+            echo $first_word
+        end
     end
 end
 
@@ -251,6 +286,8 @@ function _cli_complete_command
     set -l pos $argv[1]
     set -l line $argv[2..-1]
 
+    _cli_load_cmd_descriptions
+
     for l in $__CLI_CONFIG
         set -l cmd_part (string split ',' -- $l)[1]
         set cmd_part (string trim -- $cmd_part)
@@ -259,9 +296,17 @@ function _cli_complete_command
         # Split into words and get the one at position
         set -l words (string split ' ' -- $cmd_part)
         if test (count $words) -ge $pos
-            echo $words[$pos]
+            set -l word $words[$pos]
+            # Get full command path for description lookup
+            set -l full_cmd (string join ' ' -- $words[1..$pos])
+            set -l desc (_cli_get_description $full_cmd)
+            if test -n "$desc"
+                printf '%s\t%s\n' $word $desc
+            else
+                echo $word
+            end
         end
-    end | sort -u
+    end | sort -u -t \t -k1,1
 end
 
 # ── Command matching helpers ──
@@ -682,4 +727,12 @@ if not set -q __CLI_SOURCED
         _cli_load_command_word_functions
         _cli_execute $cmd_args
     end
+end
+
+# Define a wrapper function so "dev <args>" works after sourcing.
+# In fish, sourced files don't become commands like in bash.
+# Always redefine so updates take effect on re-source.
+function $__CLI_PROGNAME
+    _cli_load_command_word_functions
+    _cli_execute $argv
 end
