@@ -214,16 +214,18 @@ jobs:
       - name: Test PKGBUILD build
         run: |
           cd packaging/arch
+          # Extract version from PKGBUILD
+          pkgver=$(grep '^pkgver=' PKGBUILD | cut -d= -f2)
           # Create a source tarball matching GitHub's archive layout
-          mkdir /tmp/src && cp -a ../.. /tmp/src/audogombleed.sh-2.0.0
-          tar czf /tmp/audogombleed-2.0.0.tar.gz -C /tmp/src audogombleed.sh-2.0.0
+          mkdir /tmp/src && cp -a ../.. "/tmp/src/audogombleed.sh-${pkgver}"
+          tar czf "/tmp/audogombleed-${pkgver}.tar.gz" -C /tmp/src "audogombleed.sh-${pkgver}"
           rm -rf /tmp/src
           # Update source to use local tarball
-          sed -i "s|source=.*|source=(\"audogombleed-2.0.0.tar.gz::file:///tmp/audogombleed-2.0.0.tar.gz\")|" PKGBUILD
+          sed -i "s|source=.*|source=(\"audogombleed-${pkgver}.tar.gz::file:///tmp/audogombleed-${pkgver}.tar.gz\")|" PKGBUILD
           sed -i "s|sha256sums=.*|sha256sums=('SKIP')|" PKGBUILD
           # Build as non-root user (makepkg refuses to run as root)
           useradd -m builder
-          chown -R builder:builder /tmp/audogombleed-2.0.0.tar.gz "$GITHUB_WORKSPACE"
+          chown -R builder:builder "/tmp/audogombleed-${pkgver}.tar.gz" "$GITHUB_WORKSPACE"
           su builder -c "cd $GITHUB_WORKSPACE/packaging/arch && makepkg --noconfirm --nodeps"
 
   pkg-nix:
@@ -250,11 +252,13 @@ jobs:
           # Create a proper tap
           brew tap-new i-love-coffee-i-love-tea/audogombleed
           cp packaging/homebrew/audogombleed.rb "$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-audogombleed/Formula/"
+          # Extract version from formula URL (e.g., v2.1.0.tar.gz -> 2.1.0)
+          pkgver=$(grep 'url ' packaging/homebrew/audogombleed.rb | sed 's|.*v\([0-9.]*\)\.tar\.gz.*|\1|')
           # Replace the GitHub URL with a local path for testing
-          tar czf /tmp/audogombleed-2.0.0.tar.gz .
-          sha=$(shasum -a 256 /tmp/audogombleed-2.0.0.tar.gz | cut -d' ' -f1)
+          tar czf "/tmp/audogombleed-${pkgver}.tar.gz" .
+          sha=$(shasum -a 256 "/tmp/audogombleed-${pkgver}.tar.gz" | cut -d' ' -f1)
           formula="$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-audogombleed/Formula/audogombleed.rb"
-          sed -i '' "s|url .*|url \"file:///tmp/audogombleed-2.0.0.tar.gz\"|" "$formula"
+          sed -i '' "s|url .*|url \"file:///tmp/audogombleed-${pkgver}.tar.gz\"|" "$formula"
           sed -i '' "s|sha256 .*|sha256 \"$sha\"|" "$formula"
           brew install --build-from-source i-love-coffee-i-love-tea/audogombleed/audogombleed
           audogombleed --version
@@ -270,13 +274,15 @@ jobs:
         run: |
           dnf install -y rpm-build rpmdevtools
           rpmdev-setuptree
+          # Extract version from spec file
+          pkgver=$(grep '^Version:' packaging/rpm/audogombleed.spec | awk '{print $2}')
           # Create source tarball matching GitHub's archive layout
-          mkdir /tmp/src && cp -a . /tmp/src/audogombleed.sh-2.0.0
-          tar czf ~/rpmbuild/SOURCES/audogombleed-2.0.0.tar.gz -C /tmp/src audogombleed.sh-2.0.0
+          mkdir /tmp/src && cp -a . "/tmp/src/audogombleed.sh-${pkgver}"
+          tar czf ~/rpmbuild/SOURCES/audogombleed-${pkgver}.tar.gz -C /tmp/src "audogombleed.sh-${pkgver}"
           rm -rf /tmp/src
           rpmbuild -ba packaging/rpm/audogombleed.spec
           # Verify the RPM was built
-          rpm -qip ~/rpmbuild/RPMS/noarch/audogombleed-2.0.0-1.*.rpm
+          rpm -qip ~/rpmbuild/RPMS/noarch/audogombleed-${pkgver}-1.*.rpm
 
   pkg-gentoo:
     name: "pkg: Gentoo ebuild"
@@ -285,7 +291,12 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - name: Validate ebuild
         run: |
-          ebuild=packaging/gentoo/audogombleed-2.0.0.ebuild
+          # Find the ebuild file (version in filename)
+          ebuild=$(ls packaging/gentoo/audogombleed-*.ebuild | head -1)
+          if [ -z "$ebuild" ]; then
+            echo "No ebuild found"
+            exit 1
+          fi
           # Check bash syntax
           bash -n "$ebuild"
           # Check required ebuild variables are defined
@@ -294,4 +305,4 @@ jobs:
           done
           # Check required functions exist
           grep -q "^src_install()" "$ebuild" || { echo "Missing src_install"; exit 1; }
-          echo "ebuild validation passed"
+          echo "ebuild validation passed: $ebuild"
