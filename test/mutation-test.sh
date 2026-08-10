@@ -12,7 +12,7 @@
 #   ./test/mutation-test.sh --dry-run           # show mutations without running
 #
 # Requirements:
-#   - bats (test/bats/bin/bats)
+#   - bats (test/_bats/bin/bats)
 #   - The full test suite must pass before running this
 #
 set -euo pipefail
@@ -130,7 +130,7 @@ for mutation_str in "${mutations[@]}"; do
 	fi
 
 	# Run tests with timeout
-	test_output=$(timeout 120 "$PROJECT_DIR/test/bats/bin/bats" $test_files --tap 2>&1 || true)
+	test_output=$(timeout 120 "$PROJECT_DIR/test/_bats/bin/bats" $test_files --tap 2>&1 || true)
 
 	if echo "$test_output" | grep -q "^not ok"; then
 		echo "  [killed] $name"

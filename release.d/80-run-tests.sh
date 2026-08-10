@@ -5,4 +5,4 @@
 #
 set -euo pipefail
 
-test/bats/bin/bats test/*.bats
+test/_bats/bin/bats test/*/*.bats

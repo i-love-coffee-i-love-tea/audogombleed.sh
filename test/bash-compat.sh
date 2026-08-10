@@ -50,7 +50,7 @@ echo "Installed: ${BASH_BIN} ($(${BASH_BIN} --version | head -1))"
 echo "Running tests ..."
 cd "${REPO_DIR}"
 set +e
-${BASH_BIN} test/bats/bin/bats test/*-bash.bats test/*-all.bats --formatter junit > report.xml
+${BASH_BIN} test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --formatter junit > report.xml
 EXIT_CODE=$?
 set -e
 

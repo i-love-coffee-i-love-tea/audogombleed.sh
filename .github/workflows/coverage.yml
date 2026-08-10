@@ -56,14 +56,14 @@ jobs:
             --include-pattern=audogombleed.sh \
             --exclude-pattern=test,bats \
             coverage/bash \
-            test/bats/bin/bats test/*-bash.bats test/*-all.bats
+            test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats
 
       - name: Run zsh tests with coverage
         run: |
           mkdir -p coverage/zsh
           # kcov doesn't support zsh natively. Run zsh tests normally to
           # verify they pass; bash coverage already exercises the shared code.
-          test/bats/bin/bats test/*-zsh.bats test/*-all.bats
+          test/_bats/bin/bats test/*/*-zsh.bats test/*/*-all.bats
 
       - name: Merge coverage data
         run: |

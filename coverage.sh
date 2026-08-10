@@ -33,7 +33,7 @@ if ! command -v kcov &>/dev/null; then
     exit 1
 fi
 
-if [ ! -x "$SCRIPT_DIR/test/bats/bin/bats" ]; then
+if [ ! -x "$SCRIPT_DIR/test/_bats/bin/bats" ]; then
     echo "error: bats not found. Initialize submodules:"
     echo "  git submodule update --init --recursive"
     exit 1
@@ -49,12 +49,12 @@ kcov \
     --include-pattern=audogombleed.sh \
     --exclude-pattern=test,bats \
     "$COVERAGE_DIR/bash" \
-    "$SCRIPT_DIR/test/bats/bin/bats" "$SCRIPT_DIR/test/"*-bash.bats "$SCRIPT_DIR/test/"*-all.bats
+    "$SCRIPT_DIR/test/_bats/bin/bats" "$SCRIPT_DIR/test/*/*-bash.bats "$SCRIPT_DIR/test/*/*-all.bats
 
 if $RUN_ZSH; then
     echo ""
     echo "Running zsh tests (coverage data is bash-only)..."
-    "$SCRIPT_DIR/test/bats/bin/bats" "$SCRIPT_DIR/test/"*-zsh.bats "$SCRIPT_DIR/test/"*-all.bats
+    "$SCRIPT_DIR/test/_bats/bin/bats" "$SCRIPT_DIR/test/*/*-zsh.bats "$SCRIPT_DIR/test/*/*-all.bats
 fi
 
 echo ""

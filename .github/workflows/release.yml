@@ -35,7 +35,7 @@ jobs:
           zsh ./testcli echo hello world
           rm -f ./testcli ~/.testcli.conf
       - name: Run tests
-        run: test/bats/bin/bats test/*-bash.bats test/*-all.bats --tap 2>&1 | tail -5
+        run: test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -5
 
   # ── Helper: extract version from tag ──────────────────────────────
   version:
@@ -76,7 +76,7 @@ jobs:
       - name: Run bats tests against installed binary
         run: |
           export CLI_UNDER_TEST=/usr/bin/audogombleed
-          test/bats/bin/bats test/*-bash.bats test/*-all.bats --tap 2>&1 | tail -20
+          test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -20
       - name: Upload .deb
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -116,7 +116,7 @@ jobs:
       - name: Run bats tests against installed binary
         run: |
           export CLI_UNDER_TEST=/usr/bin/audogombleed
-          test/bats/bin/bats test/*-bash.bats test/*-all.bats --tap 2>&1 | tail -20
+          test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -20
       - name: Upload .rpm
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -160,7 +160,7 @@ jobs:
       - name: Run bats tests against installed binary
         run: |
           export CLI_UNDER_TEST=/usr/bin/audogombleed
-          test/bats/bin/bats test/*-bash.bats test/*-all.bats --tap 2>&1 | tail -20
+          test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -20
       - name: Upload .pkg.tar.zst
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -215,7 +215,7 @@ jobs:
             # Run bats tests against installed binary
             export CLI_UNDER_TEST=/usr/local/bin/audogombleed
             export MAX_EXEC_MS=200 MAX_COMPLETION_MS=200 MAX_LARGE_COMPLETION_MS=300
-            test/bats/bin/bats test/*-bash.bats test/*-all.bats --tap 2>&1 | tail -20
+            test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -20
             # Copy package to workspace
             cp /tmp/audogombleed-${PKG_VERSION}.pkg .
       - name: Upload .pkg
@@ -267,7 +267,7 @@ jobs:
           MAX_EXEC_MS: 250
           MAX_COMPLETION_MS: 250
           MAX_LARGE_COMPLETION_MS: 350
-        run: test/bats/bin/bats test/*-bash.bats test/*-all.bats --tap 2>&1 | tail -20
+        run: test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -20
       - name: Upload formula
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
