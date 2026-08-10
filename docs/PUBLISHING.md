@@ -1,7 +1,7 @@
 # Publishing to Package Repositories
 
 This document covers the steps to publish audogombleed to Debian, Nix (nixpkgs),
-and the Arch User Repository (AUR).
+the Arch User Repository (AUR), Homebrew, Fedora COPR, and Gentoo overlays.
 
 ## Prerequisites (all ecosystems)
 
@@ -327,12 +327,212 @@ For new versions:
 
 ---
 
+## 4. Homebrew (tap)
+
+### Overview
+
+Homebrew packages live in a "tap" — a GitHub repository named
+`homebrew-<name>` under your account. Users add the tap and install
+the formula. The formula is a Ruby file that describes how to fetch,
+build, and install the package.
+
+### Steps
+
+#### 4.1 Create the tap repository
+
+Create a GitHub repo named `homebrew-audogombleed` under your account:
+
+```bash
+gh repo create i-love-coffee-i-love-tea/homebrew-audogombleed --public
+```
+
+The repo needs a `Formula/` directory containing the Ruby formula file.
+
+#### 4.2 Update the formula with a real checksum
+
+```bash
+sha=$(curl -sL https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.1.0.tar.gz | shasum -a 256 | cut -d' ' -f1)
+```
+
+Update `sha256` in `packaging/homebrew/audogombleed.rb` with the real hash.
+
+#### 4.3 Push the formula to the tap repo
+
+```bash
+git clone git@github.com:i-love-coffee-i-love-tea/homebrew-audogombleed.git
+cd homebrew-audogombleed
+mkdir -p Formula
+cp /path/to/audogombleed.sh/packaging/homebrew/audogombleed.rb Formula/
+git add . && git commit -m "audogombleed 2.1.0" && git push
+```
+
+#### 4.4 Test locally
+
+```bash
+brew tap i-love-coffee-i-love-tea/audogombleed
+brew install i-love-coffee-i-love-tea/audogombleed/audogombleed
+audogombleed --version
+```
+
+#### 4.5 Update for new versions
+
+1. Update `url` and `sha256` in the formula
+2. Push to the tap repo
+3. Users update with `brew upgrade audogombleed`
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `packaging/homebrew/audogombleed.rb` | Formula: source URL, checksum, install steps, test |
+
+---
+
+## 5. RPM (Fedora COPR)
+
+### Overview
+
+Fedora COPR is a build system for third-party RPM packages. You upload
+a spec file, COPR builds it for multiple Fedora/EPEL releases, and
+users enable the repo to install with `dnf`.
+
+### Steps
+
+#### 5.1 Create a COPR account
+
+Register at https://copr.fedorainfracloud.org/ and link your GitHub or
+FAS account.
+
+#### 5.2 Create a new project
+
+In COPR, create a project named `audogombleed`:
+- Chroots: `fedora-rawhide-x86_64`, `fedora-40-x86_64`, `epel-9-x86_64`
+- Mark as "persistent" so it survives past the default 14-day cleanup
+
+#### 5.3 Build from the spec file
+
+Option A — point COPR at the GitHub tarball:
+1. Upload `packaging/rpm/audogombleed.spec` as a new build
+2. Source URL: `https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.1.0.tar.gz`
+
+Option B — use `copr-cli`:
+```bash
+copr-cli build audogombleed --nowait \
+  https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.1.0.tar.gz
+```
+
+#### 5.4 Test
+
+```bash
+# Enable the COPR repo
+dnf install 'dnf-command(copr)'
+dnf copr enable $USER/audogombleed
+dnf install audogombleed
+audogombleed --version
+```
+
+#### 5.5 Update for new versions
+
+1. Update `Version:` in `packaging/rpm/audogombleed.spec`
+2. Add a `%changelog` entry
+3. Rebuild in COPR
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `packaging/rpm/audogombleed.spec` | RPM spec: metadata, source URL, install steps |
+
+---
+
+## 6. Gentoo (overlay)
+
+### Overview
+
+Gentoo packages live in "overlays" — third-party repositories that users
+add via `layman` or `eselect repository`. The package is an "ebuild" —
+a bash script describing how to fetch, compile, and install.
+
+### Steps
+
+#### 6.1 Create the overlay repository
+
+Create a GitHub repo named `gobuki-overlay` (or any name):
+
+```bash
+gh repo create i-love-coffee-i-love-tea/gobuki-overlay --public
+```
+
+The repo needs this structure:
+```
+gobuki-overlay/
+├── metadata/
+│   └── layout.conf
+└── app-misc/
+    └── audogombleed/
+        ├── audogombleed-2.1.0.ebuild
+        └── Manifest
+```
+
+#### 6.2 Create metadata/layout.conf
+
+```bash
+cat > metadata/layout.conf <<'EOF'
+masters = gentoo
+thin-manifests = true
+EOF
+```
+
+#### 6.3 Copy and verify the ebuild
+
+```bash
+mkdir -p app-misc/audogombleed
+cp /path/to/audogombleed.sh/packaging/gentoo/audogombleed-2.1.0.ebuild \
+   app-misc/audogombleed/
+pushd app-misc/audogombleed
+ebuild audogombleed-2.1.0.ebuild manifest
+popd
+```
+
+#### 6.4 Push the overlay
+
+```bash
+git add . && git commit -m "app-misc/audogombleed: add 2.1.0" && git push
+```
+
+#### 6.5 Test locally
+
+```bash
+eselect repository add gobuki-overlay git https://github.com/i-love-coffee-i-love-tea/gobuki-overlay.git
+emerge --sync gobuki-overlay
+emerge app-misc/audogombleed
+```
+
+#### 6.6 Update for new versions
+
+1. Copy the ebuild to the new version filename: `cp audogombleed-2.1.0.ebuild audogombleed-2.2.0.ebuild`
+2. Run `ebuild audogombleed-2.2.0.ebuild manifest` to update checksums
+3. Commit and push
+
+### Files
+
+| File | Purpose |
+|------|---------|
+| `packaging/gentoo/audogombleed-2.1.0.ebuild` | Ebuild: source, deps, install steps |
+
+---
+
 ## Version bump checklist
 
-When releasing a new version, update all three packaging files:
+When releasing a new version, update all packaging files:
 
 1. `debian/changelog` — add a new entry at the top
 2. `packaging/nix/default.nix` — update `version` and `sha256`
 3. `packaging/arch/PKGBUILD` — update `pkgver` and `sha256sums`
+4. `packaging/homebrew/audogombleed.rb` — update `url` and `sha256`
+5. `packaging/rpm/audogombleed.spec` — update `Version:` and add `%changelog` entry
+6. `packaging/gentoo/audogombleed-<version>.ebuild` — copy to new version, run `ebuild ... manifest`
+
+The `release.d/` hooks handle steps 1-6 automatically during `release.sh`.
 
 Then follow the update steps for each ecosystem.

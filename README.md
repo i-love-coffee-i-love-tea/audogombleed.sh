@@ -14,6 +14,37 @@ Create CLIs with auto-completable command trees — no coding required.
 Define commands and arguments in a plain text config file. Tab completion,
 command abbreviation, and help output all come for free.
 
+```
+                    ┌──────────────┐
+                    │  Config File │
+                    │  (.NAME.conf)│
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │  [env]       │  ← shell code: exports, functions,
+                    │  section     │    CLI options
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │  [commands]  │  ← parsed by embedded AWK script
+                    │  section     │
+                    └──────┬───────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+     ┌────────▼───┐ ┌──────▼─────┐ ┌───▼──────────┐
+     │ Completion │ │  Help      │ │  Execution   │
+     │ (Tab key)  │ │  (? / -h)  │ │  (Enter key) │
+     └────────────┘ └────────────┘ └──────────────┘
+```
+
+| | Docs |
+|---|---|
+| Config file | [Configuration Reference](docs/02-configuration.md) |
+| `[env]` section | [Environment](docs/02-configuration.md#env-section) |
+| `[commands]` section | [Command tree](docs/02-configuration.md#commands-section) |
+| Help | [Comments & help output](docs/02-configuration.md#comments) |
+
 ### :mag: What it looks like
 
 Config (`~/.tf.conf`):
@@ -119,4 +150,5 @@ example with command trees and argument types.
 | [Hierarchical Configuration](docs/04-hierarchical-configuration.md) | `include_commands_from` — split your config across multiple files, merge at runtime |
 | [Shell Compatibility](docs/05-shell-compatibility.md) | Bash/zsh differences, execution model, `SH_WORD_SPLIT` requirement, known limitations |
 | [FAQ](docs/10-faq.md) | Common issues: globbing `?`, zsh setup, config debugging, multiple CLIs |
+| [Config Grammar](docs/config-grammar.md) | Formal ABNF-like specification — the authoritative spec for the config file format |
 | [Security](docs/SECURITY.md) | Trust model, `eval` implications, attack surface, recommendations |

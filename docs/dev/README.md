@@ -44,6 +44,30 @@ can additionally use description labels, which aren't supported in bash.
 
 ## Architecture overview
 
+```
+                    ┌──────────────┐
+                    │  Config File │
+                    │  (.NAME.conf)│
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │  [env]       │  ← shell code: exports, functions,
+                    │  section     │    CLI options
+                    └──────┬───────┘
+                           │
+                    ┌──────▼───────┐
+                    │  [commands]  │  ← parsed by embedded AWK script
+                    │  section     │
+                    └──────┬───────┘
+                           │
+              ┌────────────┼────────────┐
+              │            │            │
+     ┌────────▼───┐ ┌──────▼─────┐ ┌───▼──────────┐
+     │ Completion │ │  Help      │ │  Execution   │
+     │ (Tab key)  │ │  (? / -h)  │ │  (Enter key) │
+     └────────────┘ └────────────┘ └──────────────┘
+```
+
 Audogombleed.sh is a single-file shell script (~3200 lines) that serves
 two completely different roles depending on how it is invoked:
 

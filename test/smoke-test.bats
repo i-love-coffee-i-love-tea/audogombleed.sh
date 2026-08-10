@@ -56,7 +56,7 @@
 
 	# Test: what does zsh -c 'source ./testcli' actually produce?
 	echo "# --- zsh sourcing test ---" >&3
-	ln -sf ./audogombleed.sh ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
 	cp -n example.conf ~/.testcli.conf 2>/dev/null
 	local zsh_out
 	zsh_out=$(zsh -c 'source ./testcli 2>&1; echo "exit=$?"; echo "PROGNAME=$__CLI_PROGNAME"; echo "AWK=$__CLI_AWK"' 2>&1)

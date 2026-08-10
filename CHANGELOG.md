@@ -7,6 +7,8 @@
 - Add `FILE_OR_DIR` argument type that completes both files and directories
 - Add optional glob filter parameter for `FILE`, `DIR`, and `FILE_OR_DIR` types to restrict completions by pattern (e.g. `*.txt`, `*.log`)
 - Unify config syntax so all parameterized types use `:name:type[:value[:description]]`, where `FILE`/`DIR`/`FILE_OR_DIR` treat the value field as a glob pattern
+- Add `create-github-release.sh` standalone script for creating GitHub releases with notes from CHANGELOG.md
+- Add `release.d/25-stamp-changelog.sh` hook to convert `## Unreleased` to versioned heading during releases
 
 ### Fixes
 
@@ -16,6 +18,14 @@
 - Fix `value` type default injection ordering — exit 53 (missing required args) now fires before defaults are injected, ensuring correct error messages
 - Fix `int_range` format validation — non-numeric bounds and reversed ranges (min > max) are now rejected by the validator
 - Fix undefined `$variable` and `&function` references — validator now warns when dynamic command words reference unset variables or functions
+- Rename `release.d/10-validate-config-files.sh` to `10-validate-release-artifacts.sh` — name now matches what it actually validates (release artifacts, not config files)
+- Remove redundant `release.d/11-validate-example-config.sh` — hook `14-validate-config.sh` already defaults to `example.conf`
+
+### CI
+
+- Add dependency caching to all CI workflows (`actions/cache` for apt, Homebrew, kcov)
+- Add concurrency control to all CI workflows (`cancel-in-progress: true`)
+- Add automated release workflow (`release.yml`): builds .deb, .rpm, Arch .pkg.tar.zst, FreeBSD .pkg, and Homebrew formula; runs full bats test suite against each installed binary; creates GitHub Release only if all builds and tests pass
 
 ### Documentation
 
@@ -25,10 +35,16 @@
 - Document undefined dynamic word behavior (produces no completions, not an error)
 - Add mixed tabs and spaces warning to indentation section
 - Add `value` type usage description with placeholder replacement semantics
+- Add Homebrew, RPM, and Gentoo publishing guides to `docs/PUBLISHING.md`
 
 ### Tests
 
 - Add `test/spec-holes-bash.bats` with 13 tests covering parser, validator, and grammar fixes
+- Add `test/injection-bash.bats` and `test/injection-zsh.bats` with 12 tests covering command injection, backtick injection, null bytes, long input, and path traversal
+- Add `test/encoding-bash.bats` and `test/encoding-zsh.bats` with 10 tests covering UTF-8 BOM, CRLF line endings, and multibyte characters (documents known limitations)
+- Add `test/fuzz-config-bash.bats` and `test/fuzz-config-zsh.bats` with 18 fuzz tests covering random ASCII, adversarial AWK patterns, structural edge cases, and timeout stress
+- Add `test/mutation-test.sh` for targeted mutation testing of key code paths
+- Add `CLI_UNDER_TEST` env var support to test harness — allows running the full bats test suite against an installed binary instead of the source tree
 
 ## 2.1.0
 

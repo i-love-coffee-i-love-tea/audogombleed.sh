@@ -11,6 +11,10 @@ permissions:
   contents: read
   checks: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   coverage:
     name: "coverage: bash + zsh"
@@ -26,7 +30,15 @@ jobs:
           sudo apt-get install -y -qq binutils-dev libiberty-dev libdw-dev \
             libcurl4-openssl-dev cmake zsh
 
+      - name: Cache kcov build
+        id: cache-kcov
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        with:
+          path: /usr/local/bin/kcov
+          key: kcov-v42
+
       - name: Build kcov
+        if: steps.cache-kcov.outputs.cache-hit != 'true'
         run: |
           git clone --depth 1 https://github.com/SimonKagstrom/kcov.git /tmp/kcov
           cd /tmp/kcov

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# release.d hook: validate that config files exist and have expected structure.
+# release.d hook: validate release artifacts exist and have expected structure.
+# Checks: __CLI_VERSION in script, .TH header in manpage, changelog file.
 #
 # Exports from release.sh: $version $script $manpage $changelog
 #

@@ -24,7 +24,7 @@ teardown() {
 	rm -rf /tmp/err-test-dir-* 2>/dev/null || true
 	rm -f ~/.testcli.conf
 	cp example.conf ~/.testcli.conf
-	ln -sf ./audogombleed.sh ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
 	source ./testcli
 }
 

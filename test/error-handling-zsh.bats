@@ -25,7 +25,7 @@ teardown() {
 	cp example.conf ~/.testcli.conf
 	# Restore symlink for _zsh_run compatibility
 	rm -f ./testcli
-	ln -sf ./audogombleed.sh ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
 }
 
 # ===================================================================
@@ -35,7 +35,7 @@ teardown() {
 @test "zsh: CLI name with dashes is rejected by _cli_validate_progname" {
     # Restore bash symlink for sourcing
     rm -f ./testcli
-    ln -sf ./audogombleed.sh ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
     source ./testcli
     __CLI_PROGNAME="my-cli"
     run _cli_validate_progname
@@ -45,7 +45,7 @@ teardown() {
 
 @test "zsh: CLI name with underscores is accepted by _cli_validate_progname" {
     rm -f ./testcli
-    ln -sf ./audogombleed.sh ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
     source ./testcli
     __CLI_PROGNAME="my_cli"
     run _cli_validate_progname
@@ -124,7 +124,7 @@ CONF
 
     # Restore bash symlink for _zsh_run
     rm -f ./testcli
-    ln -sf ./audogombleed.sh ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
     run _zsh_run tilde-cmd
     assert_success
     assert_output "expanded"

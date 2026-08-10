@@ -4030,6 +4030,10 @@ _cli_execute() {
 			echo "$__CLI_VERSION"
 			return 0
 			;;
+		--help)
+			_awk output=help command_filter="" do_format=1
+			return 0
+			;;
 		*)
 			if [ "$cmd_args" = "" ]; then
 				cmd_args="$1"

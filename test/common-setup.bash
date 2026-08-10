@@ -14,8 +14,9 @@ _common_setup() {
 	local optvalue
 
 	# install test files (remove if exists to avoid 'ln: Already exists')
+	# Set CLI_UNDER_TEST=/usr/bin/audogombleed to test an installed binary.
 	rm -f ./testcli
-	ln -s ./audogombleed.sh ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
 	if [ ! -e "$HOME/.testcli.conf" ]; then
 		cp example.conf ~/.testcli.conf
 	fi
