@@ -6,22 +6,18 @@
 #
 
 setup_file() {
-    load '../_helpers/common-setup'
-    _common_setup __CLI_CFG_EXEC_SILENT="y"
-
+    load '../_helpers/test-setup'
+    _test_init __CLI_CFG_EXEC_SILENT="y"
     # Create a temp file for tracking calls
     export _TEST_CALL_LOG=$(mktemp)
-
     # inject test functions that track calls via file
     sed '/^\[commands\]/i \
 _TEST_CALL_LOG='"$_TEST_CALL_LOG"'\
 track_alpha() { echo "alpha" >> "$_TEST_CALL_LOG"; echo "a1 a2"; }\
 track_beta() { echo "beta" >> "$_TEST_CALL_LOG"; echo "b1 b2"; }\
 track_gamma() { echo "gamma" >> "$_TEST_CALL_LOG"; echo "c1 c2"; }' ~/.testcli.conf > ~/.testcli.conf.tmp && mv ~/.testcli.conf.tmp ~/.testcli.conf
-
     # append test commands to [commands] section
     cat >> ~/.testcli.conf <<'CMDS'
-
 alpha-cmd
     &track_alpha: echo \0
 beta-cmd
@@ -31,13 +27,13 @@ gamma-cmd
 CMDS
 }
 teardown_file() {
+    load '../_helpers/test-setup'
+    _test_cleanup
     rm -f "$_TEST_CALL_LOG"
-    load '../_helpers/common-teardown'
-    _common_teardown
 }
 setup() {
-    load '../_test_helper/bats-support/load'
-    load '../_test_helper/bats-assert/load'
+    load '../_helpers/test-setup'
+    _test_load
     # Clear the log before each test
     > "$_TEST_CALL_LOG"
 }

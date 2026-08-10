@@ -7,18 +7,9 @@
 # an index, causing only the first element to be used.
 #
 
-setup_file() {
-    load '../_helpers/common-setup'
-    _common_setup __CLI_CFG_EXEC_SILENT="y"
-}
-teardown_file() {
-    load '../_helpers/common-teardown'
-    _common_teardown
-}
-setup() {
-	load '../_test_helper/bats-support/load'
-	load '../_test_helper/bats-assert/load'
-}
+setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="y"; }
+teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+setup()        { load '../_helpers/test-setup'; _test_load; }
 
 # ===================================================================
 # A1: $args without array index in _cli_execute_command()

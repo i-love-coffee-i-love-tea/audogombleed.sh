@@ -115,11 +115,11 @@ for mutation_str in "${mutations[@]}"; do
 		continue
 	fi
 
-	# Run matching tests
+	# Run matching tests (search subdirectories: config/, execution/, etc.)
 	if [ -n "$test_pattern" ]; then
-		test_files=$(ls "$SCRIPT_DIR"/${test_pattern}-bash.bats 2>/dev/null || true)
+		test_files=$(find "$SCRIPT_DIR" -name "*${test_pattern}-bash.bats" 2>/dev/null | tr '\n' ' ')
 	else
-		test_files=$(ls "$SCRIPT_DIR"/*-bash.bats 2>/dev/null || true)
+		test_files=$(find "$SCRIPT_DIR" \( -name "*-bash.bats" -o -name "*-all.bats" \) 2>/dev/null | tr '\n' ' ')
 	fi
 
 	if [ -z "$test_files" ]; then

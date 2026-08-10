@@ -10,21 +10,9 @@
 # instead of return. This is documented in docs/10-faq.md.
 # Tests that need abbreviation should use full command names.
 
-setup_file() {
-    echo "# setup_file" >&3
-    load '../_helpers/common-setup'
-    _common_setup __CLI_CFG_EXEC_SILENT="n" __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS="n"
-}
-teardown_file() {
-    echo "# teardown_file" >&3
-    load '../_helpers/common-teardown'
-    _common_teardown
-}
-setup() {
-    load '../_test_helper/bats-support/load'
-    load '../_test_helper/bats-assert/load'
-    load '../_helpers/zsh-helpers'
-}
+setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n" __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS="n"; }
+teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # bats test_tags=id:zsh-101
 @test "zsh: full command names work without abbreviation" {

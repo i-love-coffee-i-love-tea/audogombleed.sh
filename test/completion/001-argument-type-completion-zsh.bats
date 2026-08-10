@@ -7,52 +7,36 @@
 #
 
 setup_file() {
-    echo "# setup_file" >&3
-    load '../_helpers/common-setup'
-    _common_setup __CLI_CFG_EXEC_SILENT="y"
-
+    load '../_helpers/test-setup'
+    _test_init __CLI_CFG_EXEC_SILENT="y"
     # Add test commands for each argument type to the config
     cat >> ~/.testcli.conf <<'EOF'
-
 # --- argument type completion tests (zsh) ---
-
 test-file-zsh: echo
     :path:FILE
-
 test-dir-zsh: echo
     :path:DIR
-
 test-string-zsh: echo
     :name:STRING
-
 test-integer-zsh: echo
     :num:INTEGER
-
 test-range-zsh: echo
     :level:int_range:1-5
-
 test-envvar-zsh: echo
     :var:ENVVAR
-
 test-user-zsh: echo
     :user:USER
-
 test-group-zsh: echo
     :group:GROUP
-
 test-ssh-host-zsh: echo
     :host:SSH_HOST
-
 test-blkdev-zsh: echo
     :dev:BLKDEV
-
 test-service-zsh: echo
     :svc:SERVICE
-
 test-file-or-dir-zsh: echo
     :path:FILE_OR_DIR
 EOF
-
     # Create SSH config for SSH_HOST tests
     mkdir -p ~/.ssh
     if [ -f ~/.ssh/config ]; then
@@ -69,9 +53,8 @@ EOF
 }
 
 teardown_file() {
-    echo "# teardown_file" >&3
-    load '../_helpers/common-teardown'
-    _common_teardown
+    load '../_helpers/test-setup'
+    _test_cleanup
     if [ -f ~/.ssh/config.bak ]; then
         mv ~/.ssh/config.bak ~/.ssh/config
     else
@@ -79,11 +62,7 @@ teardown_file() {
     fi
 }
 
-setup() {
-    load '../_test_helper/bats-support/load'
-    load '../_test_helper/bats-assert/load'
-    load '../_helpers/zsh-helpers'
-}
+setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # --- FILE ---
 

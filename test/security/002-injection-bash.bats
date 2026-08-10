@@ -6,20 +6,9 @@
 # of these fail, there's a security issue.
 #
 
-setup_file() {
-	echo "# setup_file" >&3
-	load '../_helpers/common-setup'
-	_common_setup __CLI_CFG_EXEC_SILENT="n"
-}
-teardown_file() {
-	echo "# teardown_file" >&3
-	load '../_helpers/common-teardown'
-	_common_teardown
-}
-setup() {
-	load '../_test_helper/bats-support/load'
-	load '../_test_helper/bats-assert/load'
-}
+setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
+teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+setup()        { load '../_helpers/test-setup'; _test_load; }
 
 teardown() {
 	rm -f ~/.testcli.conf
@@ -36,11 +25,11 @@ teardown() {
 @test "bash: command substitution in command name does not execute" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
-test-$(echo pwned)-cmd: echo "safe"
+test-$(echo injected)-cmd: echo "safe"
 CONF
 	source ./testcli
-	run ./testcli test-\$\(echo pwned\)-cmd 2>&1
-	# Should fail (command not found); the word "pwned" appears in the
+	run ./testcli test-\$\(echo injected\)-cmd 2>&1
+	# Should fail (command not found); the word "injected" appears in the
 	# error message quoting the command name, but the command was not
 	# actually executed — verify no "safe" output (the real command body)
 	assert_failure
@@ -51,10 +40,10 @@ CONF
 @test "bash: backtick injection in command name does not execute" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
-test-`echo pwned`-cmd: echo "safe"
+test-`echo injected`-cmd: echo "safe"
 CONF
 	source ./testcli
-	run ./testcli "test-\`echo pwned\`-cmd" 2>&1
+	run ./testcli "test-\`echo injected\`-cmd" 2>&1
 	assert_failure
 	refute_output --partial "safe"
 }
@@ -64,13 +53,13 @@ CONF
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
 greet: echo "hello"
-	:msg:list:hello;echo pwned|world
+	:msg:list:hello;echo injected|world
 CONF
 	source ./testcli
 	# Verify the AWK parser preserves the semicolon as a literal string
 	run ./testcli --cli-run-awk-command output=commands command_filter="greet"
 	assert_success
-	assert_line --partial 'hello;echo pwned'
+	assert_line --partial 'hello;echo injected'
 }
 
 # bats test_tags=id:bash-297

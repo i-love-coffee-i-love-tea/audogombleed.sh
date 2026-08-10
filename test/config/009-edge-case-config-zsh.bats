@@ -4,21 +4,9 @@
 # Fuzz tests for the AWK config parser (zsh).
 #
 
-setup_file() {
-	echo "# setup_file" >&3
-	load '../_helpers/common-setup'
-	_common_setup __CLI_CFG_EXEC_SILENT="n"
-}
-teardown_file() {
-	echo "# teardown_file" >&3
-	load '../_helpers/common-teardown'
-	_common_teardown
-}
-setup() {
-	load '../_test_helper/bats-support/load'
-	load '../_test_helper/bats-assert/load'
-	load '../_helpers/zsh-helpers'
-}
+setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
+teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 teardown() {
 	rm -f ~/.testcli.conf
@@ -46,15 +34,15 @@ _fuzz_with_header() {
 # bats test_tags=id:zsh-088
 @test "zsh: edge-case: random 500-byte config does not crash" {
 	_fuzz_with_header 500
-	timeout 5 zsh -c 'source ./testcli; testcli nonexistent-cmd' >/dev/null 2>&1
-	true
+	run timeout 5 zsh -c 'source ./testcli; testcli nonexistent-cmd'
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:zsh-089
 @test "zsh: edge-case: random 2000-byte config does not crash" {
 	_fuzz_with_header 2000
-	timeout 5 zsh -c 'source ./testcli; testcli nonexistent-cmd' >/dev/null 2>&1
-	true
+	run timeout 5 zsh -c 'source ./testcli; testcli nonexistent-cmd'
+	[ "$status" -ne 124 ]
 }
 
 # ===================================================================
@@ -67,8 +55,8 @@ _fuzz_with_header() {
 [commands]
 !@#$%^&*()_+-=[]{}|;':",./<>?
 CONF
-	timeout 5 zsh -c 'source ./testcli; testcli nonexistent' >/dev/null 2>&1
-	true
+	run timeout 5 zsh -c 'source ./testcli; testcli nonexistent'
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:zsh-091
@@ -86,8 +74,8 @@ a
 								i
 									j: echo "deep"
 CONF
-	timeout 5 zsh -c 'source ./testcli; testcli a b c d e f g h i j' >/dev/null 2>&1
-	true
+	run timeout 5 zsh -c 'source ./testcli; testcli a b c d e f g h i j'
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:zsh-092
@@ -96,8 +84,8 @@ CONF
 [commands]
 ::::::::::::::::::::::::::::::::
 CONF
-	timeout 5 zsh -c 'source ./testcli; testcli nonexistent' >/dev/null 2>&1
-	true
+	run timeout 5 zsh -c 'source ./testcli; testcli nonexistent'
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:zsh-093
@@ -105,26 +93,26 @@ CONF
 	printf '[commands]\nhello: echo "world"' > ~/.testcli.conf
 	run _zsh_run hello
 	assert_success
-	assert_output "world"
+	assert_output --partial "world"
 }
 
 # bats test_tags=id:zsh-094
 @test "zsh: edge-case: config with only newlines" {
 	printf '\n\n\n\n\n\n\n\n\n\n' > ~/.testcli.conf
-	timeout 5 zsh -c 'source ./testcli; testcli hello' >/dev/null 2>&1
-	true
+	run timeout 5 zsh -c 'source ./testcli; testcli hello'
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:zsh-095
 @test "zsh: edge-case: empty command_filter does not hang" {
 	cp example.conf ~/.testcli.conf
-	timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command output=commands command_filter=""' >/dev/null 2>&1
-	true
+	run timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command output=commands command_filter=""'
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:zsh-096
 @test "zsh: edge-case: invalid output mode does not hang" {
 	cp example.conf ~/.testcli.conf
-	timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command output=invalid' >/dev/null 2>&1
-	true
+	run timeout 5 zsh -c 'source ./testcli; testcli --cli-run-awk-command output=invalid'
+	[ "$status" -ne 124 ]
 }

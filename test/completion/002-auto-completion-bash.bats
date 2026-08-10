@@ -1,20 +1,9 @@
 # vim:et:ts=4:sw=4
 # bats file_tags=category:completion, shell:bash
 
-setup_file() {
-  	echo "# setup_file" >&3
-    load '../_helpers/common-setup'
-    _common_setup __CLI_CFG_EXEC_SILENT="y"
-}
-teardown_file() {
-  	echo "# teardown_file" >&3
-    load '../_helpers/common-teardown'
-    _common_teardown
-}
-setup() {
-    load '../_test_helper/bats-support/load'
-    load '../_test_helper/bats-assert/load'
-}
+setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="y"; }
+teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+setup()        { load '../_helpers/test-setup'; _test_load; }
 
 # echo
 # bats test_tags=id:bash-029

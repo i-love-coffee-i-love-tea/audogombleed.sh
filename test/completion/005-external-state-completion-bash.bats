@@ -13,9 +13,8 @@
 # up external state changes.
 
 setup_file() {
-    load '../_helpers/common-setup'
-    _common_setup __CLI_CFG_EXEC_SILENT="y"
-
+    load '../_helpers/test-setup'
+    _test_init __CLI_CFG_EXEC_SILENT="y"
     # create the external helper script used by the function test
     cat > ./_ext_word_helper <<'HELPER'
 #!/usr/bin/env bash
@@ -24,14 +23,11 @@ HELPER
     chmod +x ./_ext_word_helper
 }
 teardown_file() {
-    load '../_helpers/common-teardown'
-    _common_teardown
+    load '../_helpers/test-setup'
+    _test_cleanup
     rm -f ./_ext_word_helper
 }
-setup() {
-    load '../_test_helper/bats-support/load'
-    load '../_test_helper/bats-assert/load'
-}
+setup()        { load '../_helpers/test-setup'; _test_load; }
 
 # --- external variable changes ---
 

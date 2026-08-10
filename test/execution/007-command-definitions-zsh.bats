@@ -6,8 +6,8 @@
 #
 
 setup_file() {
-    load '../_helpers/common-setup'
-    _common_setup __CLI_CFG_EXEC_SILENT="y"
+    load '../_helpers/test-setup'
+    _test_init __CLI_CFG_EXEC_SILENT="y"
     # Create dummy script for maven commands
     mkdir -p ~/bin
     echo '#!/bin/sh' > ~/bin/install-maven-war.sh
@@ -15,15 +15,11 @@ setup_file() {
     chmod +x ~/bin/install-maven-war.sh
 }
 teardown_file() {
-    load '../_helpers/common-teardown'
-    _common_teardown
+    load '../_helpers/test-setup'
+    _test_cleanup
     rm -f ~/bin/install-maven-war.sh
 }
-setup() {
-    load '../_test_helper/bats-support/load'
-    load '../_test_helper/bats-assert/load'
-    load '../_helpers/zsh-helpers'
-}
+setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # bats test_tags=id:zsh-121
 @test "zsh: directly executed, displays usage message" {

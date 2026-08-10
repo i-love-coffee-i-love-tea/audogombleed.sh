@@ -7,62 +7,43 @@
 #
 
 setup_file() {
-    echo "# setup_file" >&3
-    load '../_helpers/common-setup'
-    _common_setup __CLI_CFG_EXEC_SILENT="y"
-
+    load '../_helpers/test-setup'
+    _test_init __CLI_CFG_EXEC_SILENT="y"
     # Add test commands for each argument type to the config
     cat >> ~/.testcli.conf <<'EOF'
-
 # --- argument type completion tests ---
-
 test-a-file: echo
     :path:FILE
-
 test-dir: echo
     :path:DIR
-
 test-string: echo
     :name:STRING
-
 test-integer: echo
     :num:INTEGER
-
 test-range: echo
     :level:int_range:1-5
-
 test-envvar: echo
     :var:ENVVAR
-
 test-user: echo
     :user:USER
-
 test-group: echo
     :group:GROUP
-
 test-ssh-host: echo
     :host:SSH_HOST
-
 test-blkdev: echo
     :dev:BLKDEV
-
 test-service: echo
     :svc:SERVICE
-
 test-file-or-dir: echo
     :path:FILE_OR_DIR
-
 test-glob-a-file: echo
     :path:FILE:*.txt
-
 test-glob-file-or-dir: echo
     :path:FILE_OR_DIR:*.txt
-
 file-then-string: echo
     :file:FILE
     :name:list:alpha|bravo|charlie
 EOF
-
     # Create SSH config for SSH_HOST tests
     # The tool greps for lowercase "host" in ~/.ssh/config
     mkdir -p ~/.ssh
@@ -80,9 +61,8 @@ EOF
 }
 
 teardown_file() {
-    echo "# teardown_file" >&3
-    load '../_helpers/common-teardown'
-    _common_teardown
+    load '../_helpers/test-setup'
+    _test_cleanup
     # Restore original SSH config
     if [ -f ~/.ssh/config.bak ]; then
         mv ~/.ssh/config.bak ~/.ssh/config
@@ -91,10 +71,7 @@ teardown_file() {
     fi
 }
 
-setup() {
-    load '../_test_helper/bats-support/load'
-    load '../_test_helper/bats-assert/load'
-}
+setup()        { load '../_helpers/test-setup'; _test_load; }
 
 # --- FILE ---
 

@@ -4,21 +4,9 @@
 # Encoding edge-case tests (zsh).
 #
 
-setup_file() {
-	echo "# setup_file" >&3
-	load '../_helpers/common-setup'
-	_common_setup __CLI_CFG_EXEC_SILENT="n"
-}
-teardown_file() {
-	echo "# teardown_file" >&3
-	load '../_helpers/common-teardown'
-	_common_teardown
-}
-setup() {
-	load '../_test_helper/bats-support/load'
-	load '../_test_helper/bats-assert/load'
-	load '../_helpers/zsh-helpers'
-}
+setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
+teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 teardown() {
 	rm -f ~/.testcli.conf
@@ -87,10 +75,14 @@ CONF
 @test "zsh: help text with UTF-8 characters is preserved" {
 	cat > ~/.testcli.conf <<'CONF'
 [commands]
-# Greet someone with a café greeting
-greet: echo "hello"
+# Section: café management
+greet
+	# Say hello with a naïve greeting
+	hello: echo "bonjour"
+	# Say goodbye
+	bye: echo "au revoir"
 CONF
-	run _zsh_run --cli-run-awk-command output=help command_filter="greet"
+	run _zsh_run --cli-run-awk-command output=help command_filter="greet" do_format=1
 	assert_success
-	assert_line --partial 'café'
+	assert_output --partial "café"
 }

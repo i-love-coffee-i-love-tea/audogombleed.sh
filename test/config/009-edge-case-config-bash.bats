@@ -10,20 +10,9 @@
 # robustness: the parser must never crash or hang on bad input.
 #
 
-setup_file() {
-	echo "# setup_file" >&3
-	load '../_helpers/common-setup'
-	_common_setup __CLI_CFG_EXEC_SILENT="n"
-}
-teardown_file() {
-	echo "# teardown_file" >&3
-	load '../_helpers/common-teardown'
-	_common_teardown
-}
-setup() {
-	load '../_test_helper/bats-support/load'
-	load '../_test_helper/bats-assert/load'
-}
+setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
+teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+setup()        { load '../_helpers/test-setup'; _test_load; }
 
 teardown() {
 	rm -f ~/.testcli.conf
@@ -60,24 +49,24 @@ _fuzz_with_header() {
 	_fuzz_with_header 500
 	source ./testcli
 	# exit code doesn't matter — we just want no crash/hang
-	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd'
+	[ "$status" -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-126
 @test "bash: edge-case: random 2000-byte config does not crash" {
 	_fuzz_with_header 2000
 	source ./testcli
-	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd'
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-127
 @test "bash: edge-case: random 5000-byte config does not crash" {
 	_fuzz_with_header 5000
 	source ./testcli
-	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd'
+	[ "$status" -ne 124 ]
 }
 
 # ===================================================================
@@ -91,8 +80,8 @@ _fuzz_with_header() {
 !@#$%^&*()_+-=[]{}|;':",./<>?
 CONF
 	source ./testcli
-	timeout 5 ./testcli '!@#$%^&*()_+-=[]{}|;'"'"':",./<>?' >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli '!@#$%^&*()_+-=[]{}|;'"'"':",./<>?'
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-129
@@ -111,8 +100,8 @@ a
 									j: echo "deep"
 CONF
 	source ./testcli
-	timeout 5 ./testcli a b c d e f g h i j >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli a b c d e f g h i j
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-130
@@ -122,8 +111,8 @@ CONF
 ::::::::::::::::::::::::::::::::
 CONF
 	source ./testcli
-	timeout 5 ./testcli '::' >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli '::'
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-131
@@ -134,8 +123,8 @@ test-cmd: echo \1
 	:arg:list:||||||||||||||||||
 CONF
 	source ./testcli
-	timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd" >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd"
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-132
@@ -146,8 +135,8 @@ test-cmd: echo \\\\\\\\\\\\\\\\\\\\\\\\
 	:arg:list:\\\\\\\\\\\\\\\\
 CONF
 	source ./testcli
-	timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd" >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd"
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-133
@@ -158,8 +147,8 @@ test-cmd: echo """""""""""""""""
 	:arg:list:"""""""""""""""""
 CONF
 	source ./testcli
-	timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd" >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd"
+	[ "$status" -ne 124 ]
 }
 
 # ===================================================================
@@ -175,8 +164,8 @@ cmd-a: echo a
 cmd-b: echo b
 CONF
 	source ./testcli
-	timeout 5 ./testcli cmd-b >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli cmd-b
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-135
@@ -189,8 +178,8 @@ cmd-a: echo a
 __CLI_CFG_EXEC_SILENT="y"
 CONF
 	source ./testcli
-	timeout 5 ./testcli cmd-a >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli cmd-a
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-136
@@ -206,16 +195,16 @@ CONF
 @test "bash: edge-case: config with only newlines" {
 	printf '\n\n\n\n\n\n\n\n\n\n' > ~/.testcli.conf
 	source ./testcli
-	timeout 5 ./testcli hello >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli hello
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-138
 @test "bash: edge-case: config with tab-only indentation" {
 	printf '[commands]\n\t\t\thello: echo "world"\n' > ~/.testcli.conf
 	source ./testcli
-	timeout 5 ./testcli hello >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli hello
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-139
@@ -227,8 +216,8 @@ CONF
  	  cmd-c: echo c
 CONF
 	source ./testcli
-	timeout 5 ./testcli cmd-a >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli cmd-a
+	[ "$status" -ne 124 ]
 }
 
 # ===================================================================
@@ -239,22 +228,22 @@ CONF
 @test "bash: edge-case: empty args to awk parser does not hang" {
 	cp example.conf ~/.testcli.conf
 	source ./testcli
-	timeout 5 ./testcli --cli-run-awk-command >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli --cli-run-awk-command
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-141
 @test "bash: edge-case: empty command_filter does not hang" {
 	cp example.conf ~/.testcli.conf
 	source ./testcli
-	timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="" >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli --cli-run-awk-command output=commands command_filter=""
+	[ "$status" -ne 124 ]
 }
 
 # bats test_tags=id:bash-142
 @test "bash: edge-case: invalid output mode does not hang" {
 	cp example.conf ~/.testcli.conf
 	source ./testcli
-	timeout 5 ./testcli --cli-run-awk-command output=invalid >/dev/null 2>&1
-	[ $? -ne 124 ]  # fail if timeout killed it
+	run timeout 5 ./testcli --cli-run-awk-command output=invalid
+	[ "$status" -ne 124 ]
 }
