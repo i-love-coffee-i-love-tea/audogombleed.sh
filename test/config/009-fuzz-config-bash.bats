@@ -60,21 +60,24 @@ _fuzz_with_header() {
 	_fuzz_with_header 500
 	source ./testcli
 	# exit code doesn't matter — we just want no crash/hang
-	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1 || true
+	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-126
 @test "bash: fuzz: random 2000-byte config does not crash" {
 	_fuzz_with_header 2000
 	source ./testcli
-	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1 || true
+	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-127
 @test "bash: fuzz: random 5000-byte config does not crash" {
 	_fuzz_with_header 5000
 	source ./testcli
-	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1 || true
+	timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd' >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # ===================================================================
@@ -88,7 +91,8 @@ _fuzz_with_header() {
 !@#$%^&*()_+-=[]{}|;':",./<>?
 CONF
 	source ./testcli
-	timeout 5 ./testcli '!@#$%^&*()_+-=[]{}|;'"'"':",./<>?' >/dev/null 2>&1 || true
+	timeout 5 ./testcli '!@#$%^&*()_+-=[]{}|;'"'"':",./<>?' >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-129
@@ -107,7 +111,8 @@ a
 									j: echo "deep"
 CONF
 	source ./testcli
-	timeout 5 ./testcli a b c d e f g h i j >/dev/null 2>&1 || true
+	timeout 5 ./testcli a b c d e f g h i j >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-130
@@ -117,7 +122,8 @@ CONF
 ::::::::::::::::::::::::::::::::
 CONF
 	source ./testcli
-	timeout 5 ./testcli '::' >/dev/null 2>&1 || true
+	timeout 5 ./testcli '::' >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-131
@@ -129,7 +135,7 @@ test-cmd: echo \1
 CONF
 	source ./testcli
 	timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd" >/dev/null 2>&1
-	true
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-132
@@ -141,7 +147,7 @@ test-cmd: echo \\\\\\\\\\\\\\\\\\\\\\\\
 CONF
 	source ./testcli
 	timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd" >/dev/null 2>&1
-	true
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-133
@@ -153,7 +159,7 @@ test-cmd: echo """""""""""""""""
 CONF
 	source ./testcli
 	timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd" >/dev/null 2>&1
-	true
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # ===================================================================
@@ -169,7 +175,8 @@ cmd-a: echo a
 cmd-b: echo b
 CONF
 	source ./testcli
-	timeout 5 ./testcli cmd-b >/dev/null 2>&1 || true
+	timeout 5 ./testcli cmd-b >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-135
@@ -182,7 +189,8 @@ cmd-a: echo a
 __CLI_CFG_EXEC_SILENT="y"
 CONF
 	source ./testcli
-	timeout 5 ./testcli cmd-a >/dev/null 2>&1 || true
+	timeout 5 ./testcli cmd-a >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-136
@@ -198,14 +206,16 @@ CONF
 @test "bash: fuzz: config with only newlines" {
 	printf '\n\n\n\n\n\n\n\n\n\n' > ~/.testcli.conf
 	source ./testcli
-	timeout 5 ./testcli hello >/dev/null 2>&1 || true
+	timeout 5 ./testcli hello >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-138
 @test "bash: fuzz: config with tab-only indentation" {
 	printf '[commands]\n\t\t\thello: echo "world"\n' > ~/.testcli.conf
 	source ./testcli
-	timeout 5 ./testcli hello >/dev/null 2>&1 || true
+	timeout 5 ./testcli hello >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-139
@@ -217,7 +227,8 @@ CONF
  	  cmd-c: echo c
 CONF
 	source ./testcli
-	timeout 5 ./testcli cmd-a >/dev/null 2>&1 || true
+	timeout 5 ./testcli cmd-a >/dev/null 2>&1
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # ===================================================================
@@ -229,7 +240,7 @@ CONF
 	cp example.conf ~/.testcli.conf
 	source ./testcli
 	timeout 5 ./testcli --cli-run-awk-command >/dev/null 2>&1
-	true
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-141
@@ -237,7 +248,7 @@ CONF
 	cp example.conf ~/.testcli.conf
 	source ./testcli
 	timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="" >/dev/null 2>&1
-	true
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
 
 # bats test_tags=id:bash-142
@@ -245,5 +256,5 @@ CONF
 	cp example.conf ~/.testcli.conf
 	source ./testcli
 	timeout 5 ./testcli --cli-run-awk-command output=invalid >/dev/null 2>&1
-	true
+	[ $? -ne 124 ]  # fail if timeout killed it
 }
