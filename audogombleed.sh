@@ -2620,45 +2620,6 @@ _cli_uniq() {
 	uniq
 }
 
-# brings only a very minor speed improvement by about 1-3 ms
-# i think it will be slower than the uniq command with more
-# than a couple of lines
-# not worth it
-_cli_uniq_() {
-	local -a lines
-
-    if test ! -t 0; then
-		while read -ra input_line; do
-    		local line_already_seen=1
-    		for e in "${lines[@]}"; do
-        		# shellcheck disable=SC2128
-        		if [ "$e" = "$input_line" ]; then
-          			line_already_seen=0
-	            	break
-   		     	fi
-   		 	done
-
-	  		if [ "$line_already_seen" = "0" ]; then
-  		    	continue
-	   		else
-  		    	# shellcheck disable=SC2128
-  		    	lines+=("$input_line")
-	    	fi
-		done
-	fi
-	for e in "${lines[@]}"; do
-		echo "$e"
-	done
-}
-
-
-# combination of _cli_uniq and _cli_cut
-# to get the same effect as _cli_cut $col "$line" | _cli_uniq 
-# but without the pipe
-_cli_uniq_col() {
-	true
-}
-
 _cli_get_command_expr() {
 	local cmd="$1"
 	local l _rest _rest2 _expr

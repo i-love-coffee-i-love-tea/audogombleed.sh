@@ -128,32 +128,6 @@ exactly how the project evolves.
 7. Open a PR. Don't worry about making it perfect — it'll get sorted.
 
 
-## Commit messages
-
-This project uses [Conventional Commits](https://www.conventionalcommits.org/).
-The first line follows the format `type(scope): description`, where scope is
-optional but recommended.
-
-Common types:
-- `feat` — new feature
-- `fix` — bug fix (including documentation bugs)
-- `docs` — documentation additions or improvements
-- `test` — adding or fixing tests
-- `refactor` — code change that neither fixes a bug nor adds a feature
-- `chore` — maintenance tasks (CI, build, dependencies)
-
-Examples:
-```
-fix(shellcheck): resolve all warnings and errors in audogombleed.sh
-fix(release): default config validator to example.conf when no args
-docs(readme): add badge row and contributing guide
-test: update bats submodules
-```
-
-Keep the first line under 72 characters. Use the body (after a blank line)
-to explain *why*, not *what* — the diff shows what changed.
-
-
 ## Coding conventions
 
 **Shell.** 4-space indent. Functions are `_cli_*`, variables are `__CLI_*`.

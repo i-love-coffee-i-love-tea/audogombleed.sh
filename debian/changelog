@@ -26,7 +26,6 @@ audogombleed (2.1.0) unstable; urgency=medium
   * Fix WSL path conversion, CRLF handling, and script encoding
   * [Documentation] Add badge row to README (tests, coverage, shellcheck, license, release, stars, bash, zsh)
   * Add contributing guide with setup, testing, coding conventions, and MADR ADR reference
-  * Document conventional commit message format in contributing guide
   * Convert ADR-011 and ADR-012 to MADR format (YAML front matter, Pros and Cons sections)
   * Add MADR convention documentation to ADR README with lint script reference
   * Update packaging files documentation

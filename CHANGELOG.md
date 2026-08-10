@@ -20,6 +20,7 @@
 - Fix undefined `$variable` and `&function` references — validator now warns when dynamic command words reference unset variables or functions
 - Rename `release.d/10-validate-config-files.sh` to `10-validate-release-artifacts.sh` — name now matches what it actually validates (release artifacts, not config files)
 - Remove redundant `release.d/11-validate-example-config.sh` — hook `14-validate-config.sh` already defaults to `example.conf`
+- Remove dead code (`_cli_uniq_`, `_cli_uniq_col`) — unused alternative implementations with no callers
 
 ### CI
 
@@ -36,6 +37,8 @@
 - Add mixed tabs and spaces warning to indentation section
 - Add `value` type usage description with placeholder replacement semantics
 - Add Homebrew, RPM, and Gentoo publishing guides to `docs/PUBLISHING.md`
+- Add ADR-013 (AWK/shell split: parsing in AWK, matching in shell) and ADR-014 (cross-shell config compatibility)
+- Add benchmark results after dead code cleanup and hash map index experiment (`docs/dev/BENCHMARKS.md`)
 
 ### Tests
 
@@ -85,7 +88,6 @@
 
 - Add badge row to README (tests, coverage, shellcheck, license, release, stars, bash, zsh)
 - Add contributing guide with setup, testing, coding conventions, and MADR ADR reference
-- Document conventional commit message format in contributing guide
 - Convert ADR-011 and ADR-012 to MADR format (YAML front matter, Pros and Cons sections)
 - Add MADR convention documentation to ADR README with lint script reference
 - Update packaging files documentation

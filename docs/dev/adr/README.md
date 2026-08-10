@@ -30,3 +30,5 @@ lints all ADRs numbered > 10 against these rules. It runs as part of
 | [010](010-scoped-function-loading.md) | Scoped &function loading | Only `&function` entries relevant to the matched command are called during completion; significantly reduces external command invocations |
 | [011](011-formalize-config-grammar.md) | Formalize config file grammar | Standalone grammar spec in `docs/config-grammar.md`; embedded validator via `--cli-validate-config` |
 | [012](012-ci-code-coverage-with-kcov.md) | CI: Code coverage with kcov | kcov instruments bash via debugger trap; AWK/subshell/eval paths are partially invisible; report is useful for trends and dead code, not absolute percentages |
+| [013](013-awk-shell-split.md) | AWK/shell split: parsing in AWK, matching in shell | AWK parses config; shell matches and dispatches because `eval` args, system types, and `&function` expansion require shell |
+| [014](014-cross-shell-config-compatibility.md) | Cross-shell config file compatibility | Restrictions for configs that must work in bash, zsh, AND fish; `[env.fish]` section for fish-specific code |

@@ -138,6 +138,72 @@ security added ~4 external tool calls back. The benchmarks reflect this trade-of
 | **First TAB total** | | **4 forks** | **2 forks** |
 | **Subsequent TAB** | | **1 fork** (env) | **0 forks** |
 
+## Results (2026-08-10)
+
+After dead code cleanup (`_cli_uniq_`, `_cli_uniq_col` removal).
+
+Measured on Linux, bash 5.3.9, 5-run averages.
+
+### Standard config (~20 commands)
+
+| Test | bash |
+|------|------|
+| Simple command exec | 51ms |
+| Hierarchical command exec | 73ms |
+| First-word completion | 54ms |
+| Second-word completion | 53ms |
+| Argument list completion | 54ms |
+| Hierarchical completion | 55ms |
+
+### Large config (~600 commands)
+
+| Test | bash |
+|------|------|
+| First-word completion | 75ms |
+| Deep nesting completion | 94ms |
+| Argument completion | 87ms |
+| 8-level deep nesting | 83ms |
+
+### Stress test (10,000 commands)
+
+Generated with `generate_10k_config.sh` (100 groups × 10 subgroups ×
+10 commands = 10,000 commands).
+
+| Test | bash |
+|------|------|
+| First-word completion | 833ms |
+| Second-word completion | 1068ms |
+| Third-word completion | 1096ms |
+| Argument completion | 825ms |
+| Command execution | 587ms |
+
+Below 1000 commands, shell matching is within "good" thresholds. At 10K,
+the O(N) string comparison overhead becomes visible.
+
+### Hash map index experiment (reverted)
+
+Attempted to add an associative array (`declare -A __CLI_CONFIG_BY_CMD`)
+for O(1) exact-match lookups in `_cli_command_is_exact_match`,
+`_cli_get_command_expr`, `_cli_get_command_args`, and
+`_cli_count_matching_commands`.
+
+Result: **slower at every scale**. Bash's `declare -gA` + insertion
+overhead dominates. The O(1) lookup benefit does not materialize because
+the hot-path functions (`_cli_count_matching_commands`,
+`_cli_getmatchingcommands`) still need a linear prefix scan — hash maps
+don't help with `[[ "$l" == "$prefix"* ]]`.
+
+| Config size | Baseline | With hash map | Impact |
+|---|---|---|---|
+| ~20 commands | 52ms | 52ms | ~same |
+| ~600 commands | 85ms | 94ms | +11% slower |
+| 10,000 commands | 587ms | 931ms | +59% slower |
+
+Conclusion: bash associative arrays are not a viable optimization path
+for this workload. The construction cost (per-entry parameter expansion
++ hash insertion) exceeds the lookup savings, even at 10K entries. The
+existing linear scan with mtime caching is the right data structure.
+
 ## Large config generator
 
 `generate_large_config.sh` produces a 1200-line config with 600+ commands,
