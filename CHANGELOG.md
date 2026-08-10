@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add `FILE_OR_DIR` argument type that completes both files and directories
+- Add optional glob filter parameter for `FILE`, `DIR`, and `FILE_OR_DIR` types to restrict completions by pattern (e.g. `*.txt`, `*.log`)
+- Unify config syntax so all parameterized types use `:name:type[:value[:description]]`, where `FILE`/`DIR`/`FILE_OR_DIR` treat the value field as a glob pattern
+
+### Fixes
+
+- Fix `value` type argument default not being stored in `__CMD_ARG_VALUE` (was incorrectly stored in description field)
+- Fix argument descriptions with colons being truncated (URLs, time formats, ratios now preserved)
+- Fix empty elements in pipe-separated lists (`a||b`) creating blank completion entries
+- Fix `value` type default injection ordering — exit 53 (missing required args) now fires before defaults are injected, ensuring correct error messages
+- Fix `int_range` format validation — non-numeric bounds and reversed ranges (min > max) are now rejected by the validator
+- Fix undefined `$variable` and `&function` references — validator now warns when dynamic command words reference unset variables or functions
+
+### Documentation
+
+- Add fish shell comparison reference (`docs/dev/fish-comparison.md`)
+- Restrict identifier charset in grammar to match parser implementation (`[a-zA-Z0-9\-_.]` only)
+- Add `int_range` constraint documentation (integer bounds, min ≤ max)
+- Document undefined dynamic word behavior (produces no completions, not an error)
+- Add mixed tabs and spaces warning to indentation section
+- Add `value` type usage description with placeholder replacement semantics
+
+### Tests
+
+- Add `test/spec-holes-bash.bats` with 13 tests covering parser, validator, and grammar fixes
+
 ## 2.1.0
 
 ### Features
