@@ -20,3 +20,4 @@ coverage/
 
 # Exported AWK script (dev workflow)
 cli.awk
+testcli

@@ -34,3 +34,17 @@ _test_load_zsh() {
 	load '../_test_helper/bats-assert/load'
 	load '../_helpers/zsh-helpers'
 }
+
+# Call from setup_file() in fish tests — creates the fish testcli wrapper.
+_test_init_fish() {
+	load '../_helpers/common-setup'
+	load '../_helpers/common-setup-fish'
+	_common_setup_fish "$@"
+}
+
+# Call from setup() in fish tests — loads bats-support, bats-assert, and fish-helpers.
+_test_load_fish() {
+	load '../_test_helper/bats-support/load'
+	load '../_test_helper/bats-assert/load'
+	load '../_helpers/fish-helpers'
+}
