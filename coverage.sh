@@ -64,12 +64,12 @@ kcov --merge "$COVERAGE_DIR/merged" "$COVERAGE_DIR/bash"
 
 echo ""
 if [ -f "$COVERAGE_DIR/merged/derakht.sh/coverage.json" ]; then
-    pct=$(python3 -c "
+    read -r pct covered total <<< $(python3 -c "
 import json
 d = json.load(open('$COVERAGE_DIR/merged/derakht.sh/coverage.json'))
-print(f\"{d['percent_covered']:.1f}%\")
-" 2>/dev/null || echo "N/A")
-    echo "Coverage: $pct"
+print(f\"{d['percent_covered']:.1f} {d['covered_lines']} {d['total_lines']}\")
+" 2>/dev/null || echo "N/A 0 0")
+    echo "Coverage: $pct ($covered / $total lines)"
     echo "HTML report: $COVERAGE_DIR/merged/derakht.sh/index.html"
 else
     echo "Warning: no coverage data generated. Check kcov output above."

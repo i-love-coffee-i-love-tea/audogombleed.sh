@@ -7,9 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write
   contents: read
-  checks: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -71,15 +69,6 @@ jobs:
           mkdir -p coverage/merged
           kcov --merge coverage/merged coverage/bash
 
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@04b047e8bb82a0c002c8312c1c880fbc6a999d45 # v5
-        with:
-          files: coverage/merged/derakht.sh/coverage.json
-          flags: bash
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
       - name: Upload coverage report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -90,14 +79,16 @@ jobs:
       - name: Summary
         run: |
           if [ -f coverage/merged/derakht.sh/coverage.json ]; then
-            pct=$(python3 -c "
-          import json, sys
+            read -r pct covered total <<< $(python3 -c "
+          import json
           d = json.load(open('coverage/merged/derakht.sh/coverage.json'))
-          print(f\"{d['percent_covered']:.1f}%\")
-          " 2>/dev/null || echo "N/A")
+          print(f\"{d['percent_covered']:.1f} {d['covered_lines']} {d['total_lines']}\")
+          " 2>/dev/null || echo "N/A 0 0")
             echo "## Coverage: $pct" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Report uploaded as artifact: \`coverage-report\`" >> "$GITHUB_STEP_SUMMARY"
+            echo "**$covered / $total** lines covered" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Download the \`coverage-report\` artifact for the full HTML report." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "## Coverage: no data generated" >> "$GITHUB_STEP_SUMMARY"
           fi
