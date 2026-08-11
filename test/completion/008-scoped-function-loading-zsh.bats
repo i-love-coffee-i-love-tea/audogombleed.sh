@@ -8,23 +8,7 @@
 setup_file() {
     load '../_helpers/test-setup'
     _test_init __CLI_CFG_EXEC_SILENT="y"
-    # Create a temp file for tracking calls
     export _TEST_CALL_LOG=$(mktemp)
-    # inject test functions that track calls via file
-    sed '/^\[commands\]/i \
-_TEST_CALL_LOG='"$_TEST_CALL_LOG"'\
-track_alpha() { echo "alpha" >> "$_TEST_CALL_LOG"; echo "a1 a2"; }\
-track_beta() { echo "beta" >> "$_TEST_CALL_LOG"; echo "b1 b2"; }\
-track_gamma() { echo "gamma" >> "$_TEST_CALL_LOG"; echo "c1 c2"; }' ~/.testcli.conf > ~/.testcli.conf.tmp && mv ~/.testcli.conf.tmp ~/.testcli.conf
-    # append test commands to [commands] section
-    cat >> ~/.testcli.conf <<'CMDS'
-alpha-cmd
-    &track_alpha: echo \0
-beta-cmd
-    &track_beta: echo \0
-gamma-cmd
-    &track_gamma: echo \0
-CMDS
 }
 teardown_file() {
     load '../_helpers/test-setup'
@@ -33,7 +17,7 @@ teardown_file() {
 }
 setup() {
     load '../_helpers/test-setup'
-    _test_load
+    _test_load_zsh
     # Clear the log before each test
     > "$_TEST_CALL_LOG"
 }

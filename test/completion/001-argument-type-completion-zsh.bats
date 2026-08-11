@@ -7,41 +7,6 @@
 setup_file() {
     load '../_helpers/test-setup'
     _test_init __CLI_CFG_EXEC_SILENT="y"
-    # Add test commands for each argument type to the config
-    cat >> ~/.testcli.conf <<'EOF'
-# --- argument type completion tests (zsh) ---
-test-a-file: echo
-    :path:FILE
-test-dir: echo
-    :path:DIR
-test-string: echo
-    :name:STRING
-test-integer: echo
-    :num:INTEGER
-test-range: echo
-    :level:int_range:1-5
-test-envvar: echo
-    :var:ENVVAR
-test-user: echo
-    :user:USER
-test-group: echo
-    :group:GROUP
-test-ssh-host: echo
-    :host:SSH_HOST
-test-blkdev: echo
-    :dev:BLKDEV
-test-service: echo
-    :svc:SERVICE
-test-file-or-dir: echo
-    :path:FILE_OR_DIR
-test-glob-a-file: echo
-    :path:FILE:*.txt
-test-glob-file-or-dir: echo
-    :path:FILE_OR_DIR:*.txt
-file-then-string: echo
-    :file:FILE
-    :name:list:alpha|bravo|charlie
-EOF
     # Create SSH config for SSH_HOST tests
     mkdir -p ~/.ssh
     if [ -f ~/.ssh/config ]; then
