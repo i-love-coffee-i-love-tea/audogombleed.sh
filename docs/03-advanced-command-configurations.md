@@ -2,7 +2,7 @@
 
 Without expansion, every variant of a command needs its own block. With
 expansion, define the structure once and provide the varying parts as a
-list — audogombleed expands one definition into many. Adding a variant
+list — derakht expands one definition into many. Adding a variant
 means appending one word, not copying a block.
 
 `\0` is replaced by the expanded word (the last word before the colon).

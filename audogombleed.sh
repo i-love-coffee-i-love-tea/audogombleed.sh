@@ -42,7 +42,7 @@
 #
 #		1. create a link to the main script
 #
-#			`ln -s ~/bin/audogombleed.sh ~/bin/yourcli`
+#			`ln -s ~/bin/derakht.sh ~/bin/yourcli`
 #
 #		2. create config file. This example creates a cli with a single command 'echo'
 #		   that executes 'echo' and appends everything that follows after the command
@@ -63,7 +63,7 @@
 #	debug logs to /tmp/cli-bash.log or /tmp/cli-zsh.log depending
 #   on the shell you are using
 #
-# 	Documentation is available here: https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
+# 	Documentation is available here: https://github.com/i-love-coffee-i-love-tea/derakht-cli
 #	
 __CLI_VERSION="2.1.0"
 
@@ -4052,14 +4052,14 @@ _cli_execute() {
 # execute command, if not sourced
 # load completions if sourced
 if ! _cli_is_sourced; then
-	if [ "audogombleed.sh" = "$(basename "$0")" ]; then
+	if [ "derakht.sh" = "$(basename "$0")" ]; then
 		echo "This script is not intended to be called directly."
 		echo "Create a link and an alias with the same name as"
 		echo "the link to the global _cli_execute function"
 		echo
 		echo "    # once: create a config file and a cli instance link"
 		echo "    touch ~/.yourcli.conf"
-		echo "    ln -s ~/bin/audogombleed.sh ~/bin/yourcli"
+		echo "    ln -s ~/bin/derakht.sh ~/bin/yourcli"
 		echo
 		echo "    # in your ~/.bashrc or ~/.zshrc"
 		echo "    source ~/bin/yourcli"

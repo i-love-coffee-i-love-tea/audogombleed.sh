@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Mutation testing for audogombleed.sh
+# Mutation testing for derakht.sh
 #
 # Applies targeted mutations to key code paths and runs the test suite
 # to verify that tests catch the mutations. A "killed" mutation means
@@ -19,8 +19,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-TARGET="$PROJECT_DIR/audogombleed.sh"
-BACKUP="$PROJECT_DIR/audogombleed.sh.mutation-backup"
+TARGET="$PROJECT_DIR/derakht.sh"
+BACKUP="$PROJECT_DIR/derakht.sh.mutation-backup"
 FILTER=""
 DRY_RUN=false
 
@@ -46,7 +46,7 @@ trap cleanup EXIT
 cp "$TARGET" "$BACKUP"
 
 # Each mutation is: name | sed_command | test_file_pattern
-# The sed_command modifies audogombleed.sh; test_file_pattern selects
+# The sed_command modifies derakht.sh; test_file_pattern selects
 # which tests to run (empty = run all bash tests).
 mutations=(
 	# File permission checks — should be caught by file-permissions tests

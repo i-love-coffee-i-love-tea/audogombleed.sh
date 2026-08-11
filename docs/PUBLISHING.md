@@ -1,6 +1,6 @@
 # Publishing to Package Repositories
 
-This document covers the steps to publish audogombleed to Debian, Nix (nixpkgs),
+This document covers the steps to publish derakht-cli to Debian, Nix (nixpkgs),
 the Arch User Repository (AUR), Homebrew, Fedora COPR, and Gentoo overlays.
 
 ## Prerequisites (all ecosystems)
@@ -27,21 +27,21 @@ your upload into the archive.
 Send an email to `submit@bugs.debian.org`:
 
 ```
-Subject: ITP: audogombleed -- Create CLIs with auto-completion, abbreviation and built-in help from config
+Subject: ITP: derakht-cli -- Create CLIs with auto-completion, abbreviation and built-in help from config
 
 Package: wnpp
 Severity: wishlist
 Owner: Steffen Kremsler <debian@gobuki.org>
 
-* Package name    : audogombleed
+* Package name    : derakht-cli
   Version         : 2.0.0
   Upstream Author : Steffen Kremsler
-* URL             : https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
+* URL             : https://github.com/i-love-coffee-i-love-tea/derakht-cli
 * License         : BSD-2-Clause
   Programming Lang: Shell (bash/zsh)
   Description     : Create CLIs with auto-completion, abbreviation and built-in help from config
 
- Audogombleed generates shell CLIs from a plain text config file.
+ Derakht generates shell CLIs from a plain text config file.
  Define commands and arguments declaratively — tab completion,
  command abbreviation, help output, and execution all come for free.
  .
@@ -71,7 +71,7 @@ You will receive a bug number (e.g. `#1100000`) within seconds.
 Replace `NNNNNN` with your ITP bug number:
 
 ```
-audogombleed (2.0.0) unstable; urgency=medium
+derakht-cli (2.0.0) unstable; urgency=medium
 
   * Initial release. (Closes: #NNNNNN)
 
@@ -82,7 +82,7 @@ audogombleed (2.0.0) unstable; urgency=medium
 
 ```bash
 dpkg-buildpackage -us -uc
-lintian ../audogombleed_2.0.0_amd64.changes
+lintian ../derakht-cli_2.0.0_amd64.changes
 ```
 
 Fix any errors lintian reports. Warnings are usually acceptable for a first
@@ -91,7 +91,7 @@ upload.
 #### 1.4 Upload to mentors
 
 ```bash
-dput mentors ../audogombleed_2.0.0_source.changes
+dput mentors ../derakht-cli_2.0.0_source.changes
 ```
 
 This uploads to https://mentors.debian.net/ where DDs can find it.
@@ -101,12 +101,12 @@ This uploads to https://mentors.debian.net/ where DDs can find it.
 Email `debian-mentors@lists.debian.org`:
 
 ```
-Subject: Sponsor needed for audogombleed (ITP #NNNNNN)
+Subject: Sponsor needed for derakht-cli (ITP #NNNNNN)
 
 Hi,
 
-I've uploaded audogombleed to mentors.debian.net:
-https://mentors.debian.net/package/audogombleed
+I've uploaded derakht-cli to mentors.debian.net:
+https://mentors.debian.net/package/derakht-cli
 
 It's a shell-based CLI framework that generates auto-completable command
 trees from plain text config files. License is BSD-2-Clause.
@@ -159,7 +159,7 @@ sh <(curl -L https://nixos.org/nix/install) --daemon
 ```bash
 git clone https://github.com/NixOS/nixpkgs.git
 cd nixpkgs
-git checkout -b audogombleed
+git checkout -b derakht-cli
 ```
 
 #### 2.3 Create the package expression
@@ -167,8 +167,8 @@ git checkout -b audogombleed
 Copy `packaging/nix/default.nix` into the nixpkgs tree:
 
 ```bash
-mkdir -p pkgs/by-name/au/audogombleed
-cp /path/to/audogombleed.sh/packaging/nix/default.nix pkgs/by-name/au/audogombleed/package.nix
+mkdir -p pkgs/by-name/de/derakht-cli
+cp /path/to/derakht.sh/packaging/nix/default.nix pkgs/by-name/de/derakht-cli/package.nix
 ```
 
 Note: nixpkgs uses `package.nix` as the filename, not `default.nix`.
@@ -176,7 +176,7 @@ Note: nixpkgs uses `package.nix` as the filename, not `default.nix`.
 #### 2.4 Get the source hash
 
 ```bash
-nix-prefetch-url --unpack https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.0.0.tar.gz
+nix-prefetch-url --unpack https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v2.0.0.tar.gz
 ```
 
 Or use `lib.fakeSha256` temporarily and let nix tell you the correct hash on
@@ -185,27 +185,27 @@ first build. Update the `sha256` field in `package.nix`.
 #### 2.5 Test locally
 
 ```bash
-nix-build -A audogombleed
-./result/bin/audogombleed --version
+nix-build -A derakht-cli
+./result/bin/derakht --version
 ```
 
 #### 2.6 Run nixpkgs linters
 
 ```bash
-nix-shell -p nixpkgs-lint --run "nixpkgs-lint pkgs/by-name/au/audogombleed"
+nix-shell -p nixpkgs-lint --run "nixpkgs-lint pkgs/by-name/de/derakht-cli"
 nix-shell -p nixpkgs-review --run "nixpkgs-review pr HEAD"
 ```
 
 #### 2.7 Open a pull request
 
 ```bash
-git add pkgs/by-name/au/audogombleed/
-git commit -m "audogombleed: init at 2.0.0"
-git push origin audogombleed
+git add pkgs/by-name/de/derakht-cli/
+git commit -m "derakht-cli: init at 2.0.0"
+git push origin derakht-cli
 ```
 
 Open a PR at https://github.com/NixOS/nixpkgs/compare. Use the title:
-`audogombleed: init at 2.0.0`.
+`derakht-cli: init at 2.0.0`.
 
 A nixpkgs committer will review and merge.
 
@@ -215,9 +215,9 @@ The package appears in `nixpkgs-unstable` within days and in the next NixOS
 release. Users install with:
 
 ```bash
-nix-env -iA nixpkgs.audogombleed
+nix-env -iA nixpkgs.derakht-cli
 # or in a flake:
-nix profile install nixpkgs#audogombleed
+nix profile install nixpkgs#derakht-cli
 ```
 
 ### Files
@@ -245,7 +245,7 @@ Register at https://aur.archlinux.org/ and add your SSH public key.
 #### 3.2 Generate a real sha256sum
 
 ```bash
-curl -sL https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.0.0.tar.gz | sha256sum
+curl -sL https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v2.0.0.tar.gz | sha256sum
 ```
 
 Update `sha256sums` in `packaging/arch/PKGBUILD` with the real hash (replace
@@ -254,14 +254,14 @@ Update `sha256sums` in `packaging/arch/PKGBUILD` with the real hash (replace
 #### 3.3 Clone the AUR repo
 
 ```bash
-git clone ssh://aur@aur.archlinux.org/audogombleed.git
-cd audogombleed
+git clone ssh://aur@aur.archlinux.org/derakht-cli.git
+cd derakht-cli
 ```
 
 #### 3.4 Copy the PKGBUILD
 
 ```bash
-cp /path/to/audogombleed.sh/packaging/arch/PKGBUILD .
+cp /path/to/derakht.sh/packaging/arch/PKGBUILD .
 ```
 
 #### 3.5 Test the build
@@ -274,8 +274,8 @@ makepkg -s
 
 Verify the package works:
 ```bash
-audogombleed --version
-man audogombleed
+derakht --version
+man derakht
 ```
 
 #### 3.6 Generate .SRCINFO
@@ -288,24 +288,24 @@ makepkg --printsrcinfo > .SRCINFO
 
 ```bash
 git add PKGBUILD .SRCINFO
-git commit -m "audogombleed 2.0.0"
+git commit -m "derakht-cli 2.0.0"
 git push
 ```
 
-The package is immediately available at https://aur.archlinux.org/packages/audogombleed.
+The package is immediately available at https://aur.archlinux.org/packages/derakht.
 
 Users install with:
 
 ```bash
-git clone https://aur.archlinux.org/audogombleed.git
-cd audogombleed
+git clone https://aur.archlinux.org/derakht-cli.git
+cd derakht-cli
 makepkg -si
 ```
 
 Or with an AUR helper like `yay`:
 
 ```bash
-yay -S audogombleed
+yay -S derakht-cli
 ```
 
 #### 3.8 Updating
@@ -340,10 +340,10 @@ build, and install the package.
 
 #### 4.1 Create the tap repository
 
-Create a GitHub repo named `homebrew-audogombleed` under your account:
+Create a GitHub repo named `homebrew-derakht-cli` under your account:
 
 ```bash
-gh repo create i-love-coffee-i-love-tea/homebrew-audogombleed --public
+gh repo create i-love-coffee-i-love-tea/homebrew-derakht-cli --public
 ```
 
 The repo needs a `Formula/` directory containing the Ruby formula file.
@@ -351,40 +351,40 @@ The repo needs a `Formula/` directory containing the Ruby formula file.
 #### 4.2 Update the formula with a real checksum
 
 ```bash
-sha=$(curl -sL https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.1.0.tar.gz | shasum -a 256 | cut -d' ' -f1)
+sha=$(curl -sL https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v2.1.0.tar.gz | shasum -a 256 | cut -d' ' -f1)
 ```
 
-Update `sha256` in `packaging/homebrew/audogombleed.rb` with the real hash.
+Update `sha256` in `packaging/homebrew/derakht-cli.rb` with the real hash.
 
 #### 4.3 Push the formula to the tap repo
 
 ```bash
-git clone git@github.com:i-love-coffee-i-love-tea/homebrew-audogombleed.git
-cd homebrew-audogombleed
+git clone git@github.com:i-love-coffee-i-love-tea/homebrew-derakht-cli.git
+cd homebrew-derakht-cli
 mkdir -p Formula
-cp /path/to/audogombleed.sh/packaging/homebrew/audogombleed.rb Formula/
-git add . && git commit -m "audogombleed 2.1.0" && git push
+cp /path/to/derakht.sh/packaging/homebrew/derakht-cli.rb Formula/
+git add . && git commit -m "derakht-cli 2.1.0" && git push
 ```
 
 #### 4.4 Test locally
 
 ```bash
-brew tap i-love-coffee-i-love-tea/audogombleed
-brew install i-love-coffee-i-love-tea/audogombleed/audogombleed
-audogombleed --version
+brew tap i-love-coffee-i-love-tea/derakht-cli
+brew install i-love-coffee-i-love-tea/derakht-cli/derakht-cli
+derakht --version
 ```
 
 #### 4.5 Update for new versions
 
 1. Update `url` and `sha256` in the formula
 2. Push to the tap repo
-3. Users update with `brew upgrade audogombleed`
+3. Users update with `brew upgrade derakht`
 
 ### Files
 
 | File | Purpose |
 |------|---------|
-| `packaging/homebrew/audogombleed.rb` | Formula: source URL, checksum, install steps, test |
+| `packaging/homebrew/derakht-cli.rb` | Formula: source URL, checksum, install steps, test |
 
 ---
 
@@ -405,20 +405,20 @@ FAS account.
 
 #### 5.2 Create a new project
 
-In COPR, create a project named `audogombleed`:
+In COPR, create a project named `derakht`:
 - Chroots: `fedora-rawhide-x86_64`, `fedora-40-x86_64`, `epel-9-x86_64`
 - Mark as "persistent" so it survives past the default 14-day cleanup
 
 #### 5.3 Build from the spec file
 
 Option A — point COPR at the GitHub tarball:
-1. Upload `packaging/rpm/audogombleed.spec` as a new build
-2. Source URL: `https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.1.0.tar.gz`
+1. Upload `packaging/rpm/derakht.spec` as a new build
+2. Source URL: `https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v2.1.0.tar.gz`
 
 Option B — use `copr-cli`:
 ```bash
-copr-cli build audogombleed --nowait \
-  https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.1.0.tar.gz
+copr-cli build derakht --nowait \
+  https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v2.1.0.tar.gz
 ```
 
 #### 5.4 Test
@@ -426,14 +426,14 @@ copr-cli build audogombleed --nowait \
 ```bash
 # Enable the COPR repo
 dnf install 'dnf-command(copr)'
-dnf copr enable $USER/audogombleed
-dnf install audogombleed
-audogombleed --version
+dnf copr enable $USER/derakht-cli
+dnf install derakht-cli
+derakht --version
 ```
 
 #### 5.5 Update for new versions
 
-1. Update `Version:` in `packaging/rpm/audogombleed.spec`
+1. Update `Version:` in `packaging/rpm/derakht.spec`
 2. Add a `%changelog` entry
 3. Rebuild in COPR
 
@@ -441,7 +441,7 @@ audogombleed --version
 
 | File | Purpose |
 |------|---------|
-| `packaging/rpm/audogombleed.spec` | RPM spec: metadata, source URL, install steps |
+| `packaging/rpm/derakht.spec` | RPM spec: metadata, source URL, install steps |
 
 ---
 
@@ -469,8 +469,8 @@ gobuki-overlay/
 ├── metadata/
 │   └── layout.conf
 └── app-misc/
-    └── audogombleed/
-        ├── audogombleed-2.1.0.ebuild
+    └── derakht/
+        ├── derakht-cli-2.1.0.ebuild
         └── Manifest
 ```
 
@@ -486,18 +486,18 @@ EOF
 #### 6.3 Copy and verify the ebuild
 
 ```bash
-mkdir -p app-misc/audogombleed
-cp /path/to/audogombleed.sh/packaging/gentoo/audogombleed-2.1.0.ebuild \
-   app-misc/audogombleed/
-pushd app-misc/audogombleed
-ebuild audogombleed-2.1.0.ebuild manifest
+mkdir -p app-misc/derakht-cli
+cp /path/to/derakht.sh/packaging/gentoo/derakht-cli-2.1.0.ebuild \
+   app-misc/derakht-cli/
+pushd app-misc/derakht-cli
+ebuild derakht-cli-2.1.0.ebuild manifest
 popd
 ```
 
 #### 6.4 Push the overlay
 
 ```bash
-git add . && git commit -m "app-misc/audogombleed: add 2.1.0" && git push
+git add . && git commit -m "app-misc/derakht-cli: add 2.1.0" && git push
 ```
 
 #### 6.5 Test locally
@@ -505,20 +505,20 @@ git add . && git commit -m "app-misc/audogombleed: add 2.1.0" && git push
 ```bash
 eselect repository add gobuki-overlay git https://github.com/i-love-coffee-i-love-tea/gobuki-overlay.git
 emerge --sync gobuki-overlay
-emerge app-misc/audogombleed
+emerge app-misc/derakht-cli
 ```
 
 #### 6.6 Update for new versions
 
-1. Copy the ebuild to the new version filename: `cp audogombleed-2.1.0.ebuild audogombleed-2.2.0.ebuild`
-2. Run `ebuild audogombleed-2.2.0.ebuild manifest` to update checksums
+1. Copy the ebuild to the new version filename: `cp derakht-cli-2.1.0.ebuild derakht-2.2.0.ebuild`
+2. Run `ebuild derakht-2.2.0.ebuild manifest` to update checksums
 3. Commit and push
 
 ### Files
 
 | File | Purpose |
 |------|---------|
-| `packaging/gentoo/audogombleed-2.1.0.ebuild` | Ebuild: source, deps, install steps |
+| `packaging/gentoo/derakht-cli-2.1.0.ebuild` | Ebuild: source, deps, install steps |
 
 ---
 
@@ -529,9 +529,9 @@ When releasing a new version, update all packaging files:
 1. `debian/changelog` — add a new entry at the top
 2. `packaging/nix/default.nix` — update `version` and `sha256`
 3. `packaging/arch/PKGBUILD` — update `pkgver` and `sha256sums`
-4. `packaging/homebrew/audogombleed.rb` — update `url` and `sha256`
-5. `packaging/rpm/audogombleed.spec` — update `Version:` and add `%changelog` entry
-6. `packaging/gentoo/audogombleed-<version>.ebuild` — copy to new version, run `ebuild ... manifest`
+4. `packaging/homebrew/derakht-cli.rb` — update `url` and `sha256`
+5. `packaging/rpm/derakht.spec` — update `Version:` and add `%changelog` entry
+6. `packaging/gentoo/derakht-<version>.ebuild` — copy to new version, run `ebuild ... manifest`
 
 The `release.d/` hooks handle steps 1-6 automatically during `release.sh`.
 

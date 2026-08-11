@@ -111,8 +111,8 @@ NOTE: Debug output slows the CLI down noticeably.
 
 Each symlink gets its own config file and variable namespace:
 
-    ln -s ~/bin/audogombleed.sh ~/bin/cluster
-    ln -s ~/bin/audogombleed.sh ~/bin/music
+    ln -s ~/bin/derakht.sh ~/bin/cluster
+    ln -s ~/bin/derakht.sh ~/bin/music
 
 This creates two independent CLIs:
 - `cluster` reads `~/.cluster.conf`

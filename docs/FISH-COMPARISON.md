@@ -1,6 +1,6 @@
 # Fish Shell Integration Reference
 
-Comparison of bash/zsh and fish shell completion APIs for audogombleed.sh.
+Comparison of bash/zsh and fish shell completion APIs for derakht.sh.
 
 ## Completion model comparison
 

@@ -17,7 +17,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     tmpdir=$(mktemp -d)
     touch "$tmpdir/.hidden" "$tmpdir/visible"
 
-    run zsh -c "source ./audogombleed.sh; _cli_compgen -f '$tmpdir/'"
+    run zsh -c "source ./derakht.sh; _cli_compgen -f '$tmpdir/'"
     assert_success
     assert_line --partial ".hidden"
     assert_line --partial "visible"
@@ -31,7 +31,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     mkdir -p "$tmpdir/subdir"
     touch "$tmpdir/subdir/alpha" "$tmpdir/subdir/beta" "$tmpdir/other"
 
-    run zsh -c "source ./audogombleed.sh; _cli_compgen -f '$tmpdir/subdir/a'"
+    run zsh -c "source ./derakht.sh; _cli_compgen -f '$tmpdir/subdir/a'"
     assert_success
     assert_line --partial "alpha"
     refute_line --partial "beta"
@@ -44,7 +44,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     tmpdir=$(mktemp -d)
     touch "$tmpdir/file1" "$tmpdir/file2"
 
-    run zsh -c "source ./audogombleed.sh; _cli_compgen -f '$tmpdir'"
+    run zsh -c "source ./derakht.sh; _cli_compgen -f '$tmpdir'"
     assert_success
     assert_line --partial "file1"
     assert_line --partial "file2"
@@ -62,7 +62,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     mkdir -p "$tmpdir/alpha" "$tmpdir/beta"
     touch "$tmpdir/file1"
 
-    run zsh -c "source ./audogombleed.sh; _cli_compgen -d '$tmpdir'"
+    run zsh -c "source ./derakht.sh; _cli_compgen -d '$tmpdir'"
     assert_success
     assert_line --partial "alpha"
     assert_line --partial "beta"
@@ -76,7 +76,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 # ===================================================================
 
 @test "zsh: _cli_compgen -W matches prefix" {
-    run zsh -c "source ./audogombleed.sh; _cli_compgen -W 'deploy destroy delete list' 'de'"
+    run zsh -c "source ./derakht.sh; _cli_compgen -W 'deploy destroy delete list' 'de'"
     assert_success
     assert_line "deploy"
     assert_line "destroy"
@@ -85,7 +85,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 }
 
 @test "zsh: _cli_compgen -W returns empty for no match" {
-    run zsh -c "source ./audogombleed.sh; _cli_compgen -W 'deploy destroy' 'xyz'"
+    run zsh -c "source ./derakht.sh; _cli_compgen -W 'deploy destroy' 'xyz'"
     assert_success
     assert_output ""
 }
@@ -95,27 +95,27 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 # ===================================================================
 
 @test "zsh: _cli_is_integer rejects float" {
-    run zsh -c "source ./audogombleed.sh; _cli_is_integer '3.14'"
+    run zsh -c "source ./derakht.sh; _cli_is_integer '3.14'"
     assert_failure
 }
 
 @test "zsh: _cli_is_integer rejects empty string" {
-    run zsh -c "source ./audogombleed.sh; _cli_is_integer ''"
+    run zsh -c "source ./derakht.sh; _cli_is_integer ''"
     assert_failure
 }
 
 @test "zsh: _cli_is_integer accepts zero" {
-    run zsh -c "source ./audogombleed.sh; _cli_is_integer '0'"
+    run zsh -c "source ./derakht.sh; _cli_is_integer '0'"
     assert_success
 }
 
 @test "zsh: _cli_is_integer rejects mixed alphanumeric" {
-    run zsh -c "source ./audogombleed.sh; _cli_is_integer '42abc'"
+    run zsh -c "source ./derakht.sh; _cli_is_integer '42abc'"
     assert_failure
 }
 
 @test "zsh: _cli_is_integer accepts negative" {
-    run zsh -c "source ./audogombleed.sh; _cli_is_integer '-5'"
+    run zsh -c "source ./derakht.sh; _cli_is_integer '-5'"
     assert_success
 }
 
@@ -124,13 +124,13 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 # ===================================================================
 
 @test "zsh: _cli_compgen -A variable returns name for defined variable" {
-    run zsh -c "source ./audogombleed.sh; TESTVAR=exists; _cli_compgen -A variable 'TESTVAR'"
+    run zsh -c "source ./derakht.sh; TESTVAR=exists; _cli_compgen -A variable 'TESTVAR'"
     assert_success
     assert_output "TESTVAR"
 }
 
 @test "zsh: _cli_compgen -A variable returns empty for undefined variable" {
-    run zsh -c "source ./audogombleed.sh; _cli_compgen -A variable 'NONEXISTENT_VAR_12345'"
+    run zsh -c "source ./derakht.sh; _cli_compgen -A variable 'NONEXISTENT_VAR_12345'"
     assert_failure
     assert_output ""
 }
@@ -174,5 +174,5 @@ CONF
 teardown() {
 	rm -f ~/.testcli.conf
 	cp example.conf ~/.testcli.conf
-	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
 }

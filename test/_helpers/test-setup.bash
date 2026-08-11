@@ -63,3 +63,31 @@ _test_load_fish() {
 	load '../_test_helper/bats-assert/load'
 	load '../_helpers/fish-helpers'
 }
+
+# Call from setup_file() in nu tests — creates the nu testcli wrapper.
+_test_init_nu() {
+	load '../_helpers/common-setup'
+	load '../_helpers/common-setup-nu'
+	_common_setup_nu
+}
+
+# Call from setup() in nu tests — copies config from _configs/ and loads helpers.
+_test_load_nu() {
+	local project_root category testname confpath
+
+	project_root="$(cd "$(dirname "$(dirname "$(dirname "${BATS_TEST_FILENAME}")")")" && pwd)"
+	category="$(basename "$(dirname "${BATS_TEST_FILENAME}")")"
+	testname="$(basename "${BATS_TEST_FILENAME}" .bats)"
+	confpath="${project_root}/test/_configs/${category}/${testname}.conf"
+
+	if [ ! -f "$confpath" ]; then
+		echo "ERROR: config file not found: $confpath" >&2
+		return 1
+	fi
+
+	cp "$confpath" ~/.testcli.conf
+
+	load '../_test_helper/bats-support/load'
+	load '../_test_helper/bats-assert/load'
+	load '../_helpers/nu-helpers'
+}

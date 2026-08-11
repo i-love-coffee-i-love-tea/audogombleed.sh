@@ -7,7 +7,7 @@ date: 2026-08-10
 
 ## Context and Problem Statement
 
-audogombleed.sh currently supports bash and zsh. Fish shell support is being
+derakht.sh currently supports bash and zsh. Fish shell support is being
 added (see FISH-PLAN.md). Bash and zsh share enough syntax that the same
 `[env]` section and command expressions work in both. Fish is a different
 language — different variable syntax, no `eval` builtin, different function

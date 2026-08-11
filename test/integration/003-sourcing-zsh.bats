@@ -11,7 +11,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # bats test_tags=id:zsh-201
 @test "zsh: direct execution exits 49" {
-    run zsh ./audogombleed.sh
+    run zsh ./derakht.sh
     assert_failure 49
 }
 
@@ -51,7 +51,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 }
 
 @test "zsh: direct execution shows usage message" {
-    run zsh ./audogombleed.sh
+    run zsh ./derakht.sh
     assert_failure
     assert_line "This script is not intended to be called directly."
 }

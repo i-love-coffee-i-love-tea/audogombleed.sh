@@ -10,7 +10,7 @@
 # Requirements:
 #   - gh (GitHub CLI) authenticated
 #   - The tag must already exist locally (created by release.sh)
-#   - A .deb package at ../audogombleed_<version>_all.deb (optional)
+#   - A .deb package at ../derakht-cli_<version>_all.deb (optional)
 #
 set -euo pipefail
 
@@ -65,8 +65,8 @@ fi
 
 # Build asset list
 assets=()
-if [ -f "../audogombleed_${version}_all.deb" ]; then
-	assets+=("../audogombleed_${version}_all.deb")
+if [ -f "../derakht-cli_${version}_all.deb" ]; then
+	assets+=("../derakht-cli_${version}_all.deb")
 fi
 
 # Create the release

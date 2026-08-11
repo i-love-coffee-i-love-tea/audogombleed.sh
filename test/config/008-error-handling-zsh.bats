@@ -16,7 +16,7 @@ teardown() {
 	cp example.conf ~/.testcli.conf
 	# Restore symlink for _zsh_run compatibility
 	rm -f ./testcli
-	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
 }
 
 # ===================================================================
@@ -25,7 +25,7 @@ teardown() {
 
 # bats test_tags=id:zsh-082
 @test "zsh: CLI name with dashes is accepted and executes" {
-    ln -sf audogombleed.sh ./fancy-cli
+    ln -sf derakht.sh ./fancy-cli
     printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy-cli.conf
     run zsh ./fancy-cli greet
     assert_success
@@ -36,7 +36,7 @@ teardown() {
 # bats test_tags=id:zsh-083
 @test "zsh: CLI name with underscores is accepted by _cli_validate_progname" {
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
     source ./testcli
     __CLI_PROGNAME="fancy_cli"
     run _cli_validate_progname
@@ -120,7 +120,7 @@ CONF
 
     # Restore bash symlink for _zsh_run
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
     run _zsh_run tilde-cmd
     assert_success
     assert_output "expanded"
@@ -134,7 +134,7 @@ CONF
 
 # bats test_tags=id:zsh-089
 @test "zsh: CLI name with dots is accepted and executes" {
-    ln -sf audogombleed.sh ./fancy.cli
+    ln -sf derakht.sh ./fancy.cli
     printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy.cli.conf
     run zsh ./fancy.cli greet
     assert_success
@@ -142,8 +142,8 @@ CONF
     rm -f ./fancy.cli ~/.fancy.cli.conf
 }
 
-@test "zsh: direct execution as audogombleed.sh exits 49" {
-    run zsh ./audogombleed.sh greet
+@test "zsh: direct execution as derakht.sh exits 49" {
+    run zsh ./derakht.sh greet
     assert_failure 49
     assert_line --partial "not intended to be called directly"
 }
@@ -162,7 +162,7 @@ __CLI_CFG.BAD=n
 test-cmd: echo "should still work"
 CONF
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
 
     run _zsh_run test-cmd
     # Should print error about invalid variable name
@@ -217,7 +217,7 @@ CONF
 # bats test_tags=id:zsh-093
 @test "zsh: _cli_check_file_permissions rejects nonexistent file" {
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
     source ./testcli
     run _cli_check_file_permissions "/nonexistent/module.conf" "include file"
     assert_failure

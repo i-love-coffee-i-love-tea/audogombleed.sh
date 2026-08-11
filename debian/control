@@ -1,15 +1,15 @@
-Source: audogombleed
+Source: derakht-cli
 Section: utils
 Priority: optional
 Maintainer: Steffen Kremsler <debian@gobuki.org>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.7.0
 
-Package: audogombleed
+Package: derakht-cli
 Architecture: all
 Depends: ${misc:Depends}, bash (>= 4.2) | zsh, gawk | mawk, coreutils (>= 8.30)
 Description: Create CLIs with auto-completion, abbreviation and built-in help from config
- Audogombleed generates shell CLIs from a plain text config file.
+ Derakht generates shell CLIs from a plain text config file.
  Define commands and arguments declaratively — tab completion,
  command abbreviation, help output, and execution all come for free.
  .

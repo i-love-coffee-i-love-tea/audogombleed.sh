@@ -8,8 +8,8 @@ if [ $# -ne 1 ]; then
 fi
 
 version="$1"
-script="audogombleed.sh"
-manpage="audogombleed.1"
+script="derakht.sh"
+manpage="derakht.1"
 changelog="debian/changelog"
 hook_dir="release.d"
 

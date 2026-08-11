@@ -1,6 +1,6 @@
 # vim:et:ts=2:sw=2
 
-# Run audogombleed.sh under zsh instead of the default bash.
+# Run derakht.sh under zsh instead of the default bash.
 # Source this in a bats setup_file to override _common_setup.
 
 _common_setup_zsh() {
@@ -10,7 +10,7 @@ _common_setup_zsh() {
 	# create a wrapper that invokes the script under zsh
 	cat > ./testcli <<'WRAPPER'
 #!/usr/bin/env zsh
-source "${0:A:h}/audogombleed.sh"
+source "${0:A:h}/derakht.sh"
 WRAPPER
 	chmod +x ./testcli
 

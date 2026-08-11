@@ -22,6 +22,10 @@
 - Remove redundant `release.d/11-validate-example-config.sh` — hook `14-validate-config.sh` already defaults to `example.conf`
 - Remove dead code (`_cli_uniq_`, `_cli_uniq_col`) — unused alternative implementations with no callers
 
+### Renamed
+
+- Rename project from `audogombleed.sh` to `derakht-cli` — "derakht" (درخت) is Persian for "tree", reflecting the tool's core purpose of generating command trees
+
 ### CI
 
 - Add dependency caching to all CI workflows (`actions/cache` for apt, Homebrew, kcov)
@@ -72,7 +76,7 @@
 
 ### Fixes
 
-- Fix shellcheck warnings and errors in `audogombleed.sh`: resolve all findings (real bugs, style issues, and suppressions with explanations)
+- Fix shellcheck warnings and errors in `derakht.sh`: resolve all findings (real bugs, style issues, and suppressions with explanations)
 - Fix `$args` array truncation in `_cli_execute_command()` — multi-arg abbreviation expansion was only passing the first argument
 - Fix `args="$expanded_args"` reassignment that corrupted the args array by leaking old elements
 - Fix `arg_list` array/string type confusion in `_cli_complete_arg()` that broke list argument completion
@@ -105,7 +109,7 @@
 - Add scoped `&function` loading — only `&function` entries relevant to the matched command are called during completion, instead of all `&function` entries
 - Add macOS support (portable file modification time)
 - Add `.deb` packaging (`build-deb.sh`, `debian/` directory)
-- Add `release.sh` for version bump (updates `audogombleed.sh`, `audogombleed.1`, `debian/changelog`), commit, and tagging
+- Add `release.sh` for version bump (updates `derakht.sh`, `derakht.1`, `debian/changelog`), commit, and tagging
 - Remove `CFG_EXEC_SUBPROCESS` option — redundant with the existing alias mode (`alias mycli='_cli_execute'`)
 
 ### Performance
@@ -160,7 +164,7 @@
 - Add full zsh compatibility: config loading, completion, command execution
 - Add zsh completion descriptions: commands show help text and arguments show type descriptions in zsh `_values` format
 - Rewrite embedded AWK script to be POSIX compatible (no gensub, no PROCINFO) — now works with gawk, mawk, and nawk
-- Add manpage (`audogombleed.1`)
+- Add manpage (`derakht.1`)
 - Add argument type completion tests for FILE, DIR, STRING, INTEGER, int_range, ENVVAR, USER, GROUP, SSH_HOST, BLKDEV, SERVICE
 - Add zsh test suite (`test/zsh.bats`, `test/zsh-completion-descriptions.bats`)
 - Add zsh test helpers (`test/zsh-helpers.bash`, `test/common-setup-zsh.bash`)

@@ -16,9 +16,9 @@ Derive the CLI name from the symlink filename. One script serves as many
 CLIs as the user creates symlinks for.
 
 ```
-ln -s ~/bin/audogombleed.sh ~/bin/tf
-ln -s ~/bin/audogombleed.sh ~/bin/k
-ln -s ~/bin/audogombleed.sh ~/bin/deploy
+ln -s ~/bin/derakht.sh ~/bin/tf
+ln -s ~/bin/derakht.sh ~/bin/k
+ln -s ~/bin/derakht.sh ~/bin/deploy
 ```
 
 Each symlink resolves to a different config file (`~/.tf.conf`,
@@ -44,7 +44,7 @@ because they break aliases and variable names.
 
 ## Consequences
 
-- The script must not be called directly as `audogombleed.sh` — it
+- The script must not be called directly as `derakht.sh` — it
   detects this case and prints setup instructions.
 - The symlink name is the CLI's identity for its entire lifetime.
   Renaming the CLI means creating a new symlink and config file.

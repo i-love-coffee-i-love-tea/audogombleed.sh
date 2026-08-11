@@ -99,7 +99,7 @@ jobs:
           echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
       - name: Smoke test
         run: |
-          ln -sf ./audogombleed.sh ./testcli
+          ln -sf ./derakht.sh ./testcli
           cp example.conf ~/.testcli.conf
           zsh ./testcli echo hello world
           bash ./testcli echo hello world
@@ -133,7 +133,7 @@ jobs:
           prepare: |
             pkg install -y bash zsh git gawk coreutils
             mount -t fdescfs fdesc /dev/fd
-            git config --global --add safe.directory /home/runner/work/audogombleed.sh/audogombleed.sh
+            git config --global --add safe.directory /home/runner/work/derakht-cli/derakht-cli
           run: |
             {
             echo "=== FreeBSD version ==="
@@ -154,7 +154,7 @@ jobs:
             ln -sf /tmp/test-stat.txt /tmp/test-link.txt
             readlink -f /tmp/test-link.txt
             # Smoke test
-            ln -sf ./audogombleed.sh ./testcli
+            ln -sf ./derakht.sh ./testcli
             cp example.conf ~/.testcli.conf
             bash ./testcli echo hello world
             zsh ./testcli echo hello world
@@ -205,7 +205,7 @@ jobs:
         run: |
           $wslPath = "${{ github.workspace }}" -replace '\\','/' -replace '^([A-Z]):', '/mnt/$1'
           $wslPath = $wslPath.ToLower()
-          $script = "set -eo pipefail`ncd `"$wslPath`"`napt-get update -qq`napt-get install -y -qq bash zsh gawk git`nln -sf ./audogombleed.sh ./testcli`ncp example.conf ~/.testcli.conf`nbash ./testcli echo hello world`nzsh ./testcli echo hello world`nrm -f ./testcli ~/.testcli.conf`nexport MAX_EXEC_MS=400 MAX_COMPLETION_MS=400 MAX_LARGE_COMPLETION_MS=600`ntest/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --filter '!ACK=y' --formatter junit | tee report-wsl-bash.xml`ntest/_bats/bin/bats test/*/*-zsh.bats test/*/*-all.bats --formatter junit | tee report-wsl-zsh.xml"
+          $script = "set -eo pipefail`ncd `"$wslPath`"`napt-get update -qq`napt-get install -y -qq bash zsh gawk git`nln -sf ./derakht.sh ./testcli`ncp example.conf ~/.testcli.conf`nbash ./testcli echo hello world`nzsh ./testcli echo hello world`nrm -f ./testcli ~/.testcli.conf`nexport MAX_EXEC_MS=400 MAX_COMPLETION_MS=400 MAX_LARGE_COMPLETION_MS=600`ntest/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --filter '!ACK=y' --formatter junit | tee report-wsl-bash.xml`ntest/_bats/bin/bats test/*/*-zsh.bats test/*/*-all.bats --formatter junit | tee report-wsl-zsh.xml"
           $script = $script -replace "`r`n","`n" -replace "`r","`n"
           $bytes = [System.Text.Encoding]::UTF8.GetBytes($script)
           $encoded = [Convert]::ToBase64String($bytes)
@@ -243,15 +243,15 @@ jobs:
           # Extract version from PKGBUILD
           pkgver=$(grep '^pkgver=' PKGBUILD | cut -d= -f2)
           # Create a source tarball matching GitHub's archive layout
-          mkdir /tmp/src && cp -a ../.. "/tmp/src/audogombleed.sh-${pkgver}"
-          tar czf "/tmp/audogombleed-${pkgver}.tar.gz" -C /tmp/src "audogombleed.sh-${pkgver}"
+          mkdir /tmp/src && cp -a ../.. "/tmp/src/derakht-cli-${pkgver}"
+          tar czf "/tmp/derakht-cli-${pkgver}.tar.gz" -C /tmp/src "derakht-cli-${pkgver}"
           rm -rf /tmp/src
           # Update source to use local tarball
-          sed -i "s|source=.*|source=(\"audogombleed-${pkgver}.tar.gz::file:///tmp/audogombleed-${pkgver}.tar.gz\")|" PKGBUILD
+          sed -i "s|source=.*|source=(\"derakht-cli-${pkgver}.tar.gz::file:///tmp/derakht-cli-${pkgver}.tar.gz\")|" PKGBUILD
           sed -i "s|sha256sums=.*|sha256sums=('SKIP')|" PKGBUILD
           # Build as non-root user (makepkg refuses to run as root)
           useradd -m builder
-          chown -R builder:builder "/tmp/audogombleed-${pkgver}.tar.gz" "$GITHUB_WORKSPACE"
+          chown -R builder:builder "/tmp/derakht-cli-${pkgver}.tar.gz" "$GITHUB_WORKSPACE"
           su builder -c "cd $GITHUB_WORKSPACE/packaging/arch && makepkg --noconfirm --nodeps"
 
   pkg-nix:
@@ -265,7 +265,7 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixpkgs-unstable
       - name: Build Nix package
-        run: nix-build packaging/nix -A audogombleed --no-out-link
+        run: nix-build packaging/nix -A derakht-cli --no-out-link
         continue-on-error: true
 
   pkg-homebrew:
@@ -276,18 +276,18 @@ jobs:
       - name: Test formula install
         run: |
           # Create a proper tap
-          brew tap-new i-love-coffee-i-love-tea/audogombleed
-          cp packaging/homebrew/audogombleed.rb "$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-audogombleed/Formula/"
+          brew tap-new i-love-coffee-i-love-tea/derakht-cli
+          cp packaging/homebrew/derakht-cli.rb "$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-derakht-cli/Formula/"
           # Extract version from formula URL (e.g., v2.1.0.tar.gz -> 2.1.0)
-          pkgver=$(grep 'url ' packaging/homebrew/audogombleed.rb | sed 's|.*v\([0-9.]*\)\.tar\.gz.*|\1|')
+          pkgver=$(grep 'url ' packaging/homebrew/derakht-cli.rb | sed 's|.*v\([0-9.]*\)\.tar\.gz.*|\1|')
           # Replace the GitHub URL with a local path for testing
-          tar czf "/tmp/audogombleed-${pkgver}.tar.gz" .
-          sha=$(shasum -a 256 "/tmp/audogombleed-${pkgver}.tar.gz" | cut -d' ' -f1)
-          formula="$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-audogombleed/Formula/audogombleed.rb"
-          sed -i '' "s|url .*|url \"file:///tmp/audogombleed-${pkgver}.tar.gz\"|" "$formula"
+          tar czf "/tmp/derakht-cli-${pkgver}.tar.gz" .
+          sha=$(shasum -a 256 "/tmp/derakht-cli-${pkgver}.tar.gz" | cut -d' ' -f1)
+          formula="$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-derakht-cli/Formula/derakht-cli.rb"
+          sed -i '' "s|url .*|url \"file:///tmp/derakht-cli-${pkgver}.tar.gz\"|" "$formula"
           sed -i '' "s|sha256 .*|sha256 \"$sha\"|" "$formula"
-          brew install --build-from-source i-love-coffee-i-love-tea/audogombleed/audogombleed
-          audogombleed --version
+          brew install --build-from-source i-love-coffee-i-love-tea/derakht-cli/derakht-cli
+          derakht --version
 
   pkg-rpm:
     name: "pkg: RPM (Fedora)"
@@ -301,14 +301,14 @@ jobs:
           dnf install -y rpm-build rpmdevtools
           rpmdev-setuptree
           # Extract version from spec file
-          pkgver=$(grep '^Version:' packaging/rpm/audogombleed.spec | awk '{print $2}')
+          pkgver=$(grep '^Version:' packaging/rpm/derakht-cli.spec | awk '{print $2}')
           # Create source tarball matching GitHub's archive layout
-          mkdir /tmp/src && cp -a . "/tmp/src/audogombleed.sh-${pkgver}"
-          tar czf ~/rpmbuild/SOURCES/audogombleed-${pkgver}.tar.gz -C /tmp/src "audogombleed.sh-${pkgver}"
+          mkdir /tmp/src && cp -a . "/tmp/src/derakht-cli-${pkgver}"
+          tar czf ~/rpmbuild/SOURCES/derakht-cli-${pkgver}.tar.gz -C /tmp/src "derakht-cli-${pkgver}"
           rm -rf /tmp/src
-          rpmbuild -ba packaging/rpm/audogombleed.spec
+          rpmbuild -ba packaging/rpm/derakht-cli.spec
           # Verify the RPM was built
-          rpm -qip ~/rpmbuild/RPMS/noarch/audogombleed-${pkgver}-1.*.rpm
+          rpm -qip ~/rpmbuild/RPMS/noarch/derakht-cli-${pkgver}-1.*.rpm
 
   pkg-gentoo:
     name: "pkg: Gentoo ebuild"
@@ -318,7 +318,7 @@ jobs:
       - name: Validate ebuild
         run: |
           # Find the ebuild file (version in filename)
-          ebuild=$(ls packaging/gentoo/audogombleed-*.ebuild | head -1)
+          ebuild=$(ls packaging/gentoo/derakht-cli-*.ebuild | head -1)
           if [ -z "$ebuild" ]; then
             echo "No ebuild found"
             exit 1

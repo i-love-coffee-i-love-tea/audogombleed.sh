@@ -13,7 +13,7 @@ setup()        { load '../_helpers/test-setup'; _test_load; }
 @test "each CLI has its own config file" {
     # Create a second CLI (remove if exists)
     rm -f ./fancy-cli
-    ln -s ./audogombleed.sh ./fancy-cli
+    ln -s ./derakht.sh ./fancy-cli
     
     # Create config for second CLI with a unique command
     cat > ~/.fancy-cli.conf <<'EOF'
@@ -48,7 +48,7 @@ EOF
 @test "CLI config options are isolated per CLI" {
     # Create a second CLI with different config (remove if exists)
     rm -f ./fancy-cli
-    ln -s ./audogombleed.sh ./fancy-cli
+    ln -s ./derakht.sh ./fancy-cli
     
     cat > ~/.fancy-cli.conf <<'EOF'
 [env]
@@ -74,7 +74,7 @@ EOF
 @test "CLI functions are namespace isolated" {
     # Create a second CLI with its own commands (remove if exists)
     rm -f ./fancy-cli
-    ln -s ./audogombleed.sh ./fancy-cli
+    ln -s ./derakht.sh ./fancy-cli
     
     cat > ~/.fancy-cli.conf <<'EOF'
 [env]
@@ -108,7 +108,7 @@ EOF
 @test "CLI completion lists are isolated" {
     # Create a second CLI with different completion options (remove if exists)
     rm -f ./fancy-cli
-    ln -s ./audogombleed.sh ./fancy-cli
+    ln -s ./derakht.sh ./fancy-cli
     
     cat > ~/.fancy-cli.conf <<'EOF'
 [env]

@@ -16,7 +16,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 #!/usr/bin/env zsh
 autoload -Uz compinit && compinit -u
 _cli_original_name="$0"
-source "${0:A:h}/audogombleed.sh"
+source "${0:A:h}/derakht.sh"
 0="$_cli_original_name"
 __CLI_PROGNAME="${0##*/}"
 _cli_execute "$@"
@@ -49,7 +49,7 @@ EOF
 #!/usr/bin/env zsh
 autoload -Uz compinit && compinit -u
 _cli_original_name="$0"
-source "${0:A:h}/audogombleed.sh"
+source "${0:A:h}/derakht.sh"
 0="$_cli_original_name"
 __CLI_PROGNAME="${0##*/}"
 _cli_execute "$@"
@@ -84,7 +84,7 @@ EOF
 #!/usr/bin/env zsh
 autoload -Uz compinit && compinit -u
 _cli_original_name="$0"
-source "${0:A:h}/audogombleed.sh"
+source "${0:A:h}/derakht.sh"
 0="$_cli_original_name"
 __CLI_PROGNAME="${0##*/}"
 _cli_execute "$@"
@@ -111,7 +111,7 @@ EOF
 #!/usr/bin/env zsh
 autoload -Uz compinit && compinit -u
 _cli_original_name="$0"
-source "${0:A:h}/audogombleed.sh"
+source "${0:A:h}/derakht.sh"
 0="$_cli_original_name"
 __CLI_PROGNAME="${0##*/}"
 _cli_execute "$@"

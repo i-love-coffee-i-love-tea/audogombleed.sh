@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Validate an audogombleed config file against the formal grammar (ADR-011).
+# Validate an derakht config file against the formal grammar (ADR-011).
 #
 # Usage:
 #   ./validate-config.sh <config-file>
 #
-# This is a convenience wrapper. The validator is embedded in audogombleed.sh
+# This is a convenience wrapper. The validator is embedded in derakht.sh
 # and available to every derived CLI via --cli-validate-config.
 #
 # Exit 0 if valid, exit 1 if errors found.
@@ -24,5 +24,5 @@ fi
 # Create a temporary symlink so the embedded script can determine its name.
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
-ln -sf "$PWD/audogombleed.sh" "$tmpdir/validate"
+ln -sf "$PWD/derakht.sh" "$tmpdir/validate"
 "$tmpdir/validate" --cli-validate-config "$config"

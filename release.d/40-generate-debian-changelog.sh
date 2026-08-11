@@ -4,15 +4,15 @@ set -euo pipefail
 # Generate debian/changelog from CHANGELOG.md (single source of truth).
 #
 # Usage:
-#   ./generate-debian-changelog.sh              # auto-detect version from audogombleed.sh
+#   ./generate-debian-changelog.sh              # auto-detect version from derakht.sh
 #   ./generate-debian-changelog.sh 2.0.0        # explicit version
 
 if [ $# -ge 1 ]; then
     version="$1"
 else
-    version=$(grep '^__CLI_VERSION=' audogombleed.sh | cut -d'"' -f2)
+    version=$(grep '^__CLI_VERSION=' derakht.sh | cut -d'"' -f2)
     if [ -z "$version" ]; then
-        echo "error: could not read version from audogombleed.sh"
+        echo "error: could not read version from derakht.sh"
         exit 1
     fi
 fi
@@ -72,7 +72,7 @@ fi
 rfc_date=$(date -R)
 
 cat > "$changelog_deb" <<EOF
-audogombleed ($version) unstable; urgency=medium
+derakht-cli ($version) unstable; urgency=medium
 
 $entries
 

@@ -1,13 +1,16 @@
-[![Tests](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/main.yml)
-[![Coverage](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/actions/workflows/coverage.yml)
+[![Tests](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
+[![Coverage](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/coverage.yml)
 [![ShellCheck](https://img.shields.io/badge/shellcheck-passing-brightgreen)](https://www.shellcheck.net/)
-[![License](https://img.shields.io/github/license/i-love-coffee-i-love-tea/audogombleed.sh)](LICENSE)
-[![Latest Release](https://img.shields.io/github/v/release/i-love-coffee-i-love-tea/audogombleed.sh)](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/releases/latest)
-[![GitHub Stars](https://img.shields.io/github/stars/i-love-coffee-i-love-tea/audogombleed.sh)](https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/stargazers)
+[![License](https://img.shields.io/github/license/i-love-coffee-i-love-tea/derakht-cli)](LICENSE)
+[![Latest Release](https://img.shields.io/github/v/release/i-love-coffee-i-love-tea/derakht-cli)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/releases/latest)
+[![GitHub Stars](https://img.shields.io/github/stars/i-love-coffee-i-love-tea/derakht-cli)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/stargazers)
 [![bash](https://img.shields.io/badge/bash-4.2%2B-blue?logo=gnubash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![zsh](https://img.shields.io/badge/zsh-compatible-blue?logo=zsh&logoColor=white)](https://zsh.sourceforge.io/)
+[![fish](https://img.shields.io/badge/fish-compatible-blue?logo=fish&logoColor=white)](https://fishshell.com/)
 
-# Audogombleed
+# Derakht
+
+*derakht* [/dɛˈɾæxt/](https://forvo.com/word/%D8%AF%D8%B1%D8%AE%D8%AA/#fa) — Persian for "tree" (درخت).
 
 Create CLIs with auto-completable command trees — no coding required.
 
@@ -80,7 +83,7 @@ Bash and zsh have built-in completion, but it requires one completion script
 per command (or a big hardcoded function). If you change a parameter, you
 have to update the completion code too.
 
-Audogombleed takes a **declarative approach**: everything lives in a config
+Derakht takes a **declarative approach**: everything lives in a config
 file. Add, remove, or restructure commands by editing text. No shell
 functions to maintain.
 
@@ -119,7 +122,7 @@ functions to maintain.
 
 1. **Create a symlink** — the filename becomes the CLI name:
 
-       ln -s ~/bin/audogombleed.sh ~/bin/mycli
+       ln -s ~/bin/derakht.sh ~/bin/mycli
 
 2. **Create a config file** — must match the symlink name (`~/$NAME.conf`):
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# release.d hook: stamp $version into audogombleed.sh (__CLI_VERSION).
+# release.d hook: stamp $version into derakht.sh (__CLI_VERSION).
 #
 # Exports from release.sh: $version $script
 #

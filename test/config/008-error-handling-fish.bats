@@ -22,7 +22,7 @@ teardown() {
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME testcli
 set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/audogombleed.fish
+source (path dirname (status filename))/derakht.fish
 WRAPPER
 	chmod +x ./testcli
 }
@@ -37,7 +37,7 @@ WRAPPER
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME fancy.cli
 set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/audogombleed.fish
+source (path dirname (status filename))/derakht.fish
 WRAPPER
     chmod +x ./fancy.cli
     printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy.cli.conf
@@ -53,7 +53,7 @@ WRAPPER
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME fancy-cli
 set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/audogombleed.fish
+source (path dirname (status filename))/derakht.fish
 WRAPPER
     chmod +x ./fancy-cli
     printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy-cli.conf
@@ -69,7 +69,7 @@ WRAPPER
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME fancy_cli
 set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/audogombleed.fish
+source (path dirname (status filename))/derakht.fish
 WRAPPER
     chmod +x ./fancy_cli
     printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy_cli.conf
@@ -79,8 +79,8 @@ WRAPPER
     rm -f ./fancy_cli ~/.fancy_cli.conf
 }
 
-@test "fish: direct execution as audogombleed.sh fails (bash script under fish)" {
-    run fish ./audogombleed.sh greet
+@test "fish: direct execution as derakht.sh fails (bash script under fish)" {
+    run fish ./derakht.sh greet
     assert_failure
 }
 

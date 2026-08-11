@@ -16,9 +16,9 @@ and Gentoo (not distributed yet), but you don't need any of that to use it or
 contribute. You need bash, awk, and that's about it.
 
 ```bash
-git clone --recurse-submodules https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
-cd audogombleed.sh
-ln -sf audogombleed.sh dev && source ./dev
+git clone --recurse-submodules https://github.com/i-love-coffee-i-love-tea/derakht-cli
+cd derakht.sh
+ln -sf derakht.sh dev && source ./dev
 ```
 
 That last line is worth pausing on — you just sourced the project to get a
@@ -72,8 +72,8 @@ process, so don't wait for it.
 ## How the project is laid out
 
 ```
-audogombleed.sh      the script — ~4K lines, one file, by design
-audogombleed.1       manpage
+derakht.sh      the script — ~4K lines, one file, by design
+derakht.1       manpage
 example.conf         example config (doubles as a CI smoke test)
 dev.conf             the project's own dev CLI — dogfood!
 release.sh           release orchestrator
@@ -123,7 +123,7 @@ exactly how the project evolves.
 4. `dev test all` — everything green.
 5. `dev lint` — no warnings.
 6. Update docs if the behavior changed. `CHANGELOG.md` for the notable stuff,
-   `docs/` for user docs, `docs/dev/` for internals, `audogombleed.1` if the
+   `docs/` for user docs, `docs/dev/` for internals, `derakht.1` if the
    manpage needs it.
 7. Open a PR. Don't worry about making it perfect — it'll get sorted.
 

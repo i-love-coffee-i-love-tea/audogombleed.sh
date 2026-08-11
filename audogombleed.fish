@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 # -*- coding: utf-8 -*-
 #
-# Fish shell wrapper for audogombleed.sh
+# Fish shell wrapper for derakht.sh
 # Reuses the embedded AWK config parser for completion, help, and execution.
 #
 # Usage:
@@ -57,44 +57,44 @@ end
 
 # ── AWK script extraction ──
 
-# Extract the embedded AWK parser from audogombleed.sh.
+# Extract the embedded AWK parser from derakht.sh.
 # This avoids duplicating the 1200-line script.
 function _cli_read_awk_script
     if test -n "$__CLI_AWK_SCRIPT"
         return
     end
     set -l script_dir (path dirname (status filename))
-    set -l main_script "$script_dir/audogombleed.sh"
+    set -l main_script "$script_dir/derakht.sh"
     if not test -f "$main_script"
         # Try the directory of the symlink target
         set main_script (realpath (status filename) 2>/dev/null)
         if test -n "$main_script"
-            set main_script (path dirname "$main_script")/audogombleed.sh
+            set main_script (path dirname "$main_script")/derakht.sh
         end
     end
     if not test -f "$main_script"
-        echo "error: cannot find audogombleed.sh" >&2
+        echo "error: cannot find derakht.sh" >&2
         return 1
     end
     # Extract lines between __MAIN_AWK_PARSER__ and MAIN_AWK_EOF
     set -g __CLI_AWK_SCRIPT (sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^MAIN_AWK_EOF$/d; p; }' "$main_script")
 end
 
-# Extract the embedded AWK validator from audogombleed.sh.
+# Extract the embedded AWK validator from derakht.sh.
 function _cli_read_validator_script
     if test -n "$__CLI_VALIDATOR_SCRIPT"
         return
     end
     set -l script_dir (path dirname (status filename))
-    set -l main_script "$script_dir/audogombleed.sh"
+    set -l main_script "$script_dir/derakht.sh"
     if not test -f "$main_script"
         set main_script (realpath (status filename) 2>/dev/null)
         if test -n "$main_script"
-            set main_script (path dirname "$main_script")/audogombleed.sh
+            set main_script (path dirname "$main_script")/derakht.sh
         end
     end
     if not test -f "$main_script"
-        echo "error: cannot find audogombleed.sh" >&2
+        echo "error: cannot find derakht.sh" >&2
         return 1
     end
     # Extract lines between VALIDATOR_AWK_EOF markers
@@ -823,7 +823,7 @@ function _cli_execute
     if test (count $cmdline) -gt 0
         switch "$cmdline[1]"
             case --version
-                echo "audogombleed.sh 2.1.0 (fish)"
+                echo "derakht.sh 2.1.0 (fish)"
                 return 0
             case --cli-print-awk-script
                 printf '%s\n' $__CLI_AWK_SCRIPT

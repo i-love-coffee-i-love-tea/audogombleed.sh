@@ -11,7 +11,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # bats test_tags=id:zsh-156
 @test "zsh: exit code 49 - script called with wrong name" {
-    run zsh ./audogombleed.sh
+    run zsh ./derakht.sh
     assert_failure 49
 }
 

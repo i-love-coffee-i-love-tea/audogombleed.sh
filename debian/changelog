@@ -1,4 +1,4 @@
-audogombleed (2.1.0) unstable; urgency=medium
+derakht-cli (2.1.0) unstable; urgency=medium
 
   * [Features] Add release.d hook system: 19 hooks for validation, linting, version stamping, testing, and tagging (release.sh orchestrates the pipeline)
   * Add formal config grammar specification (docs/config-grammar.md) with embedded validator accessible via --cli-validate-config
@@ -13,7 +13,7 @@ audogombleed (2.1.0) unstable; urgency=medium
   * Restructure job names with test: and pkg: prefixes
   * Use GNU mirror and curl retry for bash source downloads
   * Raise WSL benchmark thresholds (400ms exec, 400ms completion, 600ms large)
-  * [Fixes] Fix shellcheck warnings and errors in audogombleed.sh: resolve all findings (real bugs, style issues, and suppressions with explanations)
+  * [Fixes] Fix shellcheck warnings and errors in derakht.sh: resolve all findings (real bugs, style issues, and suppressions with explanations)
   * Fix $args array truncation in _cli_execute_command() — multi-arg abbreviation expansion was only passing the first argument
   * Fix args="$expanded_args" reassignment that corrupted the args array by leaking old elements
   * Fix arg_list array/string type confusion in _cli_complete_arg() that broke list argument completion

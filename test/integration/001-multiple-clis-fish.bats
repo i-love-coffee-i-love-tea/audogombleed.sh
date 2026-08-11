@@ -17,7 +17,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME fancy-cli
 set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/audogombleed.fish
+source (path dirname (status filename))/derakht.fish
 WRAPPER
     chmod +x ./fancy-cli
 
@@ -55,7 +55,7 @@ EOF
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME fancy-cli
 set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/audogombleed.fish
+source (path dirname (status filename))/derakht.fish
 WRAPPER
     chmod +x ./fancy-cli
 
@@ -85,7 +85,7 @@ EOF
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME fancy-cli
 set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/audogombleed.fish
+source (path dirname (status filename))/derakht.fish
 WRAPPER
     chmod +x ./fancy-cli
 
@@ -122,7 +122,7 @@ EOF
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME fancy-cli
 set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/audogombleed.fish
+source (path dirname (status filename))/derakht.fish
 WRAPPER
     chmod +x ./fancy-cli
 

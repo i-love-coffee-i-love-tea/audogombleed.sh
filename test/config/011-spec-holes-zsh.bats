@@ -10,7 +10,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 teardown() {
 	rm -f ~/.testcli.conf
 	cp example.conf ~/.testcli.conf
-	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
 }
 
 # ── value type with 4-field arg list ──────────────────────────────

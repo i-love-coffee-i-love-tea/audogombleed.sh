@@ -53,7 +53,7 @@ jobs:
           kcov \
             --bash-method=DEBUG \
             --bash-parse-files-in-dir="$(pwd)" \
-            --include-pattern=audogombleed.sh \
+            --include-pattern=derakht.sh \
             --exclude-pattern=test,bats \
             coverage/bash \
             test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats
@@ -74,7 +74,7 @@ jobs:
       - name: Upload to Codecov
         uses: codecov/codecov-action@04b047e8bb82a0c002c8312c1c880fbc6a999d45 # v5
         with:
-          files: coverage/merged/audogombleed.sh/coverage.json
+          files: coverage/merged/derakht.sh/coverage.json
           flags: bash
           fail_ci_if_error: false
         env:
@@ -89,10 +89,10 @@ jobs:
 
       - name: Summary
         run: |
-          if [ -f coverage/merged/audogombleed.sh/coverage.json ]; then
+          if [ -f coverage/merged/derakht.sh/coverage.json ]; then
             pct=$(python3 -c "
           import json, sys
-          d = json.load(open('coverage/merged/audogombleed.sh/coverage.json'))
+          d = json.load(open('coverage/merged/derakht.sh/coverage.json'))
           print(f\"{d['percent_covered']:.1f}%\")
           " 2>/dev/null || echo "N/A")
             echo "## Coverage: $pct" >> "$GITHUB_STEP_SUMMARY"

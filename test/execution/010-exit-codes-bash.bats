@@ -11,8 +11,8 @@ setup()        { load '../_helpers/test-setup'; _test_load; }
 
 # bats test_tags=id:bash-222
 @test "exit code 49: script called with wrong name" {
-    # When audogombleed.sh is called directly (not via symlink), it should exit 49
-    run ./audogombleed.sh
+    # When derakht.sh is called directly (not via symlink), it should exit 49
+    run ./derakht.sh
     assert_failure 49
     assert_line "This script is not intended to be called directly."
 }

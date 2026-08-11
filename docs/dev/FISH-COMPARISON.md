@@ -12,11 +12,11 @@ nested subcommands for well-known tools (git, docker, kubectl). For a developer 
 their own CLI, fish completions are written in fish syntax and are reasonably ergonomic.
 
 But fish completions are per-tool, per-shell. If you build a CLI for your team or your
-company, every user needs fish AND your completion script installed. audogombleed.sh
+company, every user needs fish AND your completion script installed. derakht.sh
 works in bash and zsh — the shells most people actually use. The config is a single
 declarative file, not a scripting language.
 
-| Capability | Fish | audogombleed.sh |
+| Capability | Fish | derakht.sh |
 |---|---|---|
 | Shell support | fish only | bash + zsh |
 | Completion definition | Fish scripting | Declarative config file |
@@ -35,20 +35,20 @@ Completions execute code in your shell context. Fish handles this by shipping
 completions as part of the package — trusted code, installed via package manager.
 That's a valid model.
 
-audogombleed.sh takes a different approach: the command hierarchy and help text
+derakht.sh takes a different approach: the command hierarchy and help text
 are declarative (defined by indentation and comments), but the config also
 contains evaluated code — the `[env]` section can source files and set variables,
 and command expressions are executed via eval. The tool validates file permissions
 before sourcing anything (rejects world-writable files, files owned by other
 users, symlinks to unsafe targets).
 
-The tradeoff: fish completions are safer because they're curated. audogombleed.sh
+The tradeoff: fish completions are safer because they're curated. derakht.sh
 configs are more flexible because they're user-defined. Neither model is wrong —
 they serve different trust levels.
 
 ## The real comparison
 
-Fish is a better shell for interactive use. audogombleed.sh is a framework for building
+Fish is a better shell for interactive use. derakht.sh is a framework for building
 completions for your own CLIs. Different problems.
 
 If your users all use fish: fish completions are fine. If your users use bash and zsh

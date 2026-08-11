@@ -24,7 +24,7 @@ teardown() {
 	cp example.conf ~/.testcli.conf
 	# Restore symlink for _zsh_run compatibility
 	rm -f ./testcli
-	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
 }
 
 # ===================================================================
@@ -96,7 +96,7 @@ CONF
     ln -sf "$tmpconf" ~/.testcli.conf
 
     # Restore bash symlink for _zsh_run (avoids wrapper recursion)
-    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
     run _zsh_run status
     assert_success
     assert_line --partial "git status"
@@ -125,7 +125,7 @@ CONF
 
     # Restore bash symlink for _zsh_run
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
     run _zsh_run deploy
     # The world-executable source file should be blocked
     # Variable should not be set, so output should not contain the value
@@ -155,7 +155,7 @@ CONF
 
     # Restore bash symlink for _zsh_run
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
     run _zsh_run deploy
     refute_output --partial "eu-west-1"
 }
@@ -188,7 +188,7 @@ CONF
 
     # Restore bash symlink for sourcing
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
     source ./testcli
     run _cli_check_file_permissions "$tmpfile" "include file"
     assert_failure
@@ -205,7 +205,7 @@ CONF
 
     # Restore bash symlink for sourcing
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
     source ./testcli
     run _cli_check_file_permissions "$tmpfile" "include file"
     assert_success

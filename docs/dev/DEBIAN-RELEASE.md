@@ -20,7 +20,7 @@ For distribution (signed):
     ./build-deb.sh --sign
 
 The `.deb` is placed in the parent directory:
-`../audogombleed_<version>_all.deb`.
+`../derakht_<version>_all.deb`.
 
 ## Full release workflow
 
@@ -34,7 +34,7 @@ The `.deb` is placed in the parent directory:
     ./build-deb.sh --sign
 
     # 4. Upload to GitHub Releases
-    gh release create v2.0.0 ../audogombleed_2.0.0_all.deb
+    gh release create v2.0.0 ../derakht_2.0.0_all.deb
 
 ## Updating the maintainer email
 
@@ -43,9 +43,9 @@ This must match your GPG key for signed packages.
 
 ## Installing the .deb
 
-    sudo dpkg -i ../audogombleed_2.0.0_all.deb
+    sudo dpkg -i ../derakht_2.0.0_all.deb
 
-After installation, the script is at `/usr/bin/audogombleed`.
+After installation, the script is at `/usr/bin/derakht`.
 Create CLI symlinks as usual:
 
-    ln -s /usr/bin/audogombleed ~/bin/mycli
+    ln -s /usr/bin/derakht ~/bin/mycli

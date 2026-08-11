@@ -121,7 +121,7 @@ what runs.
 
 ## Script version updates
 
-When the audogombleed.sh script itself is updated (git pull, package
+When the derakht.sh script itself is updated (git pull, package
 upgrade), two caches may serve stale data:
 
 1. **AWK script** (`__CLI_AWK_SCRIPT`): cached in a shell variable.

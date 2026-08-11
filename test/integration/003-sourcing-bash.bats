@@ -25,7 +25,7 @@ setup()        { load '../_helpers/test-setup'; _test_load; }
 
 # bats test_tags=id:bash-283
 @test "bash: direct execution shows usage message" {
-    run ./audogombleed.sh
+    run ./derakht.sh
     assert_failure
     assert_line "This script is not intended to be called directly."
 }

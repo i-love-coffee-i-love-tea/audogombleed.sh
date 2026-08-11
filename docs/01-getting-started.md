@@ -12,18 +12,18 @@ For distribution (signed with GPG):
 
     ./build-deb.sh --sign
 
-This produces `../audogombleed_<version>_all.deb`. Install with:
+This produces `../derakht_<version>_all.deb`. Install with:
 
-    sudo dpkg -i ../audogombleed_<version>_all.deb
+    sudo dpkg -i ../derakht_<version>_all.deb
 
 Requires `build-essential` and `debhelper` (`sudo apt-get install build-essential debhelper`).
 
-After installation, the script is at `/usr/bin/audogombleed`. Continue with
+After installation, the script is at `/usr/bin/derakht`. Continue with
 step 2 to create your CLI symlinks.
 
 ### Option B: Clone or download
 
-Get `audogombleed.sh` into a directory of your choice (e.g. `~/bin/`).
+Get `derakht.sh` into a directory of your choice (e.g. `~/bin/`).
 
 ### Create CLI symlinks
 
@@ -31,8 +31,8 @@ Regardless of install method, each CLI you want needs a symlink. The
 filename becomes the CLI name, determines the config file path, and is
 used to register tab completion:
 
-    ln -s /usr/bin/audogombleed ~/bin/mycli    # after .deb install
-    ln -s ~/bin/audogombleed.sh ~/bin/mycli    # after manual download
+    ln -s /usr/bin/derakht ~/bin/mycli    # after .deb install
+    ln -s ~/bin/derakht.sh ~/bin/mycli    # after manual download
 
 ## 2. Create a config file
 

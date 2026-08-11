@@ -9,7 +9,7 @@ spring-shell.log
 debian/files
 debian/*.substvars
 debian/*.debhelper
-debian/audogombleed/
+debian/derakht/
 debian/debhelper-build-stamp
 
 # AI session artifacts

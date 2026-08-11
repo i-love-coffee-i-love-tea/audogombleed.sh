@@ -4,9 +4,9 @@
 EAPI=8
 
 DESCRIPTION="Create CLIs with auto-completable command trees"
-HOMEPAGE="https://github.com/i-love-coffee-i-love-tea/audogombleed.sh"
-SRC_URI="https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
-S="${WORKDIR}/audogombleed.sh-${PV}"
+HOMEPAGE="https://github.com/i-love-coffee-i-love-tea/derakht-cli"
+SRC_URI="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
+S="${WORKDIR}/derakht-cli-${PV}"
 
 LICENSE="BSD-2"
 SLOT="0"
@@ -18,6 +18,6 @@ RDEPEND="
 "
 
 src_install() {
-	newbin audogombleed.sh audogombleed
-	doman audogombleed.1
+	newbin derakht.sh derakht
+	doman derakht.1
 }

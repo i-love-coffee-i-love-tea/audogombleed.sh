@@ -23,7 +23,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # bats test_tags=id:zsh-121
 @test "zsh: directly executed, displays usage message" {
-    run zsh ./audogombleed.sh
+    run zsh ./derakht.sh
     assert_line 'This script is not intended to be called directly.'
 }
 

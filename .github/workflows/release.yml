@@ -29,7 +29,7 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
       - name: Smoke test (bash + zsh)
         run: |
-          ln -sf ./audogombleed.sh ./testcli
+          ln -sf ./derakht.sh ./testcli
           cp example.conf ~/.testcli.conf
           bash ./testcli echo hello world
           zsh ./testcli echo hello world
@@ -68,20 +68,20 @@ jobs:
       - name: Build .deb
         run: ./release.d/70-build-deb.sh
       - name: Install .deb
-        run: sudo dpkg -i ../audogombleed_${PKG_VERSION}_all.deb
+        run: sudo dpkg -i ../derakht_${PKG_VERSION}_all.deb
       - name: Test installed binary
         run: |
-          audogombleed --version | grep -q "$PKG_VERSION"
+          derakht --version | grep -q "$PKG_VERSION"
           echo "--- version OK ---"
       - name: Run bats tests against installed binary
         run: |
-          export CLI_UNDER_TEST=/usr/bin/audogombleed
+          export CLI_UNDER_TEST=/usr/bin/derakht
           test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -20
       - name: Upload .deb
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-deb
-          path: ../audogombleed_*_all.deb
+          path: ../derakht-cli_*_all.deb
           retention-days: 5
 
   # ── Build + test .rpm (Fedora) ────────────────────────────────────
@@ -102,26 +102,26 @@ jobs:
       - name: Build .rpm
         run: |
           rpmdev-setuptree
-          mkdir /tmp/src && cp -a . "/tmp/src/audogombleed.sh-${PKG_VERSION}"
-          tar czf ~/rpmbuild/SOURCES/audogombleed-${PKG_VERSION}.tar.gz \
-            -C /tmp/src "audogombleed.sh-${PKG_VERSION}"
+          mkdir /tmp/src && cp -a . "/tmp/src/derakht-cli-${PKG_VERSION}"
+          tar czf ~/rpmbuild/SOURCES/derakht-cli-${PKG_VERSION}.tar.gz \
+            -C /tmp/src "derakht-cli-${PKG_VERSION}"
           rm -rf /tmp/src
-          rpmbuild -ba packaging/rpm/audogombleed.spec
+          rpmbuild -ba packaging/rpm/derakht-cli.spec
       - name: Install .rpm
-        run: rpm -ivh ~/rpmbuild/RPMS/noarch/audogombleed-${PKG_VERSION}-1.*.rpm
+        run: rpm -ivh ~/rpmbuild/RPMS/noarch/derakht-cli-${PKG_VERSION}-1.*.rpm
       - name: Test installed binary
         run: |
-          audogombleed --version | grep -q "$PKG_VERSION"
+          derakht --version | grep -q "$PKG_VERSION"
           echo "--- version OK ---"
       - name: Run bats tests against installed binary
         run: |
-          export CLI_UNDER_TEST=/usr/bin/audogombleed
+          export CLI_UNDER_TEST=/usr/bin/derakht
           test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -20
       - name: Upload .rpm
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-rpm
-          path: ~/rpmbuild/RPMS/noarch/audogombleed-*.rpm
+          path: ~/rpmbuild/RPMS/noarch/derakht-cli-*.rpm
           retention-days: 5
 
   # ── Build + test .pkg.tar.zst (Arch Linux) ────────────────────────
@@ -142,30 +142,30 @@ jobs:
       - name: Build .pkg.tar.zst
         run: |
           cd packaging/arch
-          mkdir /tmp/src && cp -a ../.. "/tmp/src/audogombleed.sh-${PKG_VERSION}"
-          tar czf "/tmp/audogombleed-${PKG_VERSION}.tar.gz" -C /tmp/src \
-            "audogombleed.sh-${PKG_VERSION}"
+          mkdir /tmp/src && cp -a ../.. "/tmp/src/derakht-cli-${PKG_VERSION}"
+          tar czf "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" -C /tmp/src \
+            "derakht-cli-${PKG_VERSION}"
           rm -rf /tmp/src
-          sed -i "s|source=.*|source=(\"audogombleed-${PKG_VERSION}.tar.gz::file:///tmp/audogombleed-${PKG_VERSION}.tar.gz\")|" PKGBUILD
+          sed -i "s|source=.*|source=(\"derakht-cli-${PKG_VERSION}.tar.gz::file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\")|" PKGBUILD
           sed -i "s|sha256sums=.*|sha256sums=('SKIP')|" PKGBUILD
           useradd -m builder
-          chown -R builder:builder "/tmp/audogombleed-${PKG_VERSION}.tar.gz" "$GITHUB_WORKSPACE"
+          chown -R builder:builder "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" "$GITHUB_WORKSPACE"
           su builder -c "cd $GITHUB_WORKSPACE/packaging/arch && makepkg --noconfirm --nodeps"
       - name: Install .pkg.tar.zst
-        run: pacman -U --noconfirm packaging/arch/audogombleed-*.pkg.tar.zst
+        run: pacman -U --noconfirm packaging/arch/derakht-cli-*.pkg.tar.zst
       - name: Test installed binary
         run: |
-          audogombleed --version | grep -q "$PKG_VERSION"
+          derakht --version | grep -q "$PKG_VERSION"
           echo "--- version OK ---"
       - name: Run bats tests against installed binary
         run: |
-          export CLI_UNDER_TEST=/usr/bin/audogombleed
+          export CLI_UNDER_TEST=/usr/bin/derakht
           test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -20
       - name: Upload .pkg.tar.zst
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-arch
-          path: packaging/arch/audogombleed-*.pkg.tar.zst
+          path: packaging/arch/derakht-cli-*.pkg.tar.zst
           retention-days: 5
 
   # ── Build + test .pkg (FreeBSD) ───────────────────────────────────
@@ -191,38 +191,38 @@ jobs:
             set -e
             # Build package
             mkdir -p /tmp/pkg/usr/local/bin /tmp/pkg/usr/local/share/man/man1
-            cp audogombleed.sh /tmp/pkg/usr/local/bin/audogombleed
-            chmod 755 /tmp/pkg/usr/local/bin/audogombleed
-            cp audogombleed.1 /tmp/pkg/usr/local/share/man/man1/
+            cp derakht.sh /tmp/pkg/usr/local/bin/derakht
+            chmod 755 /tmp/pkg/usr/local/bin/derakht
+            cp derakht.1 /tmp/pkg/usr/local/share/man/man1/
             cat > /tmp/pkg/+MANIFEST <<MANIFEST
-            name: audogombleed
+            name: derakht
             version: "${PKG_VERSION}"
             comment: "Create CLIs with auto-completable command trees"
             desc: "Define commands and arguments in a plain text config file. Tab completion, command abbreviation, and help output all come for free."
-            origin: shells/audogombleed
+            origin: shells/derakht
             maintainer: github.com@gobuki.org
-            www: https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
+            www: https://github.com/i-love-coffee-i-love-tea/derakht-cli
             prefix: /usr/local
             flatsize: 0
             arch: FreeBSD:14:*
             MANIFEST
             pkg create -m /tmp/pkg -r /tmp/pkg -p /tmp/pkg -o /tmp
             # Install
-            pkg add /tmp/audogombleed-${PKG_VERSION}.pkg
+            pkg add /tmp/derakht-cli-${PKG_VERSION}.pkg
             # Test version
-            audogombleed --version | grep -q "${PKG_VERSION}"
+            derakht --version | grep -q "${PKG_VERSION}"
             echo "--- version OK ---"
             # Run bats tests against installed binary
-            export CLI_UNDER_TEST=/usr/local/bin/audogombleed
+            export CLI_UNDER_TEST=/usr/local/bin/derakht
             export MAX_EXEC_MS=200 MAX_COMPLETION_MS=200 MAX_LARGE_COMPLETION_MS=300
             test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -20
             # Copy package to workspace
-            cp /tmp/audogombleed-${PKG_VERSION}.pkg .
+            cp /tmp/derakht-cli-${PKG_VERSION}.pkg .
       - name: Upload .pkg
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-freebsd
-          path: audogombleed-*.pkg
+          path: derakht-cli-*.pkg
           retention-days: 5
 
   # ── Build + test Homebrew formula (macOS) ─────────────────────────
@@ -246,24 +246,24 @@ jobs:
       - name: Test formula install
         run: |
           # Build tarball
-          tar czf "/tmp/audogombleed-${PKG_VERSION}.tar.gz" .
-          sha=$(shasum -a 256 "/tmp/audogombleed-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
+          tar czf "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" .
+          sha=$(shasum -a 256 "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
           # Update formula
-          sed -i '' "s|url .*|url \"file:///tmp/audogombleed-${PKG_VERSION}.tar.gz\"|" \
-            packaging/homebrew/audogombleed.rb
+          sed -i '' "s|url .*|url \"file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\"|" \
+            packaging/homebrew/derakht-cli.rb
           sed -i '' "s|sha256 .*|sha256 \"$sha\"|" \
-            packaging/homebrew/audogombleed.rb
+            packaging/homebrew/derakht-cli.rb
           # Create tap and install
-          brew tap-new test-user/audogombleed
-          cp packaging/homebrew/audogombleed.rb \
-            "$(brew --repository)/Library/Taps/test-user/homebrew-audogombleed/Formula/"
-          brew install --build-from-source test-user/audogombleed/audogombleed
+          brew tap-new test-user/derakht-cli
+          cp packaging/homebrew/derakht-cli.rb \
+            "$(brew --repository)/Library/Taps/test-user/homebrew-derakht-cli/Formula/"
+          brew install --build-from-source test-user/derakht-cli/derakht
           # Test version
-          audogombleed --version | grep -q "$PKG_VERSION"
+          derakht --version | grep -q "$PKG_VERSION"
           echo "--- version OK ---"
       - name: Run bats tests against installed binary
         env:
-          CLI_UNDER_TEST: /usr/local/bin/audogombleed
+          CLI_UNDER_TEST: /usr/local/bin/derakht
           MAX_EXEC_MS: 250
           MAX_COMPLETION_MS: 250
           MAX_LARGE_COMPLETION_MS: 350
@@ -272,7 +272,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-homebrew
-          path: packaging/homebrew/audogombleed.rb
+          path: packaging/homebrew/derakht-cli.rb
           retention-days: 5
 
   # ── Create GitHub Release (only if all builds pass) ───────────────

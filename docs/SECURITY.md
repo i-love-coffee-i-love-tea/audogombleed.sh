@@ -1,13 +1,13 @@
 # Security
 
-This document is an honest account of how audogombleed.sh works, what it
+This document is an honest account of how derakht.sh works, what it
 trusts, and what can go wrong. Read it before using the tool in any
 environment where the config file isn't entirely under your control.
 
 
 ## How the tool works
 
-Audogombleed is a shell script that gets **sourced into your running shell**.
+Derakht is a shell script that gets **sourced into your running shell**.
 When you type `source ~/bin/mycli`, the script registers a tab-completion
 function. When you press Tab or run a command, the script:
 
@@ -129,7 +129,7 @@ able to:
 - Create symlinks in shared temp directories
 - Modify files in shared dotfile repos
 
-**Do not use audogombleed.sh in environments where you don't trust all users
+**Do not use derakht.sh in environments where you don't trust all users
 on the system.**
 
 ### Supply chain attacks
@@ -304,7 +304,7 @@ silently.
 
 ### For shared systems
 
-**Don't use audogombleed.sh on shared systems** unless you control all users
+**Don't use derakht.sh on shared systems** unless you control all users
 and have verified the home directory permissions. The `eval` model means any
 config file injection is a full shell compromise.
 
@@ -321,5 +321,5 @@ The project's CI pipeline applies these supply chain protections:
 
 ## Reporting security issues
 
-If you find a security vulnerability in audogombleed.sh, open an issue on the
+If you find a security vulnerability in derakht.sh, open an issue on the
 GitHub repository with the `security` label, or contact the author directly.

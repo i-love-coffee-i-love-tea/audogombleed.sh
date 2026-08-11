@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# release.d hook: lint audogombleed.sh with shellcheck.
+# release.d hook: lint derakht.sh with shellcheck.
 #
 # Exports from release.sh: $script
 # Skips gracefully if shellcheck is not installed.

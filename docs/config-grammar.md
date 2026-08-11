@@ -1,6 +1,6 @@
 # Config File Grammar
 
-Formal specification for audogombleed config files. The notation is
+Formal specification for derakht config files. The notation is
 ABNF-like (RFC 5234 semantics, but not strict ABNF).
 
 See [ADR-006](dev/adr/006-config-file-structure.md) for the design

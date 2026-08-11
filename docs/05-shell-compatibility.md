@@ -147,7 +147,7 @@ unquoted variable is expanded.
 
 ## OS support
 
-Audogombleed runs on Linux, macOS, FreeBSD, and Windows (via WSL).
+Derakht runs on Linux, macOS, FreeBSD, and Windows (via WSL).
 
 ### Linux
 
@@ -162,8 +162,8 @@ install bash`). The system bash (3.2) is **not supported**.
 
 Distribution via Homebrew:
 
-    brew tap i-love-coffee-i-love-tea/audogombleed
-    brew install audogombleed
+    brew tap i-love-coffee-i-love-tea/derakht-cli
+    brew install derakht
 
 ### FreeBSD
 

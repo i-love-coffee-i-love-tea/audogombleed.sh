@@ -5,7 +5,7 @@
 # Tests that shell variable updates are reflected in subsequent completions under fish.
 # Proves: set variable -> complete -> update variable -> complete shows different items.
 #
-# In audogombleed, $variable references in [commands] are resolved from ENVIRON
+# In derakht, $variable references in [commands] are resolved from ENVIRON
 # at AWK parse time.  The config [env] section re-exports on every source,
 # so to change the value between completions we must rewrite the config file
 # (which also busts the mtime cache).

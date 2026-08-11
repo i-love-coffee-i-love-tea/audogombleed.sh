@@ -9,20 +9,20 @@ set -euo pipefail
 #
 # The .deb is placed in the parent directory.
 # Upload to GitHub Releases:
-#   gh release create v1.3.0 ../audogombleed_1.3.0_all.deb
+#   gh release create v1.3.0 ../derakht-cli_1.3.0_all.deb
 
 sign=false
 if [ "${1:-}" = "--sign" ]; then
     sign=true
 fi
 
-version=$(grep '^__CLI_VERSION=' audogombleed.sh | cut -d'"' -f2)
+version=$(grep '^__CLI_VERSION=' derakht.sh | cut -d'"' -f2)
 if [ -z "$version" ]; then
-    echo "error: could not read version from audogombleed.sh"
+    echo "error: could not read version from derakht.sh"
     exit 1
 fi
 
-echo "Building audogombleed ${version}..."
+echo "Building derakht-cli ${version}..."
 
 if $sign; then
     # Check for GPG key matching the maintainer email in debian/control
@@ -37,7 +37,7 @@ else
     dpkg-buildpackage -us -uc -b 2>&1
 fi
 
-deb="../audogombleed_${version}_all.deb"
+deb="../derakht-cli_${version}_all.deb"
 if [ ! -f "$deb" ]; then
     echo "error: .deb not found at $deb"
     exit 1

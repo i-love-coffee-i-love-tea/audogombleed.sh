@@ -1,10 +1,10 @@
-.TH AUDOGOMBLED.SH 1 "2026" "2.1.0" "User Commands"
+.TH DERAKHT.SH 1 "2026" "2.1.0" "User Commands"
 .SH NAME
-audogombleed.sh \- create CLIs with auto\-completable command trees
+derakht.sh \- create CLIs with auto\-completable command trees
 .SH SYNOPSIS
 .B Create a symlink (the filename becomes the CLI name):
 .RS
-ln \-s ~/bin/audogombleed.sh ~/bin/\fICLINAME\fR
+ln \-s ~/bin/derakht.sh ~/bin/\fICLINAME\fR
 .RE
 .PP
 .B Create a config file (must match the symlink name):
@@ -22,7 +22,7 @@ source ~/bin/\fICLINAME\fR
 \fICLINAME\fR [\fIOPTIONS\fR] [\fICOMMAND\fR \&...]
 .RE
 .SH DESCRIPTION
-.B audogombleed.sh
+.B derakht.sh
 is a declarative framework for building shell CLIs with tab completion,
 command abbreviation, help output, and command execution\&. Commands and
 arguments are defined in a plain\-text config file; no coding is required\&.
@@ -45,7 +45,7 @@ Build and install a \&.deb package:
 .RS
 .nf
 \&./build\-deb\-sh
-sudo dpkg \-i \&.\&./audogombleed_<version>_all\&.deb
+sudo dpkg \-i \&.\&./derakht_<version>_all\&.deb
 .fi
 .RE
 For signed distribution:
@@ -59,10 +59,10 @@ Requires
 and
 .BR debhelper .
 After installation, the script is at
-.BR /usr/bin/audogombleed .
+.BR /usr/bin/derakht .
 .SS Option B: Manual download
 Get
-.B audogombleed.sh
+.B derakht.sh
 into a directory of your choice (e\&.g\&.
 .BR ~/bin/ )\&.
 .SS Create CLI symlinks
@@ -71,8 +71,8 @@ becomes the CLI name, determines the config file path, and is used to
 register tab completion:
 .RS
 .nf
-ln \-s /usr/bin/audogombleed ~/bin/mycli    # after \&.deb install
-ln \-s ~/bin/audogombleed.sh ~/bin/mycli    # after manual download
+ln \-s /usr/bin/derakht ~/bin/mycli    # after \&.deb install
+ln \-s ~/bin/derakht.sh ~/bin/mycli    # after manual download
 .fi
 .RE
 .SH GETTING STARTED
@@ -81,13 +81,13 @@ The symlink filename becomes the CLI name, determines the config file
 path, and is used to register tab completion:
 .RS
 .nf
-ln \-s ~/bin/audogombleed.sh ~/bin/mycli
+ln \-s ~/bin/derakht.sh ~/bin/mycli
 .fi
 .RE
 .PP
 Using a symlink (instead of copying the script) means all your CLIs
 share one source file \(em update
-.B audogombleed.sh
+.B derakht.sh
 once and every CLI picks up the new version\&.
 .SS Step 2: Create a config file
 Must be named \fB~/\&.\fICLINAME\fR\fB\&.conf\fR:
@@ -162,8 +162,8 @@ Tab completion always runs in your shell regardless of mode\&.
 Each symlink gets its own config file and variable namespace:
 .RS
 .nf
-ln \-s ~/bin/audogombleed.sh ~/bin/cluster
-ln \-s ~/bin/audogombleed.sh ~/bin/music
+ln \-s ~/bin/derakht.sh ~/bin/cluster
+ln \-s ~/bin/derakht.sh ~/bin/music
 .fi
 .RE
 .I cluster
@@ -1019,7 +1019,7 @@ Don't put secrets in the
 .B [env]
 section\&.
 .IP "6." 4
-.B Don't use audogombleed\&.sh on shared systems
+.B Don't use derakht\&.sh on shared systems
 unless you control all users\&.
 .SH FILES
 .TP
@@ -1229,5 +1229,5 @@ Config file grammar specification:
 .BR docs/config-grammar.md
 .PP
 Full documentation and source code:
-.UR https://github.com/i-love-coffee-i-love-tea/audogombleed.sh
+.UR https://github.com/i-love-coffee-i-love-tea/derakht-cli
 .UE

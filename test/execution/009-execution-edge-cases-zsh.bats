@@ -14,7 +14,7 @@ teardown() {
 	rm -f ~/.testcli.conf
 	cp example.conf ~/.testcli.conf
 	rm -f ./testcli
-	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
 }
 
 # ===================================================================

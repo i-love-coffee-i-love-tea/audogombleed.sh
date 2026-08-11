@@ -1,6 +1,6 @@
 # Developer Guide
 
-This document explains how audogombleed.sh works internally. It covers the
+This document explains how derakht.sh works internally. It covers the
 architecture, the embedded AWK config parser, the tab-completion pipeline,
 command execution, and development workflows.
 
@@ -68,7 +68,7 @@ can additionally use description labels, which aren't supported in bash.
      └────────────┘ └────────────┘ └──────────────┘
 ```
 
-Audogombleed.sh is a single-file shell script (~3200 lines) that serves
+Derakht.sh is a single-file shell script (~3200 lines) that serves
 two completely different roles depending on how it is invoked:
 
 ```
@@ -240,7 +240,7 @@ arguments:
 ## The AWK config parser
 
 The config parser is an embedded AWK script stored as a here-document
-inside `_cli_read_awk_script()` (line ~460 of audogombleed.sh). It is
+inside `_cli_read_awk_script()` (line ~460 of derakht.sh). It is
 written to be POSIX-compatible AWK — no gawk extensions, no `PROCINFO`,
 no `gensub`. This is deliberate: macOS ships BWK awk, and the script
 must work there without installing gawk.
@@ -857,12 +857,12 @@ To run the embedded awk script directly:
     $ cli --cli-run-awk-script output=help command_filter="" do_format=1
 
 The script parameters are described in the comments in the AWK script
-header (lines ~462-502 of audogombleed.sh).
+header (lines ~462-502 of derakht.sh).
 
 
 ## Linting
 
-    $ shellcheck audogombleed.sh
+    $ shellcheck derakht.sh
 
 
 ## Performance tips

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generate code coverage report for audogombleed.sh using kcov.
+# Generate code coverage report for derakht.sh using kcov.
 #
 # Usage:
 #   ./coverage.sh              # run all bash tests with coverage
@@ -46,7 +46,7 @@ echo "Running bash tests with kcov..."
 kcov \
     --bash-method=DEBUG \
     --bash-parse-files-in-dir="$SCRIPT_DIR" \
-    --include-pattern=audogombleed.sh \
+    --include-pattern=derakht.sh \
     --exclude-pattern=test,bats \
     "$COVERAGE_DIR/bash" \
     "$SCRIPT_DIR/test/_bats/bin/bats" "$SCRIPT_DIR/test/*/*-bash.bats "$SCRIPT_DIR/test/*/*-all.bats
@@ -63,22 +63,22 @@ mkdir -p "$COVERAGE_DIR/merged"
 kcov --merge "$COVERAGE_DIR/merged" "$COVERAGE_DIR/bash"
 
 echo ""
-if [ -f "$COVERAGE_DIR/merged/audogombleed.sh/coverage.json" ]; then
+if [ -f "$COVERAGE_DIR/merged/derakht.sh/coverage.json" ]; then
     pct=$(python3 -c "
 import json
-d = json.load(open('$COVERAGE_DIR/merged/audogombleed.sh/coverage.json'))
+d = json.load(open('$COVERAGE_DIR/merged/derakht.sh/coverage.json'))
 print(f\"{d['percent_covered']:.1f}%\")
 " 2>/dev/null || echo "N/A")
     echo "Coverage: $pct"
-    echo "HTML report: $COVERAGE_DIR/merged/audogombleed.sh/index.html"
+    echo "HTML report: $COVERAGE_DIR/merged/derakht.sh/index.html"
 else
     echo "Warning: no coverage data generated. Check kcov output above."
 fi
 
-if $OPEN_REPORT && [ -f "$COVERAGE_DIR/merged/audogombleed.sh/index.html" ]; then
+if $OPEN_REPORT && [ -f "$COVERAGE_DIR/merged/derakht.sh/index.html" ]; then
     if [ "$(uname)" = "Darwin" ]; then
-        open "$COVERAGE_DIR/merged/audogombleed.sh/index.html"
+        open "$COVERAGE_DIR/merged/derakht.sh/index.html"
     else
-        xdg-open "$COVERAGE_DIR/merged/audogombleed.sh/index.html" 2>/dev/null || true
+        xdg-open "$COVERAGE_DIR/merged/derakht.sh/index.html" 2>/dev/null || true
     fi
 fi

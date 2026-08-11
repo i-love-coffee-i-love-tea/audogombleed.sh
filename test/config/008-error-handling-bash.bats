@@ -16,7 +16,7 @@ teardown() {
 	rm -rf /tmp/err-test-dir-* 2>/dev/null || true
 	rm -f ~/.testcli.conf
 	cp example.conf ~/.testcli.conf
-	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
 	source ./testcli
 }
 
@@ -25,7 +25,7 @@ teardown() {
 # ===================================================================
 
 @test "bash: CLI name with dots is accepted and executes" {
-    ln -sf audogombleed.sh ./fancy.cli
+    ln -sf derakht.sh ./fancy.cli
     printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy.cli.conf
     run ./fancy.cli greet
     assert_success
@@ -34,7 +34,7 @@ teardown() {
 }
 
 @test "bash: CLI name with dashes is accepted and executes" {
-    ln -sf audogombleed.sh ./fancy-cli
+    ln -sf derakht.sh ./fancy-cli
     printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy-cli.conf
     run ./fancy-cli greet
     assert_success
@@ -43,7 +43,7 @@ teardown() {
 }
 
 @test "bash: CLI name with underscores is accepted and executes" {
-    ln -sf audogombleed.sh ./fancy_cli
+    ln -sf derakht.sh ./fancy_cli
     printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy_cli.conf
     run ./fancy_cli greet
     assert_success
@@ -51,8 +51,8 @@ teardown() {
     rm -f ./fancy_cli ~/.fancy_cli.conf
 }
 
-@test "bash: direct execution as audogombleed.sh exits 49" {
-    run ./audogombleed.sh greet
+@test "bash: direct execution as derakht.sh exits 49" {
+    run ./derakht.sh greet
     assert_failure 49
     assert_line --partial "not intended to be called directly"
 }

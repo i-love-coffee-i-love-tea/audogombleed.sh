@@ -1,7 +1,7 @@
-class Audogombleed < Formula
+class DerakhtCli < Formula
   desc "Create CLIs with auto-completable command trees — no coding required"
-  homepage "https://github.com/i-love-coffee-i-love-tea/audogombleed.sh"
-  url "https://github.com/i-love-coffee-i-love-tea/audogombleed.sh/archive/refs/tags/v2.1.0.tar.gz"
+  homepage "https://github.com/i-love-coffee-i-love-tea/derakht-cli"
+  url "https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v2.1.0.tar.gz"
   sha256 ""
   license "BSD-2-Clause"
 
@@ -9,11 +9,11 @@ class Audogombleed < Formula
   depends_on "gawk"
 
   def install
-    bin.install "audogombleed.sh" => "audogombleed"
-    man1.install "audogombleed.1"
+    bin.install "derakht.sh" => "derakht"
+    man1.install "derakht.1"
   end
 
   test do
-    system "#{bin}/audogombleed", "--version"
+    system "#{bin}/derakht", "--version"
   end
 end

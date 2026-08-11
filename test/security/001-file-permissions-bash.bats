@@ -21,7 +21,7 @@ teardown() {
 	rm -rf /tmp/perm-test-dir-* 2>/dev/null || true
 	rm -f ~/.testcli.conf
 	cp example.conf ~/.testcli.conf
-	ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
+	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
 	source ./testcli
 }
 

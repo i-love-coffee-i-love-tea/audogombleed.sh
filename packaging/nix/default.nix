@@ -1,12 +1,12 @@
 { lib, stdenvNoCC, fetchFromGitHub, bash, gawk, makeWrapper }:
 
 stdenvNoCC.mkDerivation rec {
-  pname = "audogombleed";
+  pname = "derakht-cli";
   version = "2.1.0";
 
   src = fetchFromGitHub {
     owner = "i-love-coffee-i-love-tea";
-    repo = "audogombleed.sh";
+    repo = "derakht-cli";
     rev = "v${version}";
     sha256 = ""; # fill in after first build
   };
@@ -16,11 +16,11 @@ stdenvNoCC.mkDerivation rec {
   installPhase = ''
     runHook preInstall
 
-    install -Dm755 audogombleed.sh $out/bin/audogombleed
-    install -Dm644 audogombleed.1 $out/share/man/man1/audogombleed.1
+    install -Dm755 derakht.sh $out/bin/derakht
+    install -Dm644 derakht.1 $out/share/man/man1/derakht.1
     install -Dm644 LICENSE $out/share/licenses/$pname/LICENSE
 
-    wrapProgram $out/bin/audogombleed \
+    wrapProgram $out/bin/derakht \
       --prefix PATH : ${lib.makeBinPath [ bash gawk ]}
 
     runHook postInstall
@@ -28,7 +28,7 @@ stdenvNoCC.mkDerivation rec {
 
   meta = with lib; {
     description = "Create CLIs with auto-completion, abbreviation and built-in help from config";
-    homepage = "https://github.com/i-love-coffee-i-love-tea/audogombleed.sh";
+    homepage = "https://github.com/i-love-coffee-i-love-tea/derakht-cli";
     license = licenses.bsd2;
     maintainers = [ ];
     platforms = platforms.unix;

@@ -194,7 +194,7 @@ Modify the AWK script to add `output=command_structure`:
     as-is instead of calling `expand_dynamic_commands`
   - Format: `command_prefix dynamic_word`
 
-**Files**: `audogombleed.sh` (AWK script section, around line 1350)
+**Files**: `derakht.sh` (AWK script section, around line 1350)
 
 ### Step 2: Add `command_functions_for` AWK output mode
 
@@ -204,13 +204,13 @@ command filter:
 - Similar to `command_word_functions` but filters by command prefix
 - Uses `command_filter` parameter to match
 
-**Files**: `audogombleed.sh` (AWK script section, around line 675)
+**Files**: `derakht.sh` (AWK script section, around line 675)
 
 ### Step 3: Implement `_cli_read_command_structure()`
 
 New bash function that reads and caches the command structure:
 
-**Files**: `audogombleed.sh` (near `_cli_read_command_list`, line 442)
+**Files**: `derakht.sh` (near `_cli_read_command_list`, line 442)
 
 ### Step 4: Implement `_cli_match_command_with_structure()`
 
@@ -220,7 +220,7 @@ New bash function that matches user input against the command structure:
 - Returns: matched command prefix, whether it has dynamic words, which &functions
   are needed
 
-**Files**: `audogombleed.sh` (near `_cli_is_command_complete`, line 1825)
+**Files**: `derakht.sh` (near `_cli_is_command_complete`, line 1825)
 
 ### Step 5: Implement `_cli_load_command_word_functions_filtered()`
 
@@ -241,7 +241,7 @@ _cli_load_command_word_functions_filtered() {
 }
 ```
 
-**Files**: `audogombleed.sh` (near `_cli_load_command_word_functions`, line 3136)
+**Files**: `derakht.sh` (near `_cli_load_command_word_functions`, line 3136)
 
 ### Step 6: Modify completion entry point
 
@@ -260,7 +260,7 @@ _cli_load_command_word_functions_filtered "$_funcs_needed"
 _cli_read_command_list  # re-expand with new &function results
 ```
 
-**Files**: `audogombleed.sh` (completion function, around line 2880)
+**Files**: `derakht.sh` (completion function, around line 2880)
 
 ### Step 7: Update execution path
 
@@ -269,7 +269,7 @@ Apply the same optimization to `_cli_execute()` (line 3164):
 - Determine command from args first
 - Call only relevant &functions
 
-**Files**: `audogombleed.sh` (`_cli_execute`, line 3164)
+**Files**: `derakht.sh` (`_cli_execute`, line 3164)
 
 ### Step 8: Update ADR 001
 
