@@ -2314,54 +2314,26 @@ _cli_load_config_environment() {
 			_cli_log 4 "include_file: '$include_file'"
 			_cli_log 4 "include_parent_command: '$include_parent_command'"
 		else
-			# special handling for CLI config variable assignments
-			# beginning with __CLI_
-			# _cli_is_one_word needs word splitting to count args
-			# shellcheck disable=SC2086
-			if _cli_is_one_word $env_line; then
-				if [[ "$env_line" =~ __CLI_.*= ]]; then
-					varname="${env_line%%=*}"
-					# remove __CLI_ prefix
-					varname="${varname##__CLI_}"
-					# validate: only allow safe characters in variable names
-					if [[ ! "$varname" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
-						_cli_error "config error: invalid variable name '$varname'"
-						continue
-					fi
-					value="${env_line#*=}"
-					# strip surrounding quotes (eval did this implicitly)
-					value="${value#\"}"
-					value="${value%\"}"
-					value="${value#\'}"
-					value="${value%\'}"
-					local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
-					_cli_log 4 "assigning \"__CLI_${_safe_progname}_${varname}=$value\""
-					printf -v "__CLI_${_safe_progname}_${varname}" '%s' "$value"
-				else
-					# Single-word non-__CLI_ line — try printf -v for simple VAR=value
-					if [[ "$env_line" =~ ^[A-Za-z_][A-Za-z0-9_]*= ]] && [[ "$env_line" != *\\ ]]; then
-						varname="${env_line%%=*}"
-						value="${env_line#*=}"
-						value="${value#\"}"
-						value="${value%\"}"
-						value="${value#\'}"
-						value="${value%\'}"
-						printf -v "$varname" '%s' "$value"
-					else
-						script="${script}
-$env_line"
-					fi
+			# __CLI_CFG_* assignments: progname-namespaced via printf -v
+			if [[ "$env_line" =~ ^__CLI_CFG_[A-Za-z_][A-Za-z0-9_]*= ]]; then
+				varname="${env_line%%=*}"
+				varname="${varname##__CLI_}"
+				if [[ ! "$varname" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+					_cli_error "config error: invalid variable name '$varname'"
+					continue
 				fi
+				value="${env_line#*=}"
+				value="${value#\"}"
+				value="${value%\"}"
+				value="${value#\'}"
+				value="${value%\'}"
+				local _safe_progname="${__CLI_PROGNAME//[^a-zA-Z0-9_]/_}"
+				_cli_log 4 "assigning \"__CLI_${_safe_progname}_${varname}=$value\""
+				printf -v "__CLI_${_safe_progname}_${varname}" '%s' "$value"
 			else
-				# Multi-word line — check if it's a simple export VAR=value
-				if [[ "$env_line" =~ ^export\ [A-Za-z_][A-Za-z0-9_]*= ]] && [[ "$env_line" =~ ^export\ [A-Za-z_][A-Za-z0-9_]*=[^\;\|\&\(\)\`]*$ ]] && [[ "$env_line" != *\\ ]]; then
-					# Safe: export VAR=value — use source so export runs
-					script="${script}
+				# Everything else: source as shell code
+				script="${script}
 $env_line"
-				else
-					script="${script}
-$env_line"
-				fi
 				_cli_log 4 "script line: $env_line"
 			fi
 		fi

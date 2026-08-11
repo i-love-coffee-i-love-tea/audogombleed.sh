@@ -193,7 +193,7 @@ function _cli_load_config_environment
                 set -l varname $parts[1]
                 set -l value $parts[2..-1]
                 set value (string trim -c '"' -- (string trim -c "'" -- $value))
-                set -gx $varname $value
+                eval "set -gx $varname $value"
                 continue
             end
 

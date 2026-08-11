@@ -36,6 +36,8 @@
 - Fix exit codes 52 and 53 (placeholder mismatch and missing required args now work correctly)
 - Fix eval quoting bug in completion
 - Fix `include_commands_from` under zsh (word splitting via `SH_WORD_SPLIT`)
+- Fix `[env]` variable expansion inconsistency in bash/zsh: `VAR=$OTHER` now expands `$OTHER` (was literal), matching `export VAR=$OTHER` behavior
+- Fix `[env]` variable expansion in fish: `export VAR=$OTHER` now expands `$OTHER`, matching bash/zsh behavior
 - Fix macOS portability: `stat`, `mktemp`, `sed -i`, `awk` (BWK vs gawk), and benchmark timing (`date +%s%N`)
 - Fix FreeBSD portability: `stat` syntax, shebang, and pipe/regex detection in zsh completion
 - Fix argument completion when preceding file argument has spaces in filename
