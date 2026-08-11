@@ -1,6 +1,6 @@
 # Maintainer: Steffen Kremsler <github.com@gobuki.org>
 pkgname=derakht-cli
-pkgver=2.1.0
+pkgver=2.0.0
 pkgrel=1
 pkgdesc="Create CLIs with auto-completion, abbreviation and built-in help from config"
 arch=('any')

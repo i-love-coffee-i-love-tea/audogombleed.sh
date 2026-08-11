@@ -143,18 +143,14 @@ approach, not less.
 The only way to make "AWK does everything" work is to drop `eval` args,
 system types, and scoped `&function` loading. These are core features.
 
-## Consequences
+### Consequences
 
-- The AWK/shell split is preserved as a deliberate architectural choice
-- `eval` args, system types, and `&function` expansion continue to work
-  natively in shell without subprocess round-trips
-- Scoped `&function` loading (ADR-010) remains effective
-- Performance at 10K commands is bounded by shell's interpreted string
-  comparison — this is an accepted tradeoff for feature completeness
-- Real-world configs (20-200 commands) perform within "good" thresholds
-- Future performance work should focus on reducing the number of
-  `__CLI_CONFIG` scans per operation, not on changing the matching
-  language
+- Good, because `eval` args, system types, and `&function` expansion work natively in shell without subprocess round-trips
+- Good, because scoped `&function` loading (ADR-010) remains effective — shell matches the static prefix, calls the function, then re-matches
+- Good, because each layer (AWK parsing, shell matching) is independently testable
+- Neutral, because real-world configs (20-200 commands) perform within "good" thresholds (<100ms) despite shell's interpreted string comparison
+- Bad, because performance at 10K commands is bounded by shell's O(N) string comparison (~460ms vs. ~50ms theoretical with AWK matching)
+- Neutral, because future performance work should focus on reducing the number of `__CLI_CONFIG` scans per operation, not on changing the matching language
 
 ## References
 

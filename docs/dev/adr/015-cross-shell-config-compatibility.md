@@ -384,21 +384,16 @@ Fish users must duplicate ALL env settings in `[env.fish]`. Nothing shared.
 - `include_commands_from` must be duplicated
 - Defeats the purpose of a single config file
 
-## Consequences
+### Consequences
 
-- The config format gains an optional `[env.fish]` section
-- The AWK parser must recognize `[env.fish]` as a section header (passes
-  through to fish wrapper, ignored by bash/zsh wrappers)
-- Command expressions in `[commands]` are portable IF they use external
-  commands, pipes, and redirects only
-- `eval`-type and `&function`-type features require dual function
-  definitions in `[env]` and `[env.fish]` for cross-shell configs
-- `$variable` expansions are portable if the variable is set via simple
-  `export VAR=value` in `[env]`
-- The fish wrapper reads `[env]` + `[env.fish]`; bash/zsh wrappers read
-  `[env]` only (no changes to existing wrappers)
-- Authors targeting a single shell face no restrictions — the config
-  format is unchanged for them
+- Good, because a single config file serves bash, zsh, and fish audiences
+- Good, because existing bash/zsh wrappers are unaffected — they simply ignore `[env.fish]`
+- Good, because `$variable` expansions are fully portable when set via simple `export VAR=value` in `[env]`
+- Good, because authors targeting a single shell face no restrictions — the config format is unchanged for them
+- Bad, because `eval`-type and `&function`-type features require dual function definitions in `[env]` and `[env.fish]` for cross-shell configs
+- Bad, because nothing prevents an author from writing non-portable expressions and claiming the config is cross-shell
+- Neutral, because command expressions in `[commands]` are portable only if they use external commands, pipes, and redirects
+- Neutral, because the AWK parser must recognize `[env.fish]` as a section header (minimal change)
 
 ## What this ADR is missing
 

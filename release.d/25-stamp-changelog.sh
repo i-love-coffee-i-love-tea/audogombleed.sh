@@ -18,6 +18,12 @@ if ! grep -q '^## Unreleased' "$changelog"; then
 	exit 0
 fi
 
+# Skip if the version section already exists (previous run stamped it)
+if grep -q "^## $version" "$changelog"; then
+	echo "Version $version already in $changelog, skipping stamping"
+	exit 0
+fi
+
 today=$(date +%Y-%m-%d)
 
 # Replace "## Unreleased" with a fresh Unreleased header + new version header.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 2.0.0 (2026-08-11)
+
 ### Features
 
 - Add fish shell support: config loading, tab completion, and command execution

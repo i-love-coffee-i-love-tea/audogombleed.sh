@@ -174,7 +174,7 @@ deploy-staging: echo "deploying to staging"
 CONF
     source ./testcli
 
-    run ./testcli d
+    run bash -c 'echo | ./testcli d'
     assert_line --partial "Executing command"
 }
 

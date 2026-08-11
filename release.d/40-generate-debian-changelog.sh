@@ -30,7 +30,7 @@ fi
 section=$(awk -v ver="$version" '
     /^## / {
         if (found) exit
-        if ($0 == "## " ver) found = 1
+        if ($2 == ver) found = 1
         next
     }
     found { print }
