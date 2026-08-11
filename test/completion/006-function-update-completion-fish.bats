@@ -9,9 +9,9 @@
 # which captures stdout into _cli_<funcname>_result.  AWK reads that from ENVIRON.
 # Rewriting the config (mtime change) forces re-source + re-execution of the function.
 
-setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/completion/006-function-update-completion-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # Helper: write a config with a function that echoes its body and a command using it.
 _write_func_config() {

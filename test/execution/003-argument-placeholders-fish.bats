@@ -5,9 +5,9 @@
 # Tests argument placeholders \0, \1, \2 etc. (fish)
 #
 
-setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/execution/003-argument-placeholders-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 @test "fish: \\0 is replaced by last command word" {
     run _fish_run echo first second third

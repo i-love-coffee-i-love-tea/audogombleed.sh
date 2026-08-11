@@ -19,7 +19,7 @@ teardown_file() {
     _test_cleanup
     rm -f ~/bin/install-maven-war.sh
 }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/execution/007-command-definitions-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 @test "fish: executed without argument, returns exit code 50" {
     run fish -c 'set -g __CLI_CFG_EXEC_SILENT n; source ./testcli; _cli_execute 2>&1'

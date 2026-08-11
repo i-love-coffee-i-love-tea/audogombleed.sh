@@ -1,9 +1,9 @@
 # vim:et:ts=4:sw=4
 # bats file_tags=category:config, shell:fish
 
-setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="n"; }
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/config/002-awk-output-escaping-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 @test "fish: AWK output escapes double quotes in arg description" {
     cat > ~/.testcli.conf <<'CONF'

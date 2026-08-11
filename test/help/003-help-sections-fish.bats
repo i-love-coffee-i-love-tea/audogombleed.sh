@@ -5,9 +5,9 @@
 # Tests help sections, section headings, and ## detail comments (fish)
 #
 
-setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; cp example.conf ~/.testcli.conf; }
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/help/003-help-sections-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # bats test_tags=id:fish-305
 @test "fish: help shows group heading from # comment" {

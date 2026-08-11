@@ -5,9 +5,9 @@
 # Tests -b/--batch mode (fish)
 #
 
-setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/execution/005-batch-mode-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 @test "fish: batch mode executes command successfully" {
     run _fish_run -b echo first second

@@ -1,9 +1,9 @@
 # vim:et:ts=4:sw=4
 # bats file_tags=category:config, shell:fish
 
-setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="n"; }
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/config/001-awk-config-parser-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 @test "fish: output=command_names finds expected number of commands" {
     run _fish_run --cli-run-awk-command output=command_names

@@ -7,9 +7,9 @@
 #         include errors, empty/malformed configs
 #
 
-setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/config/008-error-handling-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 teardown() {
 	rm -f /tmp/err-test-*.conf /tmp/err-test-*.sh
@@ -32,49 +32,51 @@ WRAPPER
 # ===================================================================
 
 @test "fish: CLI name with dots is accepted and executes" {
-    rm -f ./my.cli
-    cat > ./my.cli <<'WRAPPER'
+    rm -f ./fancy.cli
+    cat > ./fancy.cli <<'WRAPPER'
 #!/usr/bin/env fish
-set -g __CLI_PROGNAME my.cli
+set -g __CLI_PROGNAME fancy.cli
 set -g __cli_wrapper_argv $argv
 source (path dirname (status filename))/audogombleed.fish
 WRAPPER
-    chmod +x ./my.cli
-    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my.cli.conf
-    run fish ./my.cli greet
+    chmod +x ./fancy.cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy.cli.conf
+    run fish ./fancy.cli greet
     assert_success
     assert_output "hello"
-    rm -f ./my.cli ~/.my.cli.conf
+    rm -f ./fancy.cli ~/.fancy.cli.conf
 }
 
 @test "fish: CLI name with dashes is accepted and executes" {
-    cat > ./my-cli <<'WRAPPER'
+    rm -f ./fancy-cli
+    cat > ./fancy-cli <<'WRAPPER'
 #!/usr/bin/env fish
-set -g __CLI_PROGNAME my-cli
+set -g __CLI_PROGNAME fancy-cli
 set -g __cli_wrapper_argv $argv
 source (path dirname (status filename))/audogombleed.fish
 WRAPPER
-    chmod +x ./my-cli
-    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my-cli.conf
-    run fish ./my-cli greet
+    chmod +x ./fancy-cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy-cli.conf
+    run fish ./fancy-cli greet
     assert_success
     assert_output "hello"
-    rm -f ./my-cli ~/.my-cli.conf
+    rm -f ./fancy-cli ~/.fancy-cli.conf
 }
 
 @test "fish: CLI name with underscores is accepted and executes" {
-    cat > ./my_cli <<'WRAPPER'
+    rm -f ./fancy_cli
+    cat > ./fancy_cli <<'WRAPPER'
 #!/usr/bin/env fish
-set -g __CLI_PROGNAME my_cli
+set -g __CLI_PROGNAME fancy_cli
 set -g __cli_wrapper_argv $argv
 source (path dirname (status filename))/audogombleed.fish
 WRAPPER
-    chmod +x ./my_cli
-    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my_cli.conf
-    run fish ./my_cli greet
+    chmod +x ./fancy_cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy_cli.conf
+    run fish ./fancy_cli greet
     assert_success
     assert_output "hello"
-    rm -f ./my_cli ~/.my_cli.conf
+    rm -f ./fancy_cli ~/.fancy_cli.conf
 }
 
 @test "fish: direct execution as audogombleed.sh fails (bash script under fish)" {

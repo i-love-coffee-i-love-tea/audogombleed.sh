@@ -12,45 +12,45 @@ setup()        { load '../_helpers/test-setup'; _test_load; }
 # bats test_tags=id:bash-278
 @test "each CLI has its own config file" {
     # Create a second CLI (remove if exists)
-    rm -f ./testcli2
-    ln -s ./audogombleed.sh ./testcli2
+    rm -f ./fancy-cli
+    ln -s ./audogombleed.sh ./fancy-cli
     
     # Create config for second CLI with a unique command
-    cat > ~/.testcli2.conf <<'EOF'
+    cat > ~/.fancy-cli.conf <<'EOF'
 [env]
 __CLI_CFG_EXEC_SILENT="y"
 
 [commands]
-testcli2-cmd: echo "from testcli2"
+fancy-cli-cmd: echo "from fancy-cli"
 EOF
     
     # Add a different command to first CLI
     echo 'testcli1-cmd: echo "from testcli1"' >> ~/.testcli.conf
     
     source ./testcli
-    source ./testcli2
+    source ./fancy-cli
     
     # Test that each CLI has its own commands
     run ./testcli testcli1-cmd
     assert_success
     assert_output "from testcli1"
     
-    run ./testcli2 testcli2-cmd
+    run ./fancy-cli fancy-cli-cmd
     assert_success
-    assert_output "from testcli2"
+    assert_output "from fancy-cli"
     
     # Cleanup
-    rm -f ./testcli2
-    rm -f ~/.testcli2.conf
+    rm -f ./fancy-cli
+    rm -f ~/.fancy-cli.conf
 }
 
 # bats test_tags=id:bash-279
 @test "CLI config options are isolated per CLI" {
     # Create a second CLI with different config (remove if exists)
-    rm -f ./testcli2
-    ln -s ./audogombleed.sh ./testcli2
+    rm -f ./fancy-cli
+    ln -s ./audogombleed.sh ./fancy-cli
     
-    cat > ~/.testcli2.conf <<'EOF'
+    cat > ~/.fancy-cli.conf <<'EOF'
 [env]
 __CLI_CFG_EXEC_SILENT="y"
 __CLI_CFG_EXEC_ALWAYS_RETURN_0="y"
@@ -59,58 +59,58 @@ __CLI_CFG_EXEC_ALWAYS_RETURN_0="y"
 always-ok: false
 EOF
     
-    source ./testcli2
+    source ./fancy-cli
     
-    # testcli2 should always return 0 even for failing command
-    run ./testcli2 always-ok
+    # fancy-cli should always return 0 even for failing command
+    run ./fancy-cli always-ok
     assert_success
     
     # Cleanup
-    rm -f ./testcli2
-    rm -f ~/.testcli2.conf
+    rm -f ./fancy-cli
+    rm -f ~/.fancy-cli.conf
 }
 
 # bats test_tags=id:bash-280
 @test "CLI functions are namespace isolated" {
     # Create a second CLI with its own commands (remove if exists)
-    rm -f ./testcli2
-    ln -s ./audogombleed.sh ./testcli2
+    rm -f ./fancy-cli
+    ln -s ./audogombleed.sh ./fancy-cli
     
-    cat > ~/.testcli2.conf <<'EOF'
+    cat > ~/.fancy-cli.conf <<'EOF'
 [env]
 __CLI_CFG_EXEC_SILENT="y"
 
 [commands]
-func-cmd: echo "function from testcli2"
+func-cmd: echo "function from fancy-cli"
 EOF
     
     # Add different command to first CLI
     echo 'func-cmd: echo "function from testcli1"' >> ~/.testcli.conf
     
     source ./testcli
-    source ./testcli2
+    source ./fancy-cli
     
     # Test command isolation
     run ./testcli func-cmd
     assert_success
     assert_output "function from testcli1"
     
-    run ./testcli2 func-cmd
+    run ./fancy-cli func-cmd
     assert_success
-    assert_output "function from testcli2"
+    assert_output "function from fancy-cli"
     
     # Cleanup
-    rm -f ./testcli2
-    rm -f ~/.testcli2.conf
+    rm -f ./fancy-cli
+    rm -f ~/.fancy-cli.conf
 }
 
 # bats test_tags=id:bash-281
 @test "CLI completion lists are isolated" {
     # Create a second CLI with different completion options (remove if exists)
-    rm -f ./testcli2
-    ln -s ./audogombleed.sh ./testcli2
+    rm -f ./fancy-cli
+    ln -s ./audogombleed.sh ./fancy-cli
     
-    cat > ~/.testcli2.conf <<'EOF'
+    cat > ~/.fancy-cli.conf <<'EOF'
 [env]
 __CLI_CFG_EXEC_SILENT="y"
 export COMPLETION_OPTIONS="opt-a opt-b opt-c"
@@ -126,18 +126,18 @@ EOF
     echo '    :arg:list:$COMPLETION_OPTIONS' >> ~/.testcli.conf
     
     source ./testcli
-    source ./testcli2
+    source ./fancy-cli
     
     # Test that each CLI uses its own completion options
     run ./testcli complete-cmd opt-x
     assert_success
     assert_output "opt-x"
     
-    run ./testcli2 complete-cmd opt-a
+    run ./fancy-cli complete-cmd opt-a
     assert_success
     assert_output "opt-a"
     
     # Cleanup
-    rm -f ./testcli2
-    rm -f ~/.testcli2.conf
+    rm -f ./fancy-cli
+    rm -f ~/.fancy-cli.conf
 }

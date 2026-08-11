@@ -5,9 +5,9 @@
 # These tests reproduce bugs where array variables are expanded without
 # an index, causing only the first element to be used.
 
-setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/execution/012-shellcheck-fixes-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 teardown() {
 	rm -f ~/.testcli.conf
 	cp example.conf ~/.testcli.conf

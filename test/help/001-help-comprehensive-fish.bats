@@ -15,14 +15,9 @@
 #   - Argument placeholders in help output
 #
 
-setup_file() {
-    load '../_helpers/test-setup'
-    _test_init_fish __CLI_CFG_EXEC_SILENT="y"
-    # install a dedicated test config with all help text types
-    cp test/help-test-config.conf ~/.testcli.conf
-}
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/help/001-help-comprehensive-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # --- global help ---
 

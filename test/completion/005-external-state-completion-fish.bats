@@ -16,6 +16,7 @@ setup_file() {
     load '../_helpers/test-setup'
     _test_init_fish __CLI_CFG_EXEC_SILENT="y"
     # create the external helper script used by the function test
+    rm -f ./_ext_word_helper
     cat > ./_ext_word_helper <<'HELPER'
 #!/usr/bin/env bash
 echo "${EXT_WORD_SOURCE:-default}"
@@ -27,7 +28,7 @@ teardown_file() {
     _test_cleanup
     rm -f ./_ext_word_helper
 }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/completion/005-external-state-completion-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # --- external variable changes ---
 

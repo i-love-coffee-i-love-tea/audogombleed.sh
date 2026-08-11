@@ -10,9 +10,9 @@
 # so to change the value between completions we must rewrite the config file
 # (which also busts the mtime cache).
 
-setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/completion/009-variable-update-completion-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # Helper: write a config with a variable set to $1 and a command using it.
 _write_var_config() {

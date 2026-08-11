@@ -16,6 +16,7 @@ setup_file() {
     load '../_helpers/test-setup'
     _test_init __CLI_CFG_EXEC_SILENT="y"
     # create the external helper script used by the function test
+    rm -f ./_ext_word_helper
     cat > ./_ext_word_helper <<'HELPER'
 #!/usr/bin/env bash
 echo "${EXT_WORD_SOURCE:-default}"

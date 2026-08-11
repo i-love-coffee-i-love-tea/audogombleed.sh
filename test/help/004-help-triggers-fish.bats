@@ -5,9 +5,9 @@
 #	Tests help triggers under fish: ?, -h, -?
 #
 
-setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; cp example.conf ~/.testcli.conf; }
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/help/004-help-triggers-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # bats test_tags=id:fish-312
 @test "fish: help trigger ? shows all commands" {

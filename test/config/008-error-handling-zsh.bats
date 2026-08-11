@@ -25,12 +25,12 @@ teardown() {
 
 # bats test_tags=id:zsh-082
 @test "zsh: CLI name with dashes is accepted and executes" {
-    ln -sf audogombleed.sh ./my-cli
-    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my-cli.conf
-    run zsh ./my-cli greet
+    ln -sf audogombleed.sh ./fancy-cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy-cli.conf
+    run zsh ./fancy-cli greet
     assert_success
     assert_output "hello"
-    rm -f ./my-cli ~/.my-cli.conf
+    rm -f ./fancy-cli ~/.fancy-cli.conf
 }
 
 # bats test_tags=id:zsh-083
@@ -38,7 +38,7 @@ teardown() {
     rm -f ./testcli
     ln -sf "${CLI_UNDER_TEST:-./audogombleed.sh}" ./testcli
     source ./testcli
-    __CLI_PROGNAME="my_cli"
+    __CLI_PROGNAME="fancy_cli"
     run _cli_validate_progname
     assert_success
 }
@@ -134,12 +134,12 @@ CONF
 
 # bats test_tags=id:zsh-089
 @test "zsh: CLI name with dots is accepted and executes" {
-    ln -sf audogombleed.sh ./my.cli
-    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my.cli.conf
-    run zsh ./my.cli greet
+    ln -sf audogombleed.sh ./fancy.cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy.cli.conf
+    run zsh ./fancy.cli greet
     assert_success
     assert_output "hello"
-    rm -f ./my.cli ~/.my.cli.conf
+    rm -f ./fancy.cli ~/.fancy.cli.conf
 }
 
 @test "zsh: direct execution as audogombleed.sh exits 49" {

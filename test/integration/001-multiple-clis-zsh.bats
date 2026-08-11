@@ -11,8 +11,8 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # bats test_tags=id:zsh-200
 @test "zsh: each CLI has its own config file" {
-    rm -f ./testcli2
-    cat > ./testcli2 <<'WRAPPER'
+    rm -f ./fancy-cli
+    cat > ./fancy-cli <<'WRAPPER'
 #!/usr/bin/env zsh
 autoload -Uz compinit && compinit -u
 _cli_original_name="$0"
@@ -21,14 +21,14 @@ source "${0:A:h}/audogombleed.sh"
 __CLI_PROGNAME="${0##*/}"
 _cli_execute "$@"
 WRAPPER
-    chmod +x ./testcli2
+    chmod +x ./fancy-cli
 
-    cat > ~/.testcli2.conf <<'EOF'
+    cat > ~/.fancy-cli.conf <<'EOF'
 [env]
 __CLI_CFG_EXEC_SILENT="y"
 
 [commands]
-testcli2-cmd-zsh: echo "from testcli2"
+fancy-cli-cmd-zsh: echo "from fancy-cli"
 EOF
     echo 'testcli1-cmd-zsh: echo "from testcli1"' >> ~/.testcli.conf
 
@@ -36,16 +36,16 @@ EOF
     assert_success
     assert_output "from testcli1"
 
-    run zsh ./testcli2 testcli2-cmd-zsh
+    run zsh ./fancy-cli fancy-cli-cmd-zsh
     assert_success
-    assert_output "from testcli2"
+    assert_output "from fancy-cli"
 
-    rm -f ./testcli2 ~/.testcli2.conf
+    rm -f ./fancy-cli ~/.fancy-cli.conf
 }
 
 @test "zsh: CLI functions are namespace isolated" {
-    rm -f ./testcli2
-    cat > ./testcli2 <<'WRAPPER'
+    rm -f ./fancy-cli
+    cat > ./fancy-cli <<'WRAPPER'
 #!/usr/bin/env zsh
 autoload -Uz compinit && compinit -u
 _cli_original_name="$0"
@@ -54,14 +54,14 @@ source "${0:A:h}/audogombleed.sh"
 __CLI_PROGNAME="${0##*/}"
 _cli_execute "$@"
 WRAPPER
-    chmod +x ./testcli2
+    chmod +x ./fancy-cli
 
-    cat > ~/.testcli2.conf <<'EOF'
+    cat > ~/.fancy-cli.conf <<'EOF'
 [env]
 __CLI_CFG_EXEC_SILENT="y"
 
 [commands]
-func-cmd-iso-zsh: echo "function from testcli2"
+func-cmd-iso-zsh: echo "function from fancy-cli"
 EOF
 
     echo 'func-cmd-iso-zsh: echo "function from testcli1"' >> ~/.testcli.conf
@@ -70,17 +70,17 @@ EOF
     assert_success
     assert_output "function from testcli1"
 
-    run zsh ./testcli2 func-cmd-iso-zsh
+    run zsh ./fancy-cli func-cmd-iso-zsh
     assert_success
-    assert_output "function from testcli2"
+    assert_output "function from fancy-cli"
 
-    rm -f ./testcli2 ~/.testcli2.conf
+    rm -f ./fancy-cli ~/.fancy-cli.conf
 }
 
 # bats test_tags=id:zsh-201
 @test "zsh: CLI config options are isolated per CLI" {
-    rm -f ./testcli2
-    cat > ./testcli2 <<'WRAPPER'
+    rm -f ./fancy-cli
+    cat > ./fancy-cli <<'WRAPPER'
 #!/usr/bin/env zsh
 autoload -Uz compinit && compinit -u
 _cli_original_name="$0"
@@ -89,9 +89,9 @@ source "${0:A:h}/audogombleed.sh"
 __CLI_PROGNAME="${0##*/}"
 _cli_execute "$@"
 WRAPPER
-    chmod +x ./testcli2
+    chmod +x ./fancy-cli
 
-    cat > ~/.testcli2.conf <<'EOF'
+    cat > ~/.fancy-cli.conf <<'EOF'
 [env]
 __CLI_CFG_EXEC_SILENT="y"
 __CLI_CFG_EXEC_ALWAYS_RETURN_0="y"
@@ -99,15 +99,15 @@ __CLI_CFG_EXEC_ALWAYS_RETURN_0="y"
 [commands]
 always-ok-zsh: false
 EOF
-    run zsh ./testcli2 always-ok-zsh
+    run zsh ./fancy-cli always-ok-zsh
     assert_success
 
-    rm -f ./testcli2 ~/.testcli2.conf
+    rm -f ./fancy-cli ~/.fancy-cli.conf
 }
 
 @test "zsh: CLI completion lists are namespace isolated" {
-    rm -f ./testcli2
-    cat > ./testcli2 <<'WRAPPER'
+    rm -f ./fancy-cli
+    cat > ./fancy-cli <<'WRAPPER'
 #!/usr/bin/env zsh
 autoload -Uz compinit && compinit -u
 _cli_original_name="$0"
@@ -116,9 +116,9 @@ source "${0:A:h}/audogombleed.sh"
 __CLI_PROGNAME="${0##*/}"
 _cli_execute "$@"
 WRAPPER
-    chmod +x ./testcli2
+    chmod +x ./fancy-cli
 
-    cat > ~/.testcli2.conf <<'EOF'
+    cat > ~/.fancy-cli.conf <<'EOF'
 [env]
 __CLI_CFG_EXEC_SILENT="y"
 export COMPLETION_OPTIONS="opt-a opt-b opt-c"
@@ -136,9 +136,9 @@ EOF
     assert_success
     assert_output "opt-x"
 
-    run zsh ./testcli2 complete-cmd-iso-zsh opt-a
+    run zsh ./fancy-cli complete-cmd-iso-zsh opt-a
     assert_success
     assert_output "opt-a"
 
-    rm -f ./testcli2 ~/.testcli2.conf
+    rm -f ./fancy-cli ~/.fancy-cli.conf
 }

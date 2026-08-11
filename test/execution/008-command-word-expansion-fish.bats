@@ -5,40 +5,9 @@
 # Tests command word expansion: $variable, &function, and list|expansion under fish
 #
 
-setup_file() {
-    load '../_helpers/test-setup'
-    _test_init_fish __CLI_CFG_EXEC_SILENT="y"
-    # Inject fish-native test functions and variable into [env.fish] section
-    sed -i '/^\[commands\]/i\
-[env.fish]\
-function single_word_func\
-    echo "alpha"\
-end\
-function multi_word_func\
-    echo "alpha beta gamma"\
-end\
-function empty_func\
-    # intentionally empty\
-end\
-' ~/.testcli.conf
-    # Set the exported variable
-    sed -i '/^\[env\]/a export __TEST_EXPANSION_WORDS="one two three"' ~/.testcli.conf
-    # Append test commands
-    cat >> ~/.testcli.conf <<'CMDS'
-dollar-expansion
-    $__TEST_EXPANSION_WORDS: echo \0
-list-expansion-words
-    one|two|three: echo \0
-single-word-func
-    &single_word_func: echo \0
-multi-word-func
-    &multi_word_func: echo \0
-empty-func
-    &empty_func: echo \0
-CMDS
-}
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/execution/008-command-word-expansion-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # --- $variable expansion ---
 

@@ -39,11 +39,26 @@ _test_load_zsh() {
 _test_init_fish() {
 	load '../_helpers/common-setup'
 	load '../_helpers/common-setup-fish'
-	_common_setup_fish "$@"
+	_common_setup_fish
 }
 
-# Call from setup() in fish tests — loads bats-support, bats-assert, and fish-helpers.
+# Call from setup() in fish tests — copies config from _configs/ and loads helpers.
+# Config files are immutable source of truth in test/_configs/<category>/<test>.conf.
 _test_load_fish() {
+	local project_root category testname confpath
+
+	project_root="$(cd "$(dirname "$(dirname "$(dirname "${BATS_TEST_FILENAME}")")")" && pwd)"
+	category="$(basename "$(dirname "${BATS_TEST_FILENAME}")")"
+	testname="$(basename "${BATS_TEST_FILENAME}" .bats)"
+	confpath="${project_root}/test/_configs/${category}/${testname}.conf"
+
+	if [ ! -f "$confpath" ]; then
+		echo "ERROR: config file not found: $confpath" >&2
+		return 1
+	fi
+
+	cp "$confpath" ~/.testcli.conf
+
 	load '../_test_helper/bats-support/load'
 	load '../_test_helper/bats-assert/load'
 	load '../_helpers/fish-helpers'

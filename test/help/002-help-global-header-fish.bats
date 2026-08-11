@@ -5,14 +5,9 @@
 # Tests for global help header (fish)
 #
 
-setup_file() {
-    load '../_helpers/test-setup'
-    _test_init_fish __CLI_CFG_EXEC_SILENT="y"
-    # install a dedicated test config with global header
-    cp test/help-test-config.conf ~/.testcli.conf
-}
+setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/help/002-help-global-header-fish.conf" ~/.testcli.conf; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # bats test_tags=id:fish-298
 @test "fish: global help header appears at top of output" {

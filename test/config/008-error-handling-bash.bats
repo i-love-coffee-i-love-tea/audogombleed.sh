@@ -25,30 +25,30 @@ teardown() {
 # ===================================================================
 
 @test "bash: CLI name with dots is accepted and executes" {
-    ln -sf audogombleed.sh ./my.cli
-    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my.cli.conf
-    run ./my.cli greet
+    ln -sf audogombleed.sh ./fancy.cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy.cli.conf
+    run ./fancy.cli greet
     assert_success
     assert_output "hello"
-    rm -f ./my.cli ~/.my.cli.conf
+    rm -f ./fancy.cli ~/.fancy.cli.conf
 }
 
 @test "bash: CLI name with dashes is accepted and executes" {
-    ln -sf audogombleed.sh ./my-cli
-    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my-cli.conf
-    run ./my-cli greet
+    ln -sf audogombleed.sh ./fancy-cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy-cli.conf
+    run ./fancy-cli greet
     assert_success
     assert_output "hello"
-    rm -f ./my-cli ~/.my-cli.conf
+    rm -f ./fancy-cli ~/.fancy-cli.conf
 }
 
 @test "bash: CLI name with underscores is accepted and executes" {
-    ln -sf audogombleed.sh ./my_cli
-    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my_cli.conf
-    run ./my_cli greet
+    ln -sf audogombleed.sh ./fancy_cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.fancy_cli.conf
+    run ./fancy_cli greet
     assert_success
     assert_output "hello"
-    rm -f ./my_cli ~/.my_cli.conf
+    rm -f ./fancy_cli ~/.fancy_cli.conf
 }
 
 @test "bash: direct execution as audogombleed.sh exits 49" {
