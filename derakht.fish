@@ -1698,6 +1698,8 @@ function _cli_load_config_environment
                 set -l varname $parts[1]
                 set -l value $parts[2..-1]
                 set value (string trim -c '"' -- (string trim -c "'" -- $value))
+                # Escape backslashes so eval preserves them, while still expanding $VAR
+                set value (string replace -a '\\' '\\\\' -- $value)
                 eval "set -gx $varname $value"
                 continue
             end
@@ -2169,6 +2171,7 @@ function _cli_complete_arg
 
         case STRING
             test -n "$word"; and echo $word
+            return 0
 
         case INTEGER
             string match -qr '^\d+$' -- $word; and echo $word

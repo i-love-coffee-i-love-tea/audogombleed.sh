@@ -2369,7 +2369,7 @@ _cli_load_config_environment() {
 			include_files+=("$include_file|$include_parent_command")
 			_cli_log 4 "include_file: '$include_file'"
 			_cli_log 4 "include_parent_command: '$include_parent_command'"
-		else
+		elif [[ "$env_line" =~ ^__CLI_CFG ]]; then
 			# __CLI_CFG_* assignments: progname-namespaced via printf -v
 			if [[ "$env_line" =~ ^__CLI_CFG_[A-Za-z_][A-Za-z0-9_]*= ]]; then
 				varname="${env_line%%=*}"
@@ -2387,11 +2387,16 @@ _cli_load_config_environment() {
 				_cli_log 4 "assigning \"__CLI_${_safe_progname}_${varname}=$value\""
 				printf -v "__CLI_${_safe_progname}_${varname}" '%s' "$value"
 			else
-				# Everything else: source as shell code
-				script="${script}
-$env_line"
-				_cli_log 4 "script line: $env_line"
+				# __CLI_CFG_ prefix but not a valid variable assignment
+				varname="${env_line%%=*}"
+				varname="${varname##__CLI_}"
+				_cli_error "config error: invalid variable name '$varname'"
 			fi
+		else
+			# Everything else: source as shell code
+			script="${script}
+$env_line"
+			_cli_log 4 "script line: $env_line"
 		fi
 		line_nr=$((line_nr + 1))
 	done <<< "$_env_lines"
