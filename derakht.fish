@@ -11,6 +11,9 @@
 # The CLI name is derived from the symlink filename (same as bash/zsh).
 # Config file: ~/.<name>.conf
 
+# Signal to the embedded AWK script that we're running under fish
+set -gx __CLI_SHELL fish
+
 # ── Helpers ──
 
 function _cli_is_true
@@ -996,38 +999,71 @@ function _cli_read_awk_script
         '' \
         'function print_command_environment_vars(fullcmd, cmd_exec) {' \
         '	# if a filter was given, print command info as variables, for sourcing' \
-        '	print "declare -g -A __CMD_ARG __CMD_ARG_TYPE __CMD_ARG_VALUE __CMD_ARG_DESC __CMD_ARG_NAME"' \
+        '	_pcev_shell = (ENVIRON["__CLI_SHELL"] != "") ? ENVIRON["__CLI_SHELL"] : "bash"' \
         '	_pcev_fc=fullcmd; sub(/:.*$/, "", _pcev_fc)' \
         '	_pcev_ce=cmd_exec; sub(/:.*$/, "", _pcev_ce)' \
         '	# escape double quotes so the output is safe to eval' \
         '	gsub(/"/, "\\\\\\"", _pcev_ce)' \
-        '	printf "__CMD=\\"%s\\"\\n", _pcev_fc' \
-        '	# __CMD_EXEC intentionally omitted — not needed during completion,' \
-        '	# and including it causes unintended $(...) evaluation when eval'\''d.' \
-        '	arg=0' \
-        '	while (arg in cmd_args) {' \
-        '		# remove leading and trailing whitespace and trailing colon' \
-        '		_pcev_ca=cmd_args[arg]; sub(/^[ \\t]+/, "", _pcev_ca); sub(/[ \\t]*:.*/, "", _pcev_ca)' \
-        '		printf "__CMD_ARG[%s]=\\"%s\\"\\n", arg, _pcev_ca' \
-        '		printf "__CMD_ARG_NAME[%s]=\\"%s\\"\\n", arg, cmd_argname[arg]' \
-        '		printf "__CMD_ARG_TYPE[%s]=\\"%s\\"\\n", arg, cmd_argtype[arg]' \
-        '		_pcev_desc=cmd_argdesc[arg]; gsub(/"/, "\\\\\\"", _pcev_desc)' \
-        '		printf "__CMD_ARG_DESC[%s]=\\"%s\\"\\n", arg, _pcev_desc' \
-        '		_pcev_val=cmd_argvalue[arg]' \
-        '		if (substr(_pcev_val, 1, 1) == "$") {' \
-        '			printf "__CMD_ARG_VALUE[%s]=\\"\\\\%s\\"\\n", arg, _pcev_val' \
-        '		} else {' \
-        '			gsub(/"/, "\\\\\\"", _pcev_val)' \
-        '			printf "__CMD_ARG_VALUE[%s]=\\"%s\\"\\n", arg, _pcev_val' \
+        '' \
+        '	if (_pcev_shell == "fish") {' \
+        '		# Fish-compatible output: set -g syntax, 1-based arrays' \
+        '		printf "set -g __CMD \\"%s\\"\\n", _pcev_fc' \
+        '		arg=0' \
+        '		farg=1' \
+        '		while (arg in cmd_args) {' \
+        '			# remove leading and trailing whitespace and trailing colon' \
+        '			_pcev_ca=cmd_args[arg]; sub(/^[ \\t]+/, "", _pcev_ca); sub(/[ \\t]*:.*/, "", _pcev_ca)' \
+        '			printf "set -g __CMD_ARG[%s] \\"%s\\"\\n", farg, _pcev_ca' \
+        '			printf "set -g __CMD_ARG_NAME[%s] \\"%s\\"\\n", farg, cmd_argname[arg]' \
+        '			printf "set -g __CMD_ARG_TYPE[%s] \\"%s\\"\\n", farg, cmd_argtype[arg]' \
+        '			_pcev_desc=cmd_argdesc[arg]; gsub(/"/, "\\\\\\"", _pcev_desc)' \
+        '			printf "set -g __CMD_ARG_DESC[%s] \\"%s\\"\\n", farg, _pcev_desc' \
+        '			_pcev_val=cmd_argvalue[arg]' \
+        '			if (substr(_pcev_val, 1, 1) == "$") {' \
+        '				printf "set -g __CMD_ARG_VALUE[%s] \\"\\\\%s\\"\\n", farg, _pcev_val' \
+        '			} else {' \
+        '				gsub(/"/, "\\\\\\"", _pcev_val)' \
+        '				printf "set -g __CMD_ARG_VALUE[%s] \\"%s\\"\\n", farg, _pcev_val' \
+        '			}' \
+        '			arg++' \
+        '			farg++' \
         '		}' \
-        '		arg++' \
-        '	}' \
-        '	if (length(cmd_args) == 0) {' \
-        '		printf "__CMD_ARG=\\"\\"\\n", arg' \
-        '		printf "__CMD_ARG_NAME=\\"\\"\\n", arg' \
-        '		printf "__CMD_ARG_TYPE=\\"\\"\\n", arg' \
-        '		printf "__CMD_ARG_DESC=\\"\\"\\n", arg' \
-        '		printf "__CMD_ARG_VALUE=\\"\\"\\n", arg' \
+        '		if (length(cmd_args) == 0) {' \
+        '			printf "set -g __CMD_ARG\\n"' \
+        '			printf "set -g __CMD_ARG_NAME\\n"' \
+        '			printf "set -g __CMD_ARG_TYPE\\n"' \
+        '			printf "set -g __CMD_ARG_DESC\\n"' \
+        '			printf "set -g __CMD_ARG_VALUE\\n"' \
+        '		}' \
+        '	} else {' \
+        '		# Bash/zsh output: declare syntax, 0-based arrays' \
+        '		print "declare -g -A __CMD_ARG __CMD_ARG_TYPE __CMD_ARG_VALUE __CMD_ARG_DESC __CMD_ARG_NAME"' \
+        '		printf "__CMD=\\"%s\\"\\n", _pcev_fc' \
+        '		arg=0' \
+        '		while (arg in cmd_args) {' \
+        '			# remove leading and trailing whitespace and trailing colon' \
+        '			_pcev_ca=cmd_args[arg]; sub(/^[ \\t]+/, "", _pcev_ca); sub(/[ \\t]*:.*/, "", _pcev_ca)' \
+        '			printf "__CMD_ARG[%s]=\\"%s\\"\\n", arg, _pcev_ca' \
+        '			printf "__CMD_ARG_NAME[%s]=\\"%s\\"\\n", arg, cmd_argname[arg]' \
+        '			printf "__CMD_ARG_TYPE[%s]=\\"%s\\"\\n", arg, cmd_argtype[arg]' \
+        '			_pcev_desc=cmd_argdesc[arg]; gsub(/"/, "\\\\\\"", _pcev_desc)' \
+        '			printf "__CMD_ARG_DESC[%s]=\\"%s\\"\\n", arg, _pcev_desc' \
+        '			_pcev_val=cmd_argvalue[arg]' \
+        '			if (substr(_pcev_val, 1, 1) == "$") {' \
+        '				printf "__CMD_ARG_VALUE[%s]=\\"\\\\%s\\"\\n", arg, _pcev_val' \
+        '			} else {' \
+        '				gsub(/"/, "\\\\\\"", _pcev_val)' \
+        '				printf "__CMD_ARG_VALUE[%s]=\\"%s\\"\\n", arg, _pcev_val' \
+        '			}' \
+        '			arg++' \
+        '		}' \
+        '		if (length(cmd_args) == 0) {' \
+        '			printf "__CMD_ARG=\\"\\"\\n", arg' \
+        '			printf "__CMD_ARG_NAME=\\"\\"\\n", arg' \
+        '			printf "__CMD_ARG_TYPE=\\"\\"\\n", arg' \
+        '			printf "__CMD_ARG_DESC=\\"\\"\\n", arg' \
+        '			printf "__CMD_ARG_VALUE=\\"\\"\\n", arg' \
+        '		}' \
         '	}' \
         '}' \
         '' \
@@ -2015,23 +2051,25 @@ function _cli_complete_arg
     set -l arg_value ""
     set -l arg_desc ""
 
+    # pos is 0-based from caller; fish AWK output uses 1-based indices
+    set -l fish_idx (math $pos + 1)
     for line in $awk_out
-        if string match -q '__CMD_ARG_TYPE[*]=*' -- $line
+        if string match -q 'set -g __CMD_ARG_TYPE[*] *' -- $line
             set -l idx (string match -r '\[(\d+)\]' -- $line)[2]
-            if test "$idx" = "$pos"
-                set arg_type (string trim -c '"' -- (string split '=' -- $line)[2])
+            if test "$idx" = "$fish_idx"
+                set arg_type (string trim -c '"' -- $line[-1])
             end
         end
-        if string match -q '__CMD_ARG_VALUE[*]=*' -- $line
+        if string match -q 'set -g __CMD_ARG_VALUE[*] *' -- $line
             set -l idx (string match -r '\[(\d+)\]' -- $line)[2]
-            if test "$idx" = "$pos"
-                set arg_value (string trim -c '"' -- (string split '=' -- $line)[2])
+            if test "$idx" = "$fish_idx"
+                set arg_value (string trim -c '"' -- $line[-1])
             end
         end
-        if string match -q '__CMD_ARG_DESC[*]=*' -- $line
+        if string match -q 'set -g __CMD_ARG_DESC[*] *' -- $line
             set -l idx (string match -r '\[(\d+)\]' -- $line)[2]
-            if test "$idx" = "$pos"
-                set arg_desc (string trim -c '"' -- (string split '=' -- $line)[2])
+            if test "$idx" = "$fish_idx"
+                set arg_desc (string trim -c '"' -- $line[-1])
             end
         end
     end
@@ -2267,6 +2305,9 @@ function _cli_execute
             case --cli-print-awk-script
                 printf '%s\n' $__CLI_AWK_SCRIPT
                 return 0
+            case --cli-print-validator-script
+                printf '%s\n' $__CLI_VALIDATOR_SCRIPT
+                return 0
             case --cli-run-awk-command
                 _awk $cmdline[2..-1]
                 return $status
@@ -2363,8 +2404,8 @@ function _cli_execute
         set -l required_count 0
         set -l total_arg_count 0
         for aline in $awk_out
-            if string match -q '__CMD_ARG_TYPE[*]=*' -- $aline
-                set -l atype (string trim -c '"' -- (string split '=' -- $aline)[2])
+            if string match -q 'set -g __CMD_ARG_TYPE[*] *' -- $aline
+                set -l atype (string trim -c '"' -- $aline[-1])
                 set total_arg_count (math $total_arg_count + 1)
                 # value type args have a default and are always optional
                 if test "$atype" = "value"
@@ -2374,8 +2415,8 @@ function _cli_execute
                 set -l vidx (string match -r '\[(\d+)\]' -- $aline)[2]
                 set -l is_optional 0
                 for vline in $awk_out
-                    if string match -q "__CMD_ARG_VALUE[$vidx]=*" -- $vline
-                        set -l aval (string trim -c '"' -- (string split '=' -- $vline)[2..-1])
+                    if string match -q "set -g __CMD_ARG_VALUE[$vidx] *" -- $vline
+                        set -l aval (string trim -c '"' -- $vline[-1])
                         if string match -q '*?' -- $aval
                             set is_optional 1
                         end
@@ -2394,15 +2435,15 @@ function _cli_execute
         # Inject default values for value-type args when user omits them
         set -l inject_idx 0
         for aline in $awk_out
-            if string match -q '__CMD_ARG_TYPE[*]=*' -- $aline
-                set -l atype (string trim -c '"' -- (string split '=' -- $aline)[2])
+            if string match -q 'set -g __CMD_ARG_TYPE[*] *' -- $aline
+                set -l atype (string trim -c '"' -- $aline[-1])
                 if test "$atype" = "value"
                     if test $inject_idx -ge $args_count
                         # Find the default value
                         set -l vidx (string match -r '\[(\d+)\]' -- $aline)[2]
                         for vline in $awk_out
-                            if string match -q "__CMD_ARG_VALUE[$vidx]=*" -- $vline
-                                set -l defval (string trim -c '"' -- (string split '=' -- $vline)[2..-1])
+                            if string match -q "set -g __CMD_ARG_VALUE[$vidx] *" -- $vline
+                                set -l defval (string trim -c '"' -- $vline[-1])
                                 # Strip trailing ? (optional marker)
                                 set defval (string replace -r '\?$' '' -- $defval)
                                 if test -n "$defval"
@@ -2503,6 +2544,7 @@ set -g __CLI_CONFIG_FILE "$HOME/.$__CLI_PROGNAME.conf"
 # ── Initialize (always — functions need __CLI_CONFIG_FILE set) ──
 
 _cli_read_awk_script
+_cli_read_validator_script
 _cli_load_config_environment
 _cli_completion_init
 _cli_load_command_word_functions
