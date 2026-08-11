@@ -1,88 +1,152 @@
 # vim:et:ts=4:sw=4
 # bats file_tags=category:config, shell:fish
+
 #
-# Tests include_commands_from under fish
-# These tests document the expected behavior. They will fail until
-# the fish wrapper fully implements include_commands_from support.
+#	Tests include_commands_from feature (fish)
+#
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 @test "fish: include_commands_from merges commands under parent" {
-    cat > /tmp/fish-test-module.conf <<'CONF'
+    # Create a module config file
+    cat > /tmp/test-module.conf <<'EOF'
 [commands]
 module-cmd: echo "from module"
-CONF
-    cat > ~/.testcli.conf <<'CONF'
+EOF
+    
+    # The include directive must be in the [env] section
+    cat > ~/.testcli.conf <<'EOF'
 [env]
-include_commands_from /tmp/fish-test-module.conf test-parent
-[env.fish]
+__CLI_CFG_EXEC_SILENT="y"
+include_commands_from /tmp/test-module.conf test-parent
+
 [commands]
-CONF
+EOF
+    
+    # Test that included command works under parent
     run _fish_run test-parent module-cmd
     assert_success
-    assert_line "from module"
-    rm -f /tmp/fish-test-module.conf
+    assert_output "from module"
+    
+    # Cleanup
+    rm -f /tmp/test-module.conf
 }
 
 @test "fish: include_commands_from with ROOT merges at top level" {
-    cat > /tmp/fish-test-module.conf <<'CONF'
+    # Create a module config file
+    cat > /tmp/test-module-root.conf <<'EOF'
 [commands]
-top-cmd: echo "top level"
-CONF
-    cat > ~/.testcli.conf <<'CONF'
+top-level-cmd: echo "top level"
+EOF
+    
+    # Create config with include directive using ROOT
+    cat > ~/.testcli.conf <<'EOF'
 [env]
-include_commands_from /tmp/fish-test-module.conf ROOT
-[env.fish]
+__CLI_CFG_EXEC_SILENT="y"
+include_commands_from /tmp/test-module-root.conf ROOT
+
 [commands]
-CONF
-    run _fish_run top-cmd
+EOF
+    
+    # Test that included command works at top level
+    run _fish_run top-level-cmd
     assert_success
-    assert_line "top level"
-    rm -f /tmp/fish-test-module.conf
+    assert_output "top level"
+    
+    # Cleanup
+    rm -f /tmp/test-module-root.conf
 }
 
 @test "fish: include_commands_from preserves module command tree" {
-    cat > /tmp/fish-test-module.conf <<'CONF'
+    # Create a module with nested commands
+    cat > /tmp/test-module-tree.conf <<'EOF'
 [commands]
-deploy
-    staging: echo "staging"
-    production: echo "production"
-CONF
-    cat > ~/.testcli.conf <<'CONF'
+nested
+    cmd1: echo "nested cmd1"
+    cmd2: echo "nested cmd2"
+EOF
+    
+    # Create config with include directive
+    cat > ~/.testcli.conf <<'EOF'
 [env]
-include_commands_from /tmp/fish-test-module.conf infra
-[env.fish]
+__CLI_CFG_EXEC_SILENT="y"
+include_commands_from /tmp/test-module-tree.conf parent
+
 [commands]
-CONF
-    run _fish_run infra deploy staging
+EOF
+    
+    # Test nested commands
+    run _fish_run parent nested cmd1
     assert_success
-    assert_line "staging"
-    rm -f /tmp/fish-test-module.conf
+    assert_output "nested cmd1"
+    
+    run _fish_run parent nested cmd2
+    assert_success
+    assert_output "nested cmd2"
+    
+    # Cleanup
+    rm -f /tmp/test-module-tree.conf
 }
 
 @test "fish: include_commands_from supports multiple includes" {
-    cat > /tmp/fish-mod-a.conf <<'CONF'
+    # Create two module config files
+    cat > /tmp/test-module-a.conf <<'EOF'
 [commands]
-cmd-a: echo "from a"
-CONF
-    cat > /tmp/fish-mod-b.conf <<'CONF'
+cmd-a: echo "module A"
+EOF
+    
+    cat > /tmp/test-module-b.conf <<'EOF'
 [commands]
-cmd-b: echo "from b"
-CONF
-    cat > ~/.testcli.conf <<'CONF'
+cmd-b: echo "module B"
+EOF
+    
+    # Create config with both includes
+    cat > ~/.testcli.conf <<'EOF'
 [env]
-include_commands_from /tmp/fish-mod-a.conf group-a
-include_commands_from /tmp/fish-mod-b.conf group-b
-[env.fish]
+__CLI_CFG_EXEC_SILENT="y"
+include_commands_from /tmp/test-module-a.conf group-a
+include_commands_from /tmp/test-module-b.conf group-b
+
 [commands]
-CONF
+EOF
+    
+    # Test both included commands
     run _fish_run group-a cmd-a
     assert_success
-    assert_line "from a"
+    assert_output "module A"
+    
     run _fish_run group-b cmd-b
     assert_success
-    assert_line "from b"
-    rm -f /tmp/fish-mod-a.conf /tmp/fish-mod-b.conf
+    assert_output "module B"
+    
+    # Cleanup
+    rm -f /tmp/test-module-a.conf /tmp/test-module-b.conf
+}
+
+@test "fish: include_commands_from module has access to env variables" {
+    # Create a module that uses env variables
+    cat > /tmp/test-module-env.conf <<'EOF'
+[commands]
+env-cmd: echo $TEST_INCLUDE_VAR
+EOF
+    
+    # Create config with variable and include
+    cat > ~/.testcli.conf <<'EOF'
+[env]
+__CLI_CFG_EXEC_SILENT="y"
+export TEST_INCLUDE_VAR="hello from env"
+include_commands_from /tmp/test-module-env.conf with-env
+
+[commands]
+EOF
+    
+    # Test that module can access env variables
+    run _fish_run with-env env-cmd
+    assert_success
+    assert_output "hello from env"
+    
+    # Cleanup
+    rm -f /tmp/test-module-env.conf
 }

@@ -1,7 +1,9 @@
 # vim:et:ts=4:sw=4
 # bats file_tags=category:config, shell:fish
+
 #
-# Tests config options under fish
+#	Tests configuration options under fish
+#
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
@@ -10,11 +12,12 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 @test "fish: backslashes in config values are preserved" {
     cat > ~/.testcli.conf <<'CONF'
 [env]
-MY_PATH="C:\\Users\\test"
-[env.fish]
+__CLI_CFG_EXEC_SILENT="y"
+export REGEX_PATTERN="\d+\.\d+"
 [commands]
-test-cmd: echo $MY_PATH
+show-regex: printf '%s' $REGEX_PATTERN
 CONF
-    run _fish_run test-cmd
+    run _fish_run show-regex
     assert_success
+    assert_output '\d+\.\d+'
 }

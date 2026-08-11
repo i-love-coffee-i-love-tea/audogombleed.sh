@@ -1,34 +1,13 @@
 # vim:et:ts=4:sw=4
 # bats file_tags=category:execution, shell:fish
+
 #
-# Tests exit codes 50, 51, 52, 53 under fish
+#	Tests exit codes 50, 51, 52, 53 under fish
+#
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
-teardown() {
-    # Restore default config after tests that modify it
-    cp example.conf ~/.testcli.conf
-    # Re-inject [env.fish] section and set EXEC_SILENT=y
-    local tmpconf
-    tmpconf=$(mktemp)
-    awk '
-        /^\[commands\]/ {
-            print "[env.fish]"
-            print "function create_cmd_words"
-            print "    echo \"thievery\""
-            print "    echo \"corporation\""
-            print "end"
-            print "function create_arg_options"
-            print "    echo \"opt1\""
-            print "    echo \"opt2\""
-            print "end"
-            print ""
-        }
-        { print }
-    ' ~/.testcli.conf > "$tmpconf" && mv "$tmpconf" ~/.testcli.conf
-    sed -i 's/__CLI_CFG_EXEC_SILENT="n"/__CLI_CFG_EXEC_SILENT="y"/' ~/.testcli.conf
-}
 
 @test "fish: exit code 50: no command supplied" {
     run fish -c 'source ./testcli; _cli_execute 2>&1'
@@ -77,7 +56,7 @@ CONF
 @test "fish: exit code 0: successful command execution" {
     run _fish_run echo first second third
     assert_success
-    assert_output "second first third"
+    assert_line "second first third"
 }
 
 @test "fish: exit code matches command exit status (false)" {

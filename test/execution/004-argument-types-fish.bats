@@ -1,7 +1,9 @@
 # vim:et:ts=4:sw=4
 # bats file_tags=category:execution, shell:fish
+
 #
-# Tests argument types: :FILE, :DIR, :value: under fish
+#	Tests argument types: :FILE, :DIR, :value:
+#
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }

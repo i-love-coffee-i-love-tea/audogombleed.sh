@@ -1,42 +1,218 @@
 # vim:et:ts=4:sw=4
 # bats file_tags=category:config, shell:fish
+
 #
-# Tests error handling under fish
+# Tests error handling and edge cases (fish)
+# Covers: CLI name validation, variable name validation, source errors,
+#         include errors, empty/malformed configs
+#
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
-@test "fish: CLI name detection from wrapper" {
-    run fish -c 'source ./testcli; echo $__CLI_PROGNAME'
-    assert_success
-    assert_output "testcli"
+teardown() {
+	rm -f /tmp/err-test-*.conf /tmp/err-test-*.sh
+	rm -rf /tmp/err-test-dir-* 2>/dev/null || true
+	rm -f ~/.testcli.conf
+	cp example.conf ~/.testcli.conf
+	# Restore fish wrapper
+	rm -f ./testcli
+	cat > ./testcli <<'WRAPPER'
+#!/usr/bin/env fish
+set -g __CLI_PROGNAME testcli
+set -g __cli_wrapper_argv $argv
+source (path dirname (status filename))/audogombleed.fish
+WRAPPER
+	chmod +x ./testcli
 }
 
-@test "fish: source errors are non-fatal" {
-    cat > ~/.testcli.conf <<'CONF'
-[env]
-source /nonexistent/file/path.sh
-[env.fish]
-[commands]
-test-cmd: echo "works"
-CONF
-    run _fish_run test-cmd
+# ===================================================================
+# CLI name validation
+# ===================================================================
+
+@test "fish: CLI name with dots is accepted and executes" {
+    rm -f ./my.cli
+    cat > ./my.cli <<'WRAPPER'
+#!/usr/bin/env fish
+set -g __CLI_PROGNAME my.cli
+set -g __cli_wrapper_argv $argv
+source (path dirname (status filename))/audogombleed.fish
+WRAPPER
+    chmod +x ./my.cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my.cli.conf
+    run fish ./my.cli greet
     assert_success
+    assert_output "hello"
+    rm -f ./my.cli ~/.my.cli.conf
 }
 
-@test "fish: empty config file" {
-    echo "" > ~/.testcli.conf
-    run _fish_run test-cmd
+@test "fish: CLI name with dashes is accepted and executes" {
+    cat > ./my-cli <<'WRAPPER'
+#!/usr/bin/env fish
+set -g __CLI_PROGNAME my-cli
+set -g __cli_wrapper_argv $argv
+source (path dirname (status filename))/audogombleed.fish
+WRAPPER
+    chmod +x ./my-cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my-cli.conf
+    run fish ./my-cli greet
+    assert_success
+    assert_output "hello"
+    rm -f ./my-cli ~/.my-cli.conf
+}
+
+@test "fish: CLI name with underscores is accepted and executes" {
+    cat > ./my_cli <<'WRAPPER'
+#!/usr/bin/env fish
+set -g __CLI_PROGNAME my_cli
+set -g __cli_wrapper_argv $argv
+source (path dirname (status filename))/audogombleed.fish
+WRAPPER
+    chmod +x ./my_cli
+    printf '[env]\n__CLI_CFG_EXEC_SILENT="y"\n[commands]\ngreet: echo hello\n' > ~/.my_cli.conf
+    run fish ./my_cli greet
+    assert_success
+    assert_output "hello"
+    rm -f ./my_cli ~/.my_cli.conf
+}
+
+@test "fish: direct execution as audogombleed.sh fails (bash script under fish)" {
+    run fish ./audogombleed.sh greet
     assert_failure
 }
 
-@test "fish: config with only env section" {
+# ===================================================================
+# Variable name validation in [env]
+# ===================================================================
+
+@test "fish: invalid __CLI_ variable name is rejected" {
+    cat > ~/.testcli.conf <<'CONF'
+[env]
+__CLI_CFG.BAD=n
+
+[commands]
+test-cmd: echo "should still work"
+CONF
+
+    run _fish_run test-cmd
+    # Should print error about invalid variable name
+    assert_line --partial "invalid variable name"
+}
+
+@test "fish: valid __CLI_ variable name is accepted" {
     cat > ~/.testcli.conf <<'CONF'
 [env]
 __CLI_CFG_EXEC_SILENT="y"
-[env.fish]
+__CLI_CFG_GOOD_VALUE="test"
+
+[commands]
+test-cmd: echo "works"
 CONF
+
     run _fish_run test-cmd
+    assert_success
+    assert_output "works"
+}
+
+# ===================================================================
+# Source directive error handling
+# ===================================================================
+
+@test "fish: source with tilde expansion works" {
+    local tmpscript="$HOME/test-source-tilde.sh"
+    cat > "$tmpscript" <<'SCRIPT'
+export TILDE_VAR="expanded"
+SCRIPT
+
+    cat > ~/.testcli.conf <<CONF
+[env]
+__CLI_CFG_EXEC_SILENT="y"
+source ~/test-source-tilde.sh
+
+[commands]
+tilde-cmd: echo \$TILDE_VAR
+CONF
+
+    run _fish_run tilde-cmd
+    assert_success
+    assert_output "expanded"
+
+    rm -f "$tmpscript"
+}
+
+@test "fish: source of nonexistent file produces error" {
+    cat > ~/.testcli.conf <<'CONF'
+[env]
+source /nonexistent/file.sh
+
+[commands]
+test-cmd: echo "works anyway"
+CONF
+
+    run _fish_run test-cmd
+    assert_line --partial "does not exist or is not a file"
+}
+
+@test "fish: source file with non-zero exit reports error" {
+    local tmpscript="/tmp/err-test-badexit.sh"
+    cat > "$tmpscript" <<'SCRIPT'
+return 42
+SCRIPT
+
+    cat > ~/.testcli.conf <<CONF
+[env]
+source $tmpscript
+
+[commands]
+test-cmd: echo "still runs"
+CONF
+
+    run _fish_run test-cmd
+    assert_line --partial "non-zero exit code"
+
+    rm -f "$tmpscript"
+}
+
+# ===================================================================
+# Include config error handling
+# ===================================================================
+
+@test "fish: _cli_check_file_permissions rejects nonexistent file" {
+    run _fish_eval '_cli_check_file_permissions "/nonexistent/module.conf" "include file"'
     assert_failure
+    assert_line --partial "not a regular file"
+}
+
+# ===================================================================
+# Empty/malformed configs
+# ===================================================================
+
+@test "fish: empty config file results in no commands" {
+    cat > ~/.testcli.conf <<'CONF'
+CONF
+
+    run _fish_run hello
+    assert_failure 51
+}
+
+@test "fish: config with only [env] section has no commands" {
+    cat > ~/.testcli.conf <<'CONF'
+[env]
+__CLI_CFG_EXEC_SILENT="y"
+MY_VAR="hello"
+CONF
+
+    run _fish_run hello
+    assert_failure 51
+}
+
+@test "fish: config with only blank lines has no commands" {
+    cat > ~/.testcli.conf <<'CONF'
+
+
+CONF
+
+    run _fish_run hello
+    assert_failure 51
 }

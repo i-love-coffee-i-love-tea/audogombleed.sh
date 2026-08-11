@@ -1,7 +1,9 @@
 # vim:et:ts=4:sw=4
 # bats file_tags=category:execution, shell:fish
+
 #
-# Tests abbreviation expansion under fish
+# Tests command abbreviation expansion (fish)
+#
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="n" __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
@@ -10,6 +12,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 @test "fish: single-word abbreviation expands: e -> echo" {
     run _fish_run e first second
     assert_success
+    assert_line --partial 'Executing command "echo"'
     assert_line "second first"
 }
 
@@ -34,6 +37,13 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 @test "fish: unrecognized abbreviation returns exit 51" {
     run _fish_run nonexistent
+    assert_failure 51
+}
+
+@test "fish: abbreviation disabled by CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS=n" {
+    load '../_helpers/common-setup'
+    _set_option __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS '"n"'
+    run _fish_run e first second
     assert_failure 51
 }
 

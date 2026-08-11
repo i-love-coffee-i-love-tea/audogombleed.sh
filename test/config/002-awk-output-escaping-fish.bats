@@ -1,7 +1,5 @@
 # vim:et:ts=4:sw=4
 # bats file_tags=category:config, shell:fish
-#
-# Tests AWK output escaping under fish
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
@@ -15,6 +13,8 @@ test-cmd: echo \1
 CONF
     run _fish_run --cli-run-awk-command output=commands command_filter="test-cmd"
     assert_success
+    # The description should have escaped quotes so eval doesn't break
+    assert_line '__CMD_ARG_DESC[0]="arg \"with\" quotes"'
 }
 
 @test "fish: AWK output escapes double quotes in arg value" {
@@ -25,4 +25,18 @@ test-cmd: echo \1
 CONF
     run _fish_run --cli-run-awk-command output=commands command_filter="test-cmd"
     assert_success
+    # The value should have escaped quotes so eval doesn't break
+    assert_line '__CMD_ARG_VALUE[0]="value \"with\" quotes"'
+}
+
+@test "fish: AWK output with quoted args is safe to eval" {
+    cat > ~/.testcli.conf <<'CONF'
+[commands]
+test-cmd: echo \1
+    :arg:STRING:arg "with" quotes
+CONF
+    # Capture AWK output and eval it — should not break
+    run _fish_eval 'set -l output (./testcli --cli-run-awk-command output=commands command_filter="test-cmd" | string collect); eval "$output"; echo $__CMD_ARG_DESC[0]'
+    assert_success
+    assert_output --partial 'arg "with" quotes'
 }
