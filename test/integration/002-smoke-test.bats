@@ -4,6 +4,9 @@
 # Smoke test: prints versions and paths of all required/used binaries.
 # Run this first to diagnose environment issues (e.g. wrong awk on macOS).
 
+setup_file()   { load '../_helpers/test-setup'; _test_init; }
+teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+
 @test "smoke: environment diagnostics" {
 	local sep="────────────────────────────────────────"
 
@@ -57,8 +60,6 @@
 
 	# Test: what does zsh -c 'source ./testcli' actually produce?
 	echo "# --- zsh sourcing test ---" >&3
-	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
-	cp -n example.conf ~/.testcli.conf 2>/dev/null
 	local zsh_out
 	zsh_out=$(zsh -c 'source ./testcli 2>&1; echo "exit=$?"; echo "PROGNAME=$__CLI_PROGNAME"; echo "AWK=$__CLI_AWK"' 2>&1)
 	echo "# $zsh_out" >&3
@@ -77,8 +78,6 @@
 		printf "%s\n" "${COMPREPLY[@]}"
 	' _ 2>&1)
 	echo "# completions: $comp_out" >&3
-
-	rm -f ./testcli ~/.testcli.conf
 
 	echo "# $sep" >&3
 }

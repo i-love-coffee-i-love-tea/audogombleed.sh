@@ -19,6 +19,9 @@ debian/debhelper-build-stamp
 # Coverage reports
 coverage/
 
+# Test artifacts
+testcli
+testcli.conf
+
 # Exported AWK script (dev workflow)
 cli.awk
-testcli
