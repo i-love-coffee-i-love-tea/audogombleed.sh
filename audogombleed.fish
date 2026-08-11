@@ -18,6 +18,43 @@ function _cli_is_true
     test "$val" = "y" -o "$val" = "yes" -o "$val" = "true" -o "$val" = "1"
 end
 
+# Log function - writes to /tmp/cli-$PROGNAME-fish.log when LOG_LEVEL >= level
+function _cli_log
+    set -l level $argv[1]
+    set -l msg $argv[2..-1]
+    set -l log_level "$__CLI_CFG_LOG_LEVEL"
+    if test -z "$log_level"; set log_level "0"; end
+    test "$log_level" -ge "$level" 2>/dev/null; or return
+    set -l logfile "/tmp/cli-$__CLI_PROGNAME-fish.log"
+    echo "$msg" >> $logfile
+end
+
+# Check file permissions for config/source files.
+# Usage: _cli_check_file_permissions <file> <context>
+# Returns 0 if OK, 1 if rejected.
+function _cli_check_file_permissions
+    set -l file $argv[1]
+    set -l context $argv[2]
+    if test -z "$context"; set context "file"; end
+
+    if not test -f "$file"
+        echo "config error: $context '$file' is not a regular file" >&2
+        return 1
+    end
+
+    # Check for world-executable permission (7xx)
+    set -l perms (stat -c '%a' "$file" 2>/dev/null; or stat -f '%Lp' "$file" 2>/dev/null)
+    if test -n "$perms"
+        set -l others (string sub -s -1 -- $perms)
+        if test "$others" = "7"
+            echo "config error: $context '$file' is world-writable (mode $perms)" >&2
+            return 1
+        end
+    end
+
+    return 0
+end
+
 # ── AWK script extraction ──
 
 # Extract the embedded AWK parser from audogombleed.sh.
@@ -41,6 +78,37 @@ function _cli_read_awk_script
     end
     # Extract lines between __MAIN_AWK_PARSER__ and MAIN_AWK_EOF
     set -g __CLI_AWK_SCRIPT (sed -n '/^# __MAIN_AWK_PARSER__$/,/^MAIN_AWK_EOF$/{ /^# __MAIN_AWK_PARSER__$/d; /^MAIN_AWK_EOF$/d; p; }' "$main_script")
+end
+
+# Extract the embedded AWK validator from audogombleed.sh.
+function _cli_read_validator_script
+    if test -n "$__CLI_VALIDATOR_SCRIPT"
+        return
+    end
+    set -l script_dir (path dirname (status filename))
+    set -l main_script "$script_dir/audogombleed.sh"
+    if not test -f "$main_script"
+        set main_script (realpath (status filename) 2>/dev/null)
+        if test -n "$main_script"
+            set main_script (path dirname "$main_script")/audogombleed.sh
+        end
+    end
+    if not test -f "$main_script"
+        echo "error: cannot find audogombleed.sh" >&2
+        return 1
+    end
+    # Extract lines between VALIDATOR_AWK_EOF markers
+    set -g __CLI_VALIDATOR_SCRIPT (sed -n '/<<.VALIDATOR_AWK_EOF/,/^VALIDATOR_AWK_EOF$/{ /<<.VALIDATOR_AWK_EOF/d; /^VALIDATOR_AWK_EOF$/d; p; }' "$main_script")
+end
+
+function _cli_validate_config
+    set -l cfg_file $argv[1]
+    if not test -f "$cfg_file"
+        echo "error: config file '$cfg_file' not found" >&2
+        return 1
+    end
+    _cli_read_validator_script
+    printf '%s\n' $__CLI_VALIDATOR_SCRIPT | awk -f - "$cfg_file"
 end
 
 # ── AWK invocation ──
@@ -104,10 +172,15 @@ function _cli_load_config_environment
             string match -qr '^\s*$' -- $line; and continue
 
             # __CLI_CFG_* assignments
-            if string match -qr '^__CLI_CFG_' -- $line
+            if string match -qr '^__CLI_CFG' -- "$line"
                 set -l varname (string split '=' -- $line)[1]
                 set -l value (string split '=' -- $line)[2..-1]
                 set -l clean_name (string replace '__CLI_CFG_' '' -- $varname)
+                # Validate variable name (only letters, digits, underscores after __CLI_CFG_)
+                if not string match -qr '^__CLI_CFG_[A-Za-z_][A-Za-z0-9_]*$' -- "$varname"
+                    echo "config error: invalid variable name '$varname'" >&2
+                    continue
+                end
                 # Strip quotes
                 set value (string trim -c '"' -- (string trim -c "'" -- $value))
                 set -g "__CLI_CFG_$clean_name" $value
@@ -138,8 +211,28 @@ function _cli_load_config_environment
             if string match -qr '^source\s' -- $line
                 set -l src_file (string replace 'source ' '' -- $line)
                 set src_file (string replace '~' $HOME -- $src_file)
-                if test -f "$src_file"
-                    source "$src_file"
+                # Check for path traversal
+                if string match -q '*..*' -- $src_file
+                    echo "config error: source file '$src_file' contains path traversal" >&2
+                    continue
+                end
+                if not test -f "$src_file"
+                    echo "config error: source file '$src_file' does not exist or is not a file" >&2
+                    continue
+                end
+                # Check file permissions
+                if not _cli_check_file_permissions "$src_file" "source file"
+                    continue
+                end
+                # Source in a function wrapper to prevent return from propagating
+                function _cli_safe_source
+                    source $argv[1]
+                end
+                _cli_safe_source "$src_file"
+                set -l src_rc $status
+                functions -e _cli_safe_source
+                if test $src_rc -ne 0
+                    echo "config error: source file '$src_file' returned non-zero exit code $src_rc" >&2
                 end
                 continue
             end
@@ -580,7 +673,11 @@ function _cli_complete_arg
             __fish_complete_directories $word
 
         case ENVVAR
-            set -n | string match -qr "^"(string escape --style=regex -- $word)
+            if test -z "$word"
+                set -n
+            else
+                set -n | string match -r "^"(string escape --style=regex -- $word)
+            end
 
         case USER
             __fish_complete_users $word
@@ -590,19 +687,35 @@ function _cli_complete_arg
 
         case SSH_HOST
             if test -f ~/.ssh/config
-                string match -ri "^host\s+" < ~/.ssh/config | string replace -ri '^\s*host\s+' '' | string match -qr "^"(string escape --style=regex -- $word)
+                if test -z "$word"
+                    string replace -ri '^\s*host\s+' '' < ~/.ssh/config | string match -rv '^\s*$'
+                else
+                    string replace -ri '^\s*host\s+' '' < ~/.ssh/config | string match -rv '^\s*$' | string match -r "^"(string escape --style=regex -- $word)
+                end
             end
 
         case BLKDEV
             if test (uname) = Darwin
-                printf '%s\n' /dev/disk[0-9] /dev/disk[0-9][0-9] 2>/dev/null | string match -qr "^"(string escape --style=regex -- $word)
+                if test -z "$word"
+                    printf '%s\n' /dev/disk[0-9] /dev/disk[0-9][0-9] 2>/dev/null
+                else
+                    printf '%s\n' /dev/disk[0-9] /dev/disk[0-9][0-9] 2>/dev/null | string match -r "^"(string escape --style=regex -- $word)
+                end
             else
-                lsblk -plin -o NAME 2>/dev/null | string match -qr "^"(string escape --style=regex -- $word)
+                if test -z "$word"
+                    lsblk -plin -o NAME 2>/dev/null
+                else
+                    lsblk -plin -o NAME 2>/dev/null | string match -r "^"(string escape --style=regex -- $word)
+                end
             end
 
         case SERVICE
             if command -q systemctl
-                systemctl list-units --full --all --no-legend 2>/dev/null | awk '$1 ~ /\.service$/ { sub("\\.service$", "", $1); print $1 }' | string match -qr "^"(string escape --style=regex -- $word)
+                if test -z "$word"
+                    systemctl list-units --full --all --no-legend 2>/dev/null | awk '$1 ~ /\.service$/ { sub("\\.service$", "", $1); print $1 }'
+                else
+                    systemctl list-units --full --all --no-legend 2>/dev/null | awk '$1 ~ /\.service$/ { sub("\\.service$", "", $1); print $1 }' | string match -r "^"(string escape --style=regex -- $word)
+                end
             end
     end
 end
@@ -721,6 +834,13 @@ function _cli_execute
             case --cli-print-env
                 _awk output=env
                 return $status
+            case --cli-validate-config
+                set -l vc_file $__CLI_CONFIG_FILE
+                if test (count $cmdline) -gt 1
+                    set vc_file $cmdline[2]
+                end
+                _cli_validate_config "$vc_file"
+                return $status
         end
     end
 
@@ -750,8 +870,10 @@ function _cli_execute
         return 0
     end
 
-    # Expand abbreviations (disabled in batch mode)
-    if test $batch_mode -eq 0
+    # Expand abbreviations (disabled in batch mode or by config)
+    set -l _expand_cmd "$__CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS"
+    if test -z "$_expand_cmd"; set _expand_cmd "y"; end
+    if test $batch_mode -eq 0; and _cli_is_true "$_expand_cmd"
         set -l expanded (_cli_expand_abbreviated_command $cmdline)
         if test -n "$expanded"
             set cmdline (string split ' ' -- $expanded)
@@ -881,7 +1003,10 @@ function _cli_execute
         if not _cli_is_true "$__CLI_CFG_EXEC_SILENT"
             echo "Executing command \"$cmd\" --> $cmd_expr" >&2
         end
-        fish -c "$cmd_expr"
+        # Escape glob characters to simulate bash's set -o noglob
+        set -l exec_expr (string replace -a '*' '\*' -- $cmd_expr)
+        set exec_expr (string replace -a '?' '\?' -- $exec_expr)
+        fish -c "$exec_expr"
         set -l exit_code $status
         if _cli_is_true "$__CLI_CFG_EXEC_ALWAYS_RETURN_0"
             return 0
@@ -943,6 +1068,12 @@ _cli_load_config_environment
 _cli_completion_init
 _cli_load_command_word_functions
 _cli_read_command_list
+
+# Create log file if LOG_LEVEL is set
+if test -n "$__CLI_CFG_LOG_LEVEL"; and test "$__CLI_CFG_LOG_LEVEL" -gt 0 2>/dev/null
+    set -l logfile "/tmp/cli-$__CLI_PROGNAME-fish.log"
+    echo "log opened" >> $logfile
+end
 
 # ── Main: source detection ──
 
