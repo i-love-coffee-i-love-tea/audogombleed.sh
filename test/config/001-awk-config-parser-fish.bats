@@ -7,31 +7,30 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 @test "fish: output=command_names finds expected number of commands" {
     run _fish_run --cli-run-awk-command output=command_names
-	assert_equal "23" "${#lines[@]}"
+	assert_equal "${#lines[@]}" "32"
 	assert_line "install war from maven"
 }
 
 @test "fish: output=commands finds expected number of commands" {
     run _fish_run --cli-run-awk-command output=commands
 	assert_success
-	assert_equal "23" "${#lines[@]}"
+	assert_equal "${#lines[@]}" "32"
 	assert_line "install war from maven        , list,  ~/bin/install-maven-war.sh"
 }
 
 @test "fish: returns vars describing command args for complete command: echo" {
 	run _fish_run --cli-run-awk-command output=commands command_filter="echo"
-	assert_line 'declare -g -A __CMD_ARG __CMD_ARG_TYPE __CMD_ARG_VALUE __CMD_ARG_DESC __CMD_ARG_NAME'
-	assert_line '__CMD="echo"'
-    assert_line '__CMD_ARG[0]="list"'
-    assert_line '__CMD_ARG_NAME[0]="arg1"'
-    assert_line '__CMD_ARG_TYPE[0]="list"'
-    assert_line '__CMD_ARG_DESC[0]=""'
-    assert_line '__CMD_ARG_VALUE[0]="first"'
-    assert_line '__CMD_ARG[1]="list"'
-    assert_line '__CMD_ARG_NAME[1]="arg2"'
-    assert_line '__CMD_ARG_TYPE[1]="list"'
-    assert_line '__CMD_ARG_DESC[1]=""'
-    assert_line '__CMD_ARG_VALUE[1]="second"'
+	assert_line 'set -g __CMD "echo"'
+    assert_line 'set -g __CMD_ARG[1] "list"'
+    assert_line 'set -g __CMD_ARG_NAME[1] "arg1"'
+    assert_line 'set -g __CMD_ARG_TYPE[1] "list"'
+    assert_line 'set -g __CMD_ARG_DESC[1] ""'
+    assert_line 'set -g __CMD_ARG_VALUE[1] "first"'
+    assert_line 'set -g __CMD_ARG[2] "list"'
+    assert_line 'set -g __CMD_ARG_NAME[2] "arg2"'
+    assert_line 'set -g __CMD_ARG_TYPE[2] "list"'
+    assert_line 'set -g __CMD_ARG_DESC[2] ""'
+    assert_line 'set -g __CMD_ARG_VALUE[2] "second"'
 	assert_success
 }
 
@@ -49,10 +48,10 @@ test-desc-list: echo
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="test-desc-list"
 	assert_success
-	assert_line '__CMD_ARG_NAME[0]="env"'
-	assert_line '__CMD_ARG_TYPE[0]="list"'
-	assert_line '__CMD_ARG_VALUE[0]="staging|prod"'
-	assert_line '__CMD_ARG_DESC[0]="target environment"'
+	assert_line 'set -g __CMD_ARG_NAME[1] "env"'
+	assert_line 'set -g __CMD_ARG_TYPE[1] "list"'
+	assert_line 'set -g __CMD_ARG_VALUE[1] "staging|prod"'
+	assert_line 'set -g __CMD_ARG_DESC[1] "target environment"'
 }
 
 @test "fish: custom argument descriptions are parsed for non-value types" {
@@ -63,10 +62,10 @@ test-desc-file: echo
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="test-desc-file"
 	assert_success
-	assert_line '__CMD_ARG_NAME[0]="path"'
-	assert_line '__CMD_ARG_TYPE[0]="FILE"'
-	assert_line '__CMD_ARG_VALUE[0]=""'
-	assert_line '__CMD_ARG_DESC[0]="path to input"'
+	assert_line 'set -g __CMD_ARG_NAME[1] "path"'
+	assert_line 'set -g __CMD_ARG_TYPE[1] "FILE"'
+	assert_line 'set -g __CMD_ARG_VALUE[1] ""'
+	assert_line 'set -g __CMD_ARG_DESC[1] "path to input"'
 }
 
 @test "fish: FILE type with glob filter is parsed as value" {
@@ -77,10 +76,10 @@ test-file-glob: echo
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="test-file-glob"
 	assert_success
-	assert_line '__CMD_ARG_NAME[0]="path"'
-	assert_line '__CMD_ARG_TYPE[0]="FILE"'
-	assert_line '__CMD_ARG_VALUE[0]="*.txt"'
-	assert_line '__CMD_ARG_DESC[0]=""'
+	assert_line 'set -g __CMD_ARG_NAME[1] "path"'
+	assert_line 'set -g __CMD_ARG_TYPE[1] "FILE"'
+	assert_line 'set -g __CMD_ARG_VALUE[1] "*.txt"'
+	assert_line 'set -g __CMD_ARG_DESC[1] ""'
 }
 
 @test "fish: FILE type with glob filter and description" {
@@ -91,10 +90,10 @@ test-file-glob-desc: echo
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="test-file-glob-desc"
 	assert_success
-	assert_line '__CMD_ARG_NAME[0]="path"'
-	assert_line '__CMD_ARG_TYPE[0]="FILE"'
-	assert_line '__CMD_ARG_VALUE[0]="*.txt"'
-	assert_line '__CMD_ARG_DESC[0]="text files"'
+	assert_line 'set -g __CMD_ARG_NAME[1] "path"'
+	assert_line 'set -g __CMD_ARG_TYPE[1] "FILE"'
+	assert_line 'set -g __CMD_ARG_VALUE[1] "*.txt"'
+	assert_line 'set -g __CMD_ARG_DESC[1] "text files"'
 }
 
 @test "fish: DIR type with glob filter is parsed as value" {
@@ -105,10 +104,10 @@ test-dir-glob: echo
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="test-dir-glob"
 	assert_success
-	assert_line '__CMD_ARG_NAME[0]="path"'
-	assert_line '__CMD_ARG_TYPE[0]="DIR"'
-	assert_line '__CMD_ARG_VALUE[0]="*test*"'
-	assert_line '__CMD_ARG_DESC[0]=""'
+	assert_line 'set -g __CMD_ARG_NAME[1] "path"'
+	assert_line 'set -g __CMD_ARG_TYPE[1] "DIR"'
+	assert_line 'set -g __CMD_ARG_VALUE[1] "*test*"'
+	assert_line 'set -g __CMD_ARG_DESC[1] ""'
 }
 
 @test "fish: FILE_OR_DIR type with glob filter and description" {
@@ -119,10 +118,10 @@ test-file-or-dir-glob: echo
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="test-file-or-dir-glob"
 	assert_success
-	assert_line '__CMD_ARG_NAME[0]="path"'
-	assert_line '__CMD_ARG_TYPE[0]="FILE_OR_DIR"'
-	assert_line '__CMD_ARG_VALUE[0]="*.log"'
-	assert_line '__CMD_ARG_DESC[0]="log files"'
+	assert_line 'set -g __CMD_ARG_NAME[1] "path"'
+	assert_line 'set -g __CMD_ARG_TYPE[1] "FILE_OR_DIR"'
+	assert_line 'set -g __CMD_ARG_VALUE[1] "*.log"'
+	assert_line 'set -g __CMD_ARG_DESC[1] "log files"'
 }
 
 @test "fish: custom argument descriptions are parsed for int_range type" {
@@ -133,10 +132,10 @@ test-desc-range: echo
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="test-desc-range"
 	assert_success
-	assert_line '__CMD_ARG_NAME[0]="port"'
-	assert_line '__CMD_ARG_TYPE[0]="int_range"'
-	assert_line '__CMD_ARG_VALUE[0]="1-65535"'
-	assert_line '__CMD_ARG_DESC[0]="TCP port number"'
+	assert_line 'set -g __CMD_ARG_NAME[1] "port"'
+	assert_line 'set -g __CMD_ARG_TYPE[1] "int_range"'
+	assert_line 'set -g __CMD_ARG_VALUE[1] "1-65535"'
+	assert_line 'set -g __CMD_ARG_DESC[1] "TCP port number"'
 }
 
 @test "fish: custom argument descriptions are parsed for eval type" {
@@ -147,10 +146,10 @@ test-desc-eval: echo
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="test-desc-eval"
 	assert_success
-	assert_line '__CMD_ARG_NAME[0]="deployment"'
-	assert_line '__CMD_ARG_TYPE[0]="eval"'
-	assert_line '__CMD_ARG_VALUE[0]="get_deployments"'
-	assert_line '__CMD_ARG_DESC[0]="target deployment"'
+	assert_line 'set -g __CMD_ARG_NAME[1] "deployment"'
+	assert_line 'set -g __CMD_ARG_TYPE[1] "eval"'
+	assert_line 'set -g __CMD_ARG_VALUE[1] "get_deployments"'
+	assert_line 'set -g __CMD_ARG_DESC[1] "target deployment"'
 }
 
 @test "fish: command_filter with regex metacharacter matches literally" {

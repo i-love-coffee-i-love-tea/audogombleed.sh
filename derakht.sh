@@ -2302,6 +2302,7 @@ _cli_load_config_environment() {
 	local _env_lines=""
 	while IFS= read -r _raw_line; do
 		[[ "$_raw_line" == "[env]" ]] && _in_env=1 && continue
+		[[ "$_raw_line" == "[env."* ]] && _in_env=0 && continue
 		[[ "$_raw_line" == "[commands]" ]] && break
 		[[ "$_in_env" -eq 1 ]] && _env_lines="${_env_lines}${_raw_line}"$'\n'
 	done < "$_cfg_file"

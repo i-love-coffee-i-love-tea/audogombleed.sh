@@ -3,12 +3,12 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load; }
+setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-080
 @test "output=command_names finds expected number of commands" {
     run ./testcli --cli-run-awk-command output=command_names
-	assert_equal "23" "${#lines[@]}"
+	assert_equal "${#lines[@]}" "32"
 	assert_line "install war from maven"
 }
 
@@ -16,7 +16,7 @@ setup()        { load '../_helpers/test-setup'; _test_load; }
 @test "output=commands finds expected number of commands" {
     run ./testcli --cli-run-awk-command output=commands
 	assert_success
-	assert_equal "23" "${#lines[@]}"
+	assert_equal "${#lines[@]}" "32"
 	assert_line "install war from maven        , list,  ~/bin/install-maven-war.sh"
 }
 

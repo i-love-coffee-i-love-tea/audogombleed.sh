@@ -35,6 +35,36 @@ _test_load_zsh() {
 	load '../_helpers/zsh-helpers'
 }
 
+# Shared helper: resolves test-specific config and copies it to ~/.testcli.conf.
+# Strips the shell suffix (-bash, -zsh, -fish) from the test name so all shells
+# share one config file named without a shell suffix (e.g. 001-awk-config-parser-fish.conf).
+_test_copy_config() {
+	local project_root category testname confpath
+
+	project_root="$(cd "$(dirname "$(dirname "$(dirname "${BATS_TEST_FILENAME}")")")" && pwd)"
+	category="$(basename "$(dirname "${BATS_TEST_FILENAME}")")"
+	testname="$(basename "${BATS_TEST_FILENAME}" .bats)"
+	# Strip shell suffix to find the shared config (e.g. -bash -> fish config)
+	testname="${testname%-bash}"
+	testname="${testname%-zsh}"
+	testname="${testname%-fish}"
+	confpath="${project_root}/test/_configs/${category}/${testname}.conf"
+
+	if [ ! -f "$confpath" ]; then
+		echo "ERROR: config file not found: $confpath" >&2
+		return 1
+	fi
+
+	cp "$confpath" ~/.testcli.conf
+}
+
+# Call from setup() in bash tests — copies config from _configs/ and loads helpers.
+_test_load_bash() {
+	_test_copy_config
+	load '../_test_helper/bats-support/load'
+	load '../_test_helper/bats-assert/load'
+}
+
 # Call from setup_file() in fish tests — creates the fish testcli wrapper.
 _test_init_fish() {
 	load '../_helpers/common-setup'
@@ -45,20 +75,7 @@ _test_init_fish() {
 # Call from setup() in fish tests — copies config from _configs/ and loads helpers.
 # Config files are immutable source of truth in test/_configs/<category>/<test>.conf.
 _test_load_fish() {
-	local project_root category testname confpath
-
-	project_root="$(cd "$(dirname "$(dirname "$(dirname "${BATS_TEST_FILENAME}")")")" && pwd)"
-	category="$(basename "$(dirname "${BATS_TEST_FILENAME}")")"
-	testname="$(basename "${BATS_TEST_FILENAME}" .bats)"
-	confpath="${project_root}/test/_configs/${category}/${testname}.conf"
-
-	if [ ! -f "$confpath" ]; then
-		echo "ERROR: config file not found: $confpath" >&2
-		return 1
-	fi
-
-	cp "$confpath" ~/.testcli.conf
-
+	_test_copy_config
 	load '../_test_helper/bats-support/load'
 	load '../_test_helper/bats-assert/load'
 	load '../_helpers/fish-helpers'
