@@ -66,7 +66,7 @@ This runs every `release.d/*.sh` hook in order:
 |------|--------------|
 | `10-validate-release-artifacts.sh` | Checks packaging files exist |
 | `12-validate-adr-format.sh` | Validates ADR format |
-| `14-validate-config.sh` | Validates config against the grammar |
+| `14-validate-config.sh` | Validates example.conf and all test configs against the grammar |
 | `20-stamp-version-in-script.sh` | Writes version into `derakht.sh` |
 | `20-stamp-version-in-fish-script.sh` | Writes version into `derakht.fish` |
 | `21-stamp-version-in-manpage.sh` | Writes version into `derakht.1` |

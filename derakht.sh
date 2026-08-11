@@ -1941,6 +1941,13 @@ function report_warn(line, msg, hint) {
 	next
 }
 
+# [env.fish], [env.bash], [env.zsh] section headers
+/^\[env\.(fish|bash|zsh)\]$/ {
+	cfg_section = "env"
+	in_env_func = 0
+	next
+}
+
 # [commands] section header
 /^\[commands\]$/ {
 	if (saw_commands) report_error(NR, "duplicate [commands] section")
@@ -1952,7 +1959,7 @@ function report_warn(line, msg, hint) {
 
 # unknown section header
 /^\[[a-z_]*\]/ {
-	report_error(NR, "unknown section " C_BOLD $0 C_RED, "valid sections: [env], [commands]")
+	report_error(NR, "unknown section " C_BOLD $0 C_RED, "valid sections: [env], [env.fish], [env.bash], [env.zsh], [commands]")
 	next
 }
 
@@ -1975,11 +1982,27 @@ cfg_section == "env" {
 		if (wc < 3) report_error(NR, "include_commands_from needs two arguments", "syntax: include_commands_from <file> <parent-command>")
 	}
 
-	# Track variable assignments: VAR=value or VAR="value"
-	if (!in_env_func && $0 ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
-		_env_varname = $0
-		sub(/=.*/, "", _env_varname)
-		env_vars[_env_varname] = 1
+	# Track variable assignments: VAR=value, export VAR=value, or set -gx VAR value
+	if (!in_env_func) {
+		_env_line = $0
+		sub(/^export[[:space:]]+/, "", _env_line)
+		if (_env_line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
+			_env_varname = _env_line
+			sub(/=.*/, "", _env_varname)
+			env_vars[_env_varname] = 1
+		}
+	}
+
+	# Track function definitions: function name or function name()
+	# &function refs in [commands] resolve via _cli_<func>_result
+	if ($0 ~ /^[[:space:]]*function[[:space:]]/) {
+		_func_line = $0
+		sub(/^[[:space:]]*function[[:space:]]+/, "", _func_line)
+		sub(/[[:space:]]*\(\).*/, "", _func_line)
+		sub(/[[:space:]]*\{.*/, "", _func_line)
+		if (_func_line ~ /^[A-Za-z_][A-Za-z0-9_]*$/) {
+			env_vars["_cli_" _func_line "_result"] = 1
+		}
 	}
 
 	next

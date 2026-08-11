@@ -58,12 +58,12 @@ embed_sh_validator() {
     END {
         vs = ve = 0
         for (i = 1; i <= NR; i++) {
-            if (lines[i] ~ /^read -r -d.*CLI_VALIDATOR/) vs = i + 1
+            if (lines[i] ~ /^[[:space:]]*read -r -d.*CLI_VALIDATOR/) vs = i + 1
             if (lines[i] == "VALIDATOR_AWK_EOF")          ve = i
         }
         skip = 0
         for (i = 1; i <= NR; i++) {
-            if (i == vs) { printf "%s", v; skip = 1; continue }
+            if (i == vs) { printf "%s\n", v; skip = 1; continue }
             if (i == ve) { skip = 0; print lines[i]; continue }
             if (!skip) print lines[i]
         }
