@@ -2791,20 +2791,38 @@ _cli_compgen() {
 		-u)
 			local prefix="$1"
 			local user
-			while IFS=: read -r user _; do
-				if [[ "$user" == "$prefix"* ]]; then
-					echo "$user"
-				fi
-			done < /etc/passwd
+			if [ "$__CLI_UNAME" = "Darwin" ]; then
+				while read -r user; do
+					[[ "$user" == _* ]] && continue
+					if [[ "$user" == "$prefix"* ]]; then
+						echo "$user"
+					fi
+				done < <(dscl . -list /Users 2>/dev/null)
+			else
+				while IFS=: read -r user _; do
+					if [[ "$user" == "$prefix"* ]]; then
+						echo "$user"
+					fi
+				done < /etc/passwd
+			fi
 			;;
 		-g)
 			local prefix="$1"
 			local group
-			while IFS=: read -r group _; do
-				if [[ "$group" == "$prefix"* ]]; then
-					echo "$group"
-				fi
-			done < /etc/group
+			if [ "$__CLI_UNAME" = "Darwin" ]; then
+				while read -r group; do
+					[[ "$group" == _* ]] && continue
+					if [[ "$group" == "$prefix"* ]]; then
+						echo "$group"
+					fi
+				done < <(dscl . -list /Groups 2>/dev/null)
+			else
+				while IFS=: read -r group _; do
+					if [[ "$group" == "$prefix"* ]]; then
+						echo "$group"
+					fi
+				done < /etc/group
+			fi
 			;;
 		-A)
 			local mode="$1"; shift
