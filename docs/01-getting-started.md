@@ -92,9 +92,10 @@ need to affect the current shell.
 | Argument completion (`eval`) | works (runs in your shell) | works (runs in your shell) |
 | Performance | fork per invocation | no fork |
 
-Note: tab completion always runs in your shell regardless of mode.
-Argument types like `eval` and `list` with `$VARIABLE` always work
-because completion happens in the current shell context.
+> [!NOTE]
+> Tab completion always runs in your shell regardless of mode.
+> Argument types like `eval` and `list` with `$VARIABLE` always work
+> because completion happens in the current shell context.
 
 ### Multiple CLIs
 

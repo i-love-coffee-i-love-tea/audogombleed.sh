@@ -6,7 +6,7 @@
 #
 #   setup_file()   { load '../_helpers/test-setup'; _test_init [opts...]; }
 #   teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-#   setup()        { load '../_helpers/test-setup'; _test_load; }
+#   setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 #
 
 # Call from setup_file() — creates the testcli environment.
@@ -22,23 +22,18 @@ _test_cleanup() {
 	_common_teardown
 }
 
-# Call from setup() — loads bats-support and bats-assert.
-_test_load() {
-	load '../_test_helper/bats-support/load'
-	load '../_test_helper/bats-assert/load'
-}
-
-# Call from setup() in zsh tests — loads bats-support, bats-assert, and zsh-helpers.
+# Call from setup() in zsh tests — installs config and loads helpers.
 _test_load_zsh() {
+	_test_install_config
 	load '../_test_helper/bats-support/load'
 	load '../_test_helper/bats-assert/load'
 	load '../_helpers/zsh-helpers'
 }
 
-# Shared helper: resolves test-specific config and copies it to ~/.testcli.conf.
+# Shared helper: resolves test-specific config and installs it to ~/.testcli.conf.
 # Strips the shell suffix (-bash, -zsh, -fish) from the test name so all shells
-# share one config file named without a shell suffix (e.g. 001-awk-config-parser-fish.conf).
-_test_copy_config() {
+# share one config file named without a shell suffix (e.g. 001-awk-config-parser.conf).
+_test_install_config() {
 	local project_root category testname confpath
 
 	project_root="$(cd "$(dirname "$(dirname "$(dirname "${BATS_TEST_FILENAME}")")")" && pwd)"
@@ -60,7 +55,7 @@ _test_copy_config() {
 
 # Call from setup() in bash tests — copies config from _configs/ and loads helpers.
 _test_load_bash() {
-	_test_copy_config
+	_test_install_config
 	load '../_test_helper/bats-support/load'
 	load '../_test_helper/bats-assert/load'
 }
@@ -75,7 +70,7 @@ _test_init_fish() {
 # Call from setup() in fish tests — copies config from _configs/ and loads helpers.
 # Config files are immutable source of truth in test/_configs/<category>/<test>.conf.
 _test_load_fish() {
-	_test_copy_config
+	_test_install_config
 	load '../_test_helper/bats-support/load'
 	load '../_test_helper/bats-assert/load'
 	load '../_helpers/fish-helpers'

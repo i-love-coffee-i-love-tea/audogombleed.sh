@@ -12,7 +12,7 @@ setup_file() {
     cp test/help-test-config.conf ~/.testcli.conf
 }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load; }
+setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-257
 @test "bash: global help header appears at top of output" {

@@ -90,6 +90,13 @@ function report_warn(line, msg, hint) {
 	next
 }
 
+# [env.fish], [env.bash], [env.zsh] section headers
+/^\[env\.(fish|bash|zsh)\]$/ {
+	cfg_section = "env"
+	in_env_func = 0
+	next
+}
+
 # [commands] section header
 /^\[commands\]$/ {
 	if (saw_commands) report_error(NR, "duplicate [commands] section")
@@ -101,7 +108,7 @@ function report_warn(line, msg, hint) {
 
 # unknown section header
 /^\[[a-z_]*\]/ {
-	report_error(NR, "unknown section " C_BOLD $0 C_RED, "valid sections: [env], [commands]")
+	report_error(NR, "unknown section " C_BOLD $0 C_RED, "valid sections: [env], [env.fish], [env.bash], [env.zsh], [commands]")
 	next
 }
 

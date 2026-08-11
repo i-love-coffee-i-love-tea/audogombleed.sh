@@ -180,10 +180,11 @@ the `:name:type:source` definitions in order:
 second (`:tag`). If not all placeholders are used, remaining arguments are
 appended to the end of the command.
 
-**Note:** `\0` and `\1`+ come from different sources. `\0` is always the
-last command word — most useful with expanded commands (`$variable`,
-`&function`, `val1|val2`) where the expanded word carries meaning (e.g.,
-a namespace name). `\1`+ are the user's arguments after the command words.
+> [!NOTE]
+> `\0` and `\1`+ come from different sources. `\0` is always the
+> last command word — most useful with expanded commands (`$variable`,
+> `&function`, `val1|val2`) where the expanded word carries meaning (e.g.,
+> a namespace name). `\1`+ are the user's arguments after the command words.
 
 ### Optional arguments
 
@@ -195,7 +196,9 @@ Append `?` to the argument type to make it optional:
         :tag:list?:v1|v2|v3
 
 Here `:tag` is optional — the command executes with or without it.
-Optional arguments must come after all required arguments.
+
+> [!NOTE]
+> Optional arguments must come after all required arguments.
 
 ### Argument types
 
@@ -226,8 +229,9 @@ in all other types it comes directly after the type:
     :name:type:description              (STRING, INTEGER, FILE, etc.)
     :name:type:value:description        (list, int_range, eval)
 
-Descriptions appear as `[description]` suffixes in zsh tab completions.
-They are ignored in bash.
+> [!NOTE]
+> Descriptions appear as `[description]` suffixes in zsh tab completions.
+> They are ignored in bash.
 
     [commands]
     deploy: ./deploy.sh \1
@@ -245,11 +249,12 @@ is handled differently (see
 
 Everything possible in a shell script is possible here.
 
-**Performance note:** the `[env]` section runs on every tab completion and
-every command execution. Avoid slow operations (network calls, heavy
-computation) in `[env]` — they will block completion and add latency to
-every invocation. If you need dynamic values for argument completion,
-use `eval` argument types instead, which run only at completion time.
+> [!IMPORTANT]
+> The `[env]` section runs on every tab completion and every command
+> execution. Avoid slow operations (network calls, heavy computation) in
+> `[env]` — they will block completion and add latency to every invocation.
+> If you need dynamic values for argument completion, use `eval` argument
+> types instead, which run only at completion time.
 
 ### Purpose
 
@@ -272,11 +277,12 @@ with `~` are expanded to `$HOME`.
 
     source ~/bin/custom-cli-function.sh
 
-**Warning:** the `[env]` section (including `source` directives) runs in
-the current shell — this is necessary so that tab completion can access
-the defined variables and functions. This means sourced files can
-overwrite existing shell variables or functions. Use unique variable
-names or prefix them to avoid collisions.
+> [!WARNING]
+> The `[env]` section (including `source` directives) runs in the current
+> shell — this is necessary so that tab completion can access the defined
+> variables and functions. This means sourced files can overwrite existing
+> shell variables or functions. Use unique variable names or prefix them to
+> avoid collisions.
 
 ### Define variables and functions
 
@@ -298,7 +304,7 @@ Set these in the `[env]` section:
 |--------|---------|-------------|
 | `__CLI_CFG_EXEC_SILENT` | `"n"` | Suppress all CLI output (for script use) |
 | `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS` | `"y"` | Allow abbreviated command words |
-| `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS` | `"n"` | Allow abbreviated argument values |
+| `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS` | `"n"` | Allow abbreviated argument values (experimental) |
 | `__CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS` | `"y"` | Ask user to confirm expanded commands |
 | `__CLI_CFG_EXEC_PRINT_HELP_ON_INCOMPLETE_ARGS` | `"y"` | Print help when not all arguments are supplied |
 | `__CLI_CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY` | `"n"` | Only allow values from completion lists |
@@ -316,7 +322,8 @@ Set these in the `[env]` section:
 If set to 4, a log file is created under `/tmp` (filename uses `mktemp`, so
 the exact name varies — check `ls /tmp/cli-*` to find it).
 
-NOTE: Debug output slows the CLI down noticeably.
+> [!NOTE]
+> Debug output slows the CLI down noticeably.
 
 #### `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS` (default: "y")
 
@@ -324,10 +331,15 @@ Allow abbreviated commands. For example, with commands `docker list containers`
 and `docker list images`, you can type `d l c` and it expands to
 `docker list containers` — as long as the abbreviation is unambiguous.
 
-#### `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS` (default: "n")
+#### `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS` (default: "n") — experimental
 
-Allow abbreviated argument values. Disabled by default because it can be
-risky — you should know exactly what is happening.
+> [!CAUTION]
+> Allow abbreviated argument values. Disabled by default because it can be
+> risky — you should know exactly what is happening. The environment can
+> change between tab-completion and execution (e.g. new files appear, a
+> dynamic eval list changes), so an abbreviation that matched one value at
+> completion time may silently resolve to a different value at execution
+> time. Use at your own risk.
 
 #### `__CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS` (default: "y")
 

@@ -104,7 +104,8 @@ Then check the log file:
 The log filename uses `mktemp` so the `XXXXXX` portion is random. Check
 `ls /tmp/cli-*` to find it.
 
-NOTE: Debug output slows the CLI down noticeably.
+> [!NOTE]
+> Debug output slows the CLI down noticeably.
 
 
 ## How do I use this with multiple CLIs?

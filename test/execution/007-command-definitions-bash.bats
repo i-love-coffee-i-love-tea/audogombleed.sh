@@ -20,7 +20,7 @@ teardown_file() {
     _test_cleanup
     rm -f ~/bin/install-maven-war.sh
 }
-setup()        { load '../_helpers/test-setup'; _test_load; }
+setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 
 # bats test_tags=id:bash-185

@@ -14,6 +14,9 @@
 # Signal to the embedded AWK script that we're running under fish
 set -gx __CLI_SHELL fish
 
+# Version (stamped by release.sh)
+set -gx __CLI_VERSION "2.0.0"
+
 # ── Helpers ──
 
 function _cli_is_true
@@ -1399,6 +1402,13 @@ function _cli_read_validator_script
         '	next' \
         '}' \
         '' \
+        '# [env.fish], [env.bash], [env.zsh] section headers' \
+        '/^\\[env\\.(fish|bash|zsh)\\]$/ {' \
+        '	cfg_section = "env"' \
+        '	in_env_func = 0' \
+        '	next' \
+        '}' \
+        '' \
         '# [commands] section header' \
         '/^\\[commands\\]$/ {' \
         '	if (saw_commands) report_error(NR, "duplicate [commands] section")' \
@@ -1410,7 +1420,7 @@ function _cli_read_validator_script
         '' \
         '# unknown section header' \
         '/^\\[[a-z_]*\\]/ {' \
-        '	report_error(NR, "unknown section " C_BOLD $0 C_RED, "valid sections: [env], [commands]")' \
+        '	report_error(NR, "unknown section " C_BOLD $0 C_RED, "valid sections: [env], [env.fish], [env.bash], [env.zsh], [commands]")' \
         '	next' \
         '}' \
         '' \
@@ -2304,7 +2314,7 @@ function _cli_execute
     if test (count $cmdline) -gt 0
         switch "$cmdline[1]"
             case --version
-                echo "derakht.sh 2.1.0 (fish)"
+                echo "$__CLI_VERSION"
                 return 0
             case --cli-print-awk-script
                 printf '%s\n' $__CLI_AWK_SCRIPT

@@ -41,10 +41,11 @@ word to the variable.
     $ mycli ns-logs monitoring <TAB>
     grafana-0  prometheus-0  alertmanager-0
 
-The variable must be `export`ed. The config parser is an embedded AWK
-script that runs as a subprocess — AWK can only see exported environment
-variables (`ENVIRON[]`), not regular shell variables from `[env]`. Use a
-`__CLI_` prefix to avoid polluting the environment of child processes.
+> [!IMPORTANT]
+> The variable must be `export`ed. The config parser is an embedded AWK
+> script that runs as a subprocess — AWK can only see exported environment
+> variables (`ENVIRON[]`), not regular shell variables from `[env]`. Use a
+> `__CLI_` prefix to avoid polluting the environment of child processes.
 
 Use `$` for short, static lists where a function would be overkill. Use
 `&func` when the list is dynamic, derived from a command, or stored in
@@ -85,9 +86,10 @@ Arrays are a common use case:
     ns-logs
         &namespaces_from_array: kubectl logs -f -n \0
 
-Note: `&` expands command words. To complete *arguments* from a function,
-use `:argname:eval:function_name` instead — see Argument placeholders
-below.
+> [!NOTE]
+> `&` expands command words. To complete *arguments* from a function,
+> use `:argname:eval:function_name` instead — see Argument placeholders
+> below.
 
 ## List expansion (`|`)
 

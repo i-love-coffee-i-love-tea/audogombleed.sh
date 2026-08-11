@@ -58,8 +58,9 @@ can execute arbitrary commands in your shell. This includes:
 - `include_commands_from` — merge external config files into the command tree
 - `:arg:eval:function` argument types — call functions during tab completion
 
-The config file has the same privilege level as your `.bashrc`. Treat it
-accordingly.
+> [!WARNING]
+> The config file has the same privilege level as your `.bashrc`. Treat it
+> accordingly.
 
 
 ## Safe execution path
@@ -82,17 +83,20 @@ backwards compatibility.
 
 ### What the safe execution path does NOT protect against
 
-- **User argument injection**: user arguments containing `$(...)` or
-  backticks are still interpreted by `eval` in the execution path. The
-  tokenized path checks the *config expression* for metacharacters, not
-  the user arguments. For example, with this config:
+- **User argument injection**:
 
-      greet: echo "Hello, \1"
-
-  Running `greet $(touch /tmp/flag)` substitutes the argument into the
-  expression, producing `echo "Hello, $(touch /tmp/flag)"`. The tokenizer
-  sees no metacharacters in the config expression and takes the "safe"
-  path — but `eval` still expands `$(touch ...)` in the argument.
+  > [!WARNING]
+  > User arguments containing `$(...)` or backticks are still interpreted
+  > by `eval` in the execution path. The tokenized path checks the *config
+  > expression* for metacharacters, not the user arguments. For example,
+  > with this config:
+  >
+  >     greet: echo "Hello, \1"
+  >
+  > Running `greet $(touch /tmp/flag)` substitutes the argument into the
+  > expression, producing `echo "Hello, $(touch /tmp/flag)"`. The tokenizer
+  > sees no metacharacters in the config expression and takes the "safe"
+  > path — but `eval` still expands `$(touch ...)` in the argument.
 
   Mitigate by using direct commands with fixed arguments, or wrapper
   functions that validate input.
@@ -304,9 +308,10 @@ silently.
 
 ### For shared systems
 
-**Don't use derakht.sh on shared systems** unless you control all users
-and have verified the home directory permissions. The `eval` model means any
-config file injection is a full shell compromise.
+> [!CAUTION]
+> **Don't use derakht.sh on shared systems** unless you control all users
+> and have verified the home directory permissions. The `eval` model means
+> any config file injection is a full shell compromise.
 
 ## CI / supply chain
 

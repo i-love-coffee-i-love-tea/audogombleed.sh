@@ -30,7 +30,7 @@ greet: echo \1
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="greet"
 	assert_success
-	assert_line '__CMD_ARG_VALUE[0]="hello"'
+	assert_line 'set -g __CMD_ARG_VALUE[1] "hello"'
 }
 
 @test "fish: value type default is used when arg omitted" {
@@ -54,7 +54,7 @@ open: echo \1
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="open"
 	assert_success
-	assert_line '__CMD_ARG_DESC[0]="see http://example.com for details"'
+	assert_line 'set -g __CMD_ARG_DESC[1] "see http://example.com for details"'
 }
 
 # ── empty elements in pipe-separated lists ────────────────────────
@@ -78,7 +78,7 @@ env: echo \1
 EOF
 	run _fish_run --cli-run-awk-command output=commands command_filter="env"
 	assert_success
-	assert_line '__CMD_ARG_VALUE[0]="a|b"'
+	assert_line 'set -g __CMD_ARG_VALUE[1] "a|b"'
 }
 
 # ── int_range validation ─────────────────────────────────────────

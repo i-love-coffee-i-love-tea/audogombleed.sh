@@ -62,10 +62,13 @@ With `ROOT`, they are merged without a parent wrapper.
 - **No `[commands]` section:** if the included file exists but has no
   `[commands]` section, the include is silently ignored (no commands
   are merged). The rest of the config works normally.
-- **One level only:** `include_commands_from` only works in the main
-  config's `[env]` section. Included files cannot include further files.
-  Any `include_commands_from` in an included file is treated as a shell
-  command and executed, not parsed as an include directive.
+- **One level only:**
+
+  > [!WARNING]
+  > `include_commands_from` only works in the main config's `[env]` section.
+  > Included files cannot include further files. Any `include_commands_from`
+  > in an included file is treated as a shell command and executed, not
+  > parsed as an include directive.
 
 ## Visual example
 

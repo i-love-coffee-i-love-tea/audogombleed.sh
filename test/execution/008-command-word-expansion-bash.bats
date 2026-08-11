@@ -29,7 +29,7 @@ empty-func
 CMDS
 }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load; }
+setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # --- $variable expansion ---
 

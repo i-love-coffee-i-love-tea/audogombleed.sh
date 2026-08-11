@@ -28,7 +28,7 @@ teardown_file() {
     _test_cleanup
     rm -f ./_ext_word_helper
 }
-setup()        { load '../_helpers/test-setup'; _test_load; }
+setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # --- external variable changes ---
 

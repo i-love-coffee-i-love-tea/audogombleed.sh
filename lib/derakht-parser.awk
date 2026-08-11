@@ -931,38 +931,71 @@ function is_function_command(cmd) {
 
 function print_command_environment_vars(fullcmd, cmd_exec) {
 	# if a filter was given, print command info as variables, for sourcing
-	print "declare -g -A __CMD_ARG __CMD_ARG_TYPE __CMD_ARG_VALUE __CMD_ARG_DESC __CMD_ARG_NAME"
+	_pcev_shell = (ENVIRON["__CLI_SHELL"] != "") ? ENVIRON["__CLI_SHELL"] : "bash"
 	_pcev_fc=fullcmd; sub(/:.*$/, "", _pcev_fc)
 	_pcev_ce=cmd_exec; sub(/:.*$/, "", _pcev_ce)
 	# escape double quotes so the output is safe to eval
 	gsub(/"/, "\\\"", _pcev_ce)
-	printf "__CMD=\"%s\"\n", _pcev_fc
-	# __CMD_EXEC intentionally omitted — not needed during completion,
-	# and including it causes unintended $(...) evaluation when eval'd.
-	arg=0
-	while (arg in cmd_args) {
-		# remove leading and trailing whitespace and trailing colon
-		_pcev_ca=cmd_args[arg]; sub(/^[ \t]+/, "", _pcev_ca); sub(/[ \t]*:.*/, "", _pcev_ca)
-		printf "__CMD_ARG[%s]=\"%s\"\n", arg, _pcev_ca
-		printf "__CMD_ARG_NAME[%s]=\"%s\"\n", arg, cmd_argname[arg]
-		printf "__CMD_ARG_TYPE[%s]=\"%s\"\n", arg, cmd_argtype[arg]
-		_pcev_desc=cmd_argdesc[arg]; gsub(/"/, "\\\"", _pcev_desc)
-		printf "__CMD_ARG_DESC[%s]=\"%s\"\n", arg, _pcev_desc
-		_pcev_val=cmd_argvalue[arg]
-		if (substr(_pcev_val, 1, 1) == "$") {
-			printf "__CMD_ARG_VALUE[%s]=\"\\%s\"\n", arg, _pcev_val
-		} else {
-			gsub(/"/, "\\\"", _pcev_val)
-			printf "__CMD_ARG_VALUE[%s]=\"%s\"\n", arg, _pcev_val
+
+	if (_pcev_shell == "fish") {
+		# Fish-compatible output: set -g syntax, 1-based arrays
+		printf "set -g __CMD \"%s\"\n", _pcev_fc
+		arg=0
+		farg=1
+		while (arg in cmd_args) {
+			# remove leading and trailing whitespace and trailing colon
+			_pcev_ca=cmd_args[arg]; sub(/^[ \t]+/, "", _pcev_ca); sub(/[ \t]*:.*/, "", _pcev_ca)
+			printf "set -g __CMD_ARG[%s] \"%s\"\n", farg, _pcev_ca
+			printf "set -g __CMD_ARG_NAME[%s] \"%s\"\n", farg, cmd_argname[arg]
+			printf "set -g __CMD_ARG_TYPE[%s] \"%s\"\n", farg, cmd_argtype[arg]
+			_pcev_desc=cmd_argdesc[arg]; gsub(/"/, "\\\"", _pcev_desc)
+			printf "set -g __CMD_ARG_DESC[%s] \"%s\"\n", farg, _pcev_desc
+			_pcev_val=cmd_argvalue[arg]
+			if (substr(_pcev_val, 1, 1) == "$") {
+				printf "set -g __CMD_ARG_VALUE[%s] \"\\%s\"\n", farg, _pcev_val
+			} else {
+				gsub(/"/, "\\\"", _pcev_val)
+				printf "set -g __CMD_ARG_VALUE[%s] \"%s\"\n", farg, _pcev_val
+			}
+			arg++
+			farg++
 		}
-		arg++
-	}
-	if (length(cmd_args) == 0) {
-		printf "__CMD_ARG=\"\"\n", arg
-		printf "__CMD_ARG_NAME=\"\"\n", arg
-		printf "__CMD_ARG_TYPE=\"\"\n", arg
-		printf "__CMD_ARG_DESC=\"\"\n", arg
-		printf "__CMD_ARG_VALUE=\"\"\n", arg
+		if (length(cmd_args) == 0) {
+			printf "set -g __CMD_ARG\n"
+			printf "set -g __CMD_ARG_NAME\n"
+			printf "set -g __CMD_ARG_TYPE\n"
+			printf "set -g __CMD_ARG_DESC\n"
+			printf "set -g __CMD_ARG_VALUE\n"
+		}
+	} else {
+		# Bash/zsh output: declare syntax, 0-based arrays
+		print "declare -g -A __CMD_ARG __CMD_ARG_TYPE __CMD_ARG_VALUE __CMD_ARG_DESC __CMD_ARG_NAME"
+		printf "__CMD=\"%s\"\n", _pcev_fc
+		arg=0
+		while (arg in cmd_args) {
+			# remove leading and trailing whitespace and trailing colon
+			_pcev_ca=cmd_args[arg]; sub(/^[ \t]+/, "", _pcev_ca); sub(/[ \t]*:.*/, "", _pcev_ca)
+			printf "__CMD_ARG[%s]=\"%s\"\n", arg, _pcev_ca
+			printf "__CMD_ARG_NAME[%s]=\"%s\"\n", arg, cmd_argname[arg]
+			printf "__CMD_ARG_TYPE[%s]=\"%s\"\n", arg, cmd_argtype[arg]
+			_pcev_desc=cmd_argdesc[arg]; gsub(/"/, "\\\"", _pcev_desc)
+			printf "__CMD_ARG_DESC[%s]=\"%s\"\n", arg, _pcev_desc
+			_pcev_val=cmd_argvalue[arg]
+			if (substr(_pcev_val, 1, 1) == "$") {
+				printf "__CMD_ARG_VALUE[%s]=\"\\%s\"\n", arg, _pcev_val
+			} else {
+				gsub(/"/, "\\\"", _pcev_val)
+				printf "__CMD_ARG_VALUE[%s]=\"%s\"\n", arg, _pcev_val
+			}
+			arg++
+		}
+		if (length(cmd_args) == 0) {
+			printf "__CMD_ARG=\"\"\n", arg
+			printf "__CMD_ARG_NAME=\"\"\n", arg
+			printf "__CMD_ARG_TYPE=\"\"\n", arg
+			printf "__CMD_ARG_DESC=\"\"\n", arg
+			printf "__CMD_ARG_VALUE=\"\"\n", arg
+		}
 	}
 }
 

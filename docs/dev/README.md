@@ -862,7 +862,11 @@ header (lines ~462-502 of derakht.sh).
 
 ## Linting
 
-    $ shellcheck derakht.sh
+    $ dev lint          # shellcheck on derakht.sh
+    $ dev lint fish     # fish_indent --check on derakht.fish
+    $ dev format fish   # auto-fix fish_indent formatting
+
+See also: [Release Process](RELEASE.md).
 
 
 ## Performance tips

@@ -71,7 +71,7 @@ teardown_file() {
     fi
 }
 
-setup()        { load '../_helpers/test-setup'; _test_load; }
+setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # --- FILE ---
 

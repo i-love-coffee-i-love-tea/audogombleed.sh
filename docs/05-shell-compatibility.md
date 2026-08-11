@@ -135,8 +135,9 @@ _cli_shell_is_zsh && { [[ -o SH_WORD_SPLIT ]] && _had_shwordsplit=true || setopt
 _cli_shell_is_zsh && { $_had_shwordsplit || unsetopt SH_WORD_SPLIT; }
 ```
 
-Do NOT set `SH_WORD_SPLIT` globally or in the helper functions — it would
-affect all variable expansions and break quoting-dependent code elsewhere.
+> [!CAUTION]
+> Do NOT set `SH_WORD_SPLIT` globally or in the helper functions — it would
+> affect all variable expansions and break quoting-dependent code elsewhere.
 
 ### Why not set it in the functions?
 
@@ -158,7 +159,10 @@ Distribution via `.deb` package or direct install.
 
 Native support. macOS ships zsh as the default shell, which is fully
 supported. Bash 4.2+ is also supported (install via Homebrew: `brew
-install bash`). The system bash (3.2) is **not supported**.
+install bash`).
+
+> [!WARNING]
+> The system bash (3.2) is **not supported**.
 
 Distribution via Homebrew:
 

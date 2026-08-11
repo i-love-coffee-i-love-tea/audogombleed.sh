@@ -780,8 +780,10 @@ expands to
 \(em as long as the abbreviation is unambiguous\&.
 .TP
 .B __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS
-Default: "n"\&. Allow abbreviated argument values\&. Disabled by default
-because it can be risky \(em you should know exactly what is happening\&.
+(experimental) Default: "n"\&. Allow abbreviated argument values\&. Disabled by default
+because it can be risky \(em the environment can change between
+tab\-completion and execution, so an abbreviation may silently resolve to
+a different value\&. Use at your own risk\&.
 .TP
 .B __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS
 Default: "y"\&. When command expansion changes the submitted command, the
