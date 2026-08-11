@@ -18,7 +18,7 @@ set -gx __CLI_SHELL fish
 
 function _cli_is_true
     set -l val (string lower -- $argv[1])
-    test "$val" = "y" -o "$val" = "yes" -o "$val" = "true" -o "$val" = "1"
+    test "$val" = y -o "$val" = yes -o "$val" = true -o "$val" = 1
 end
 
 # Log function - writes to /tmp/cli-$PROGNAME-fish.log when LOG_LEVEL >= level
@@ -26,10 +26,12 @@ function _cli_log
     set -l level $argv[1]
     set -l msg $argv[2..-1]
     set -l log_level "$__CLI_CFG_LOG_LEVEL"
-    if test -z "$log_level"; set log_level "0"; end
+    if test -z "$log_level"
+        set log_level 0
+    end
     test "$log_level" -ge "$level" 2>/dev/null; or return
     set -l logfile "/tmp/cli-$__CLI_PROGNAME-fish.log"
-    echo "$msg" >> $logfile
+    echo "$msg" >>$logfile
 end
 
 # Check file permissions for config/source files.
@@ -38,7 +40,9 @@ end
 function _cli_check_file_permissions
     set -l file $argv[1]
     set -l context $argv[2]
-    if test -z "$context"; set context "file"; end
+    if test -z "$context"
+        set context file
+    end
 
     if not test -f "$file"
         echo "config error: $context '$file' is not a regular file" >&2
@@ -49,7 +53,7 @@ function _cli_check_file_permissions
     set -l perms (stat -c '%a' "$file" 2>/dev/null; or stat -f '%Lp' "$file" 2>/dev/null)
     if test -n "$perms"
         set -l others (string sub -s -1 -- $perms)
-        if test "$others" = "7"
+        if test "$others" = 7
             echo "config error: $context '$file' is world-writable (mode $perms)" >&2
             return 1
         end
@@ -1753,11 +1757,11 @@ function _cli_read_command_list
         for mline in $main_lines
             if test "$mline" = "[commands]"
                 set past_commands 1
-                printf '%s\n' "[commands]" >> $merged
+                printf '%s\n' "[commands]" >>$merged
                 continue
             end
             if test $past_commands -eq 0
-                printf '%s\n' "$mline" >> $merged
+                printf '%s\n' "$mline" >>$merged
             end
         end
         # Append included commands
@@ -1770,8 +1774,8 @@ function _cli_read_command_list
             end
             set -l in_commands 0
             set -l inc_lines (string split \n -- (cat "$inc_file" | string collect))
-            if test "$inc_parent" != "ROOT"
-                printf '%s\n' "$inc_parent" >> $merged
+            if test "$inc_parent" != ROOT
+                printf '%s\n' "$inc_parent" >>$merged
             end
             for iline in $inc_lines
                 if test "$iline" = "[commands]"
@@ -1785,10 +1789,10 @@ function _cli_read_command_list
                 if test $in_commands -eq 1
                     string match -qr '^\s*$' -- $iline; and continue
                     string match -q '#*' -- $iline; and continue
-                    if test "$inc_parent" != "ROOT"
-                        printf '%s	%s\n' "" "$iline" >> $merged
+                    if test "$inc_parent" != ROOT
+                        printf '%s	%s\n' "" "$iline" >>$merged
                     else
-                        printf '%s\n' "$iline" >> $merged
+                        printf '%s\n' "$iline" >>$merged
                     end
                 end
             end
@@ -2057,19 +2061,19 @@ function _cli_complete_arg
         if string match -q 'set -g __CMD_ARG_TYPE[*] *' -- $line
             set -l idx (string match -r '\[(\d+)\]' -- $line)[2]
             if test "$idx" = "$fish_idx"
-                set arg_type (string trim -c '"' -- $line[-1])
+                set arg_type (string trim -c '"' -- (string split ' ' -- $line)[-1])
             end
         end
         if string match -q 'set -g __CMD_ARG_VALUE[*] *' -- $line
             set -l idx (string match -r '\[(\d+)\]' -- $line)[2]
             if test "$idx" = "$fish_idx"
-                set arg_value (string trim -c '"' -- $line[-1])
+                set arg_value (string trim -c '"' -- (string split ' ' -- $line)[-1])
             end
         end
         if string match -q 'set -g __CMD_ARG_DESC[*] *' -- $line
             set -l idx (string match -r '\[(\d+)\]' -- $line)[2]
             if test "$idx" = "$fish_idx"
-                set arg_desc (string trim -c '"' -- $line[-1])
+                set arg_desc (string trim -c '"' -- (string split ' ' -- $line)[-1])
             end
         end
     end
@@ -2165,9 +2169,9 @@ function _cli_complete_arg
         case SSH_HOST
             if test -f ~/.ssh/config
                 if test -z "$word"
-                    string replace -ri '^\s*host\s+' '' < ~/.ssh/config | string match -rv '^\s*$'
+                    string replace -ri '^\s*host\s+' '' <~/.ssh/config | string match -rv '^\s*$'
                 else
-                    string replace -ri '^\s*host\s+' '' < ~/.ssh/config | string match -rv '^\s*$' | string match -r "^"(string escape --style=regex -- $word)
+                    string replace -ri '^\s*host\s+' '' <~/.ssh/config | string match -rv '^\s*$' | string match -r "^"(string escape --style=regex -- $word)
                 end
             end
 
@@ -2326,7 +2330,7 @@ function _cli_execute
 
     # Handle batch mode flags
     if test (count $cmdline) -gt 0
-        if test "$cmdline[1]" = "-b"; or test "$cmdline[1]" = "--batch"
+        if test "$cmdline[1]" = -b; or test "$cmdline[1]" = --batch
             set batch_mode 1
             set cmdline $cmdline[2..-1]
         end
@@ -2340,7 +2344,7 @@ function _cli_execute
 
     # Check for help triggers before anything else
     set -l last_arg $cmdline[-1]
-    if test "$last_arg" = '?'; or test "$last_arg" = '-h'; or test "$last_arg" = '--help'; or test "$last_arg" = '-?'
+    if test "$last_arg" = '?'; or test "$last_arg" = -h; or test "$last_arg" = --help; or test "$last_arg" = '-?'
         set -l filter (string join ' ' -- $cmdline[1..-2])
         if test -z "$filter"
             _awk output=help command_filter="" do_format=1
@@ -2352,7 +2356,9 @@ function _cli_execute
 
     # Expand abbreviations (disabled in batch mode or by config)
     set -l _expand_cmd "$__CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS"
-    if test -z "$_expand_cmd"; set _expand_cmd "y"; end
+    if test -z "$_expand_cmd"
+        set _expand_cmd y
+    end
     if test $batch_mode -eq 0; and _cli_is_true "$_expand_cmd"
         set -l expanded (_cli_expand_abbreviated_command $cmdline)
         if test -n "$expanded"
@@ -2405,10 +2411,10 @@ function _cli_execute
         set -l total_arg_count 0
         for aline in $awk_out
             if string match -q 'set -g __CMD_ARG_TYPE[*] *' -- $aline
-                set -l atype (string trim -c '"' -- $aline[-1])
+                set -l atype (string trim -c '"' -- (string split ' ' -- $aline)[-1])
                 set total_arg_count (math $total_arg_count + 1)
                 # value type args have a default and are always optional
-                if test "$atype" = "value"
+                if test "$atype" = value
                     continue
                 end
                 # check for ? suffix (optional marker) on the value
@@ -2416,7 +2422,7 @@ function _cli_execute
                 set -l is_optional 0
                 for vline in $awk_out
                     if string match -q "set -g __CMD_ARG_VALUE[$vidx] *" -- $vline
-                        set -l aval (string trim -c '"' -- $vline[-1])
+                        set -l aval (string trim -c '"' -- (string split ' ' -- $vline)[-1])
                         if string match -q '*?' -- $aval
                             set is_optional 1
                         end
@@ -2436,14 +2442,14 @@ function _cli_execute
         set -l inject_idx 0
         for aline in $awk_out
             if string match -q 'set -g __CMD_ARG_TYPE[*] *' -- $aline
-                set -l atype (string trim -c '"' -- $aline[-1])
-                if test "$atype" = "value"
+                set -l atype (string trim -c '"' -- (string split ' ' -- $aline)[-1])
+                if test "$atype" = value
                     if test $inject_idx -ge $args_count
                         # Find the default value
                         set -l vidx (string match -r '\[(\d+)\]' -- $aline)[2]
                         for vline in $awk_out
                             if string match -q "set -g __CMD_ARG_VALUE[$vidx] *" -- $vline
-                                set -l defval (string trim -c '"' -- $vline[-1])
+                                set -l defval (string trim -c '"' -- (string split ' ' -- $vline)[-1])
                                 # Strip trailing ? (optional marker)
                                 set defval (string replace -r '\?$' '' -- $defval)
                                 if test -n "$defval"
@@ -2553,7 +2559,7 @@ _cli_read_command_list
 # Create log file if LOG_LEVEL is set
 if test -n "$__CLI_CFG_LOG_LEVEL"; and test "$__CLI_CFG_LOG_LEVEL" -gt 0 2>/dev/null
     set -l logfile "/tmp/cli-$__CLI_PROGNAME-fish.log"
-    echo "log opened" >> $logfile
+    echo "log opened" >>$logfile
 end
 
 # ── Main: source detection ──
