@@ -38,7 +38,7 @@ empty-func
 CMDS
 }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/execution/008-command-word-expansion-fish.conf" ~/.testcli.conf; }
 
 # --- $variable expansion ---
 

@@ -8,7 +8,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/completion/007-perf-optimization-fish.conf" ~/.testcli.conf; }
 
 # Step 1: word-removal loop in _cli_is_command_complete
 # Exercises the path where the command is not a prefix match and

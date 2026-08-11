@@ -12,7 +12,7 @@ setup_file() {
     cp test/help-test-config.conf ~/.testcli.conf
 }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/help/002-help-global-header-fish.conf" ~/.testcli.conf; }
 
 # bats test_tags=id:fish-298
 @test "fish: global help header appears at top of output" {

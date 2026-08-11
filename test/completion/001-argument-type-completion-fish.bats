@@ -70,7 +70,7 @@ teardown_file() {
     fi
 }
 
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/completion/001-argument-type-completion-fish.conf" ~/.testcli.conf; }
 
 # --- FILE ---
 

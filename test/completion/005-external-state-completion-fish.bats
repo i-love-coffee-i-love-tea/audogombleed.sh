@@ -27,7 +27,7 @@ teardown_file() {
     _test_cleanup
     rm -f ./_ext_word_helper
 }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/completion/005-external-state-completion-fish.conf" ~/.testcli.conf; }
 
 # --- external variable changes ---
 

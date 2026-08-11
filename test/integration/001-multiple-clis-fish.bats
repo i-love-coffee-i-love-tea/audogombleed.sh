@@ -7,7 +7,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/integration/001-multiple-clis-fish.conf" ~/.testcli.conf; }
 
 # bats test_tags=id:fish-322
 @test "fish: each CLI has its own config file" {

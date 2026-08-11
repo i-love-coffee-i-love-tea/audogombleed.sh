@@ -3,7 +3,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/config/002-awk-output-escaping-fish.conf" ~/.testcli.conf; }
 
 @test "fish: AWK output escapes double quotes in arg description" {
     cat > ~/.testcli.conf <<'CONF'

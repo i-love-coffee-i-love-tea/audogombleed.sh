@@ -7,7 +7,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/execution/011-optional-arguments-fish.conf" ~/.testcli.conf; }
 
 @test "fish: optional argument can be omitted" {
     echo 'test-opt: echo "provided"' >> ~/.testcli.conf

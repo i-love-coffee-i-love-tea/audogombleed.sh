@@ -7,7 +7,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/execution/010-exit-codes-fish.conf" ~/.testcli.conf; }
 
 @test "fish: exit code 50: no command supplied" {
     run fish -c 'source ./testcli; _cli_execute 2>&1'

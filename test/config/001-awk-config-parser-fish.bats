@@ -3,7 +3,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/config/001-awk-config-parser-fish.conf" ~/.testcli.conf; }
 
 @test "fish: output=command_names finds expected number of commands" {
     run _fish_run --cli-run-awk-command output=command_names

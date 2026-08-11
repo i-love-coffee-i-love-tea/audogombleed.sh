@@ -9,7 +9,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; cp "test/_configs/config/008-error-handling-fish.conf" ~/.testcli.conf; }
 
 teardown() {
 	rm -f /tmp/err-test-*.conf /tmp/err-test-*.sh
