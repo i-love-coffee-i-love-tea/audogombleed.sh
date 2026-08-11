@@ -18,7 +18,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_bash; }
+setup()        { load '../_test_helper/bats-support/load'; load '../_test_helper/bats-assert/load'; }
 
 # ── Helper: run the AWK parser with a specific awk binary ──────────
 #
