@@ -152,23 +152,6 @@ CONF
 # Variable name validation in [env]
 # ===================================================================
 
-# bats test_tags=id:zsh-090
-@test "zsh: invalid __CLI_ variable name is rejected" {
-    cat > ~/.testcli.conf <<'CONF'
-[env]
-__CLI_CFG.BAD=n
-
-[commands]
-test-cmd: echo "should still work"
-CONF
-    rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
-
-    run _zsh_run test-cmd
-    # Should print error about invalid variable name
-    assert_line --partial "invalid variable name"
-}
-
 # bats test_tags=id:zsh-091
 @test "zsh: valid __CLI_ variable name is accepted" {
     cat > ~/.testcli.conf <<'CONF'

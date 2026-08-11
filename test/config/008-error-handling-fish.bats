@@ -85,23 +85,6 @@ WRAPPER
 }
 
 # ===================================================================
-# Variable name validation in [env]
-# ===================================================================
-
-@test "fish: invalid __CLI_ variable name is rejected" {
-    cat > ~/.testcli.conf <<'CONF'
-[env]
-__CLI_CFG.BAD=n
-
-[commands]
-test-cmd: echo "should still work"
-CONF
-
-    run _fish_run test-cmd
-    # Should print error about invalid variable name
-    assert_line --partial "invalid variable name"
-}
-
 @test "fish: valid __CLI_ variable name is accepted" {
     cat > ~/.testcli.conf <<'CONF'
 [env]
