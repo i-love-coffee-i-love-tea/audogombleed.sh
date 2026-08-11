@@ -1810,7 +1810,6 @@ function _strip_from_last_colon(s) {
 }
 # Portable array clear: BWK awk (macOS) does not support bare "delete array"
 function clear_array(a,    k) { for (k in a) delete a[k] }
-
 MAIN_AWK_EOF
 }
 
