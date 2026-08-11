@@ -128,7 +128,7 @@ __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS="y"
 [commands]
 deploy-staging: echo "deploying to staging"
 CONF
-    run bash -c 'echo | fish ./testcli d'
+    run fish -c 'echo | ./testcli d'
     assert_line --partial "Executing command"
 }
 

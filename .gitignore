@@ -10,6 +10,7 @@ debian/files
 debian/*.substvars
 debian/*.debhelper
 debian/derakht/
+debian/derakht-cli/
 debian/debhelper-build-stamp
 
 # AI session artifacts
