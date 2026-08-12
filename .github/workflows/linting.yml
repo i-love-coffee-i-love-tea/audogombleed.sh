@@ -1,4 +1,4 @@
-name: "ShellCheck"
+name: "Linting"
 on: [push, pull_request, workflow_dispatch]
 
 permissions:
@@ -18,3 +18,13 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
       - name: Run ShellCheck on main script
         run: shellcheck -s bash -S error derakht.sh
+
+  fish-lint:
+    name: "fish_indent"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install fish
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fish
+      - name: Run fish_indent on derakht.fish
+        run: fish --command "fish_indent --check derakht.fish"

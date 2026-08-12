@@ -47,6 +47,20 @@ jobs:
           path: report.xml
           reporter: java-junit
           fail-on-error: true
+      - name: Update test count badge
+        if: always() && github.ref == 'refs/heads/main' && matrix.bash-version == '5.3' && vars.GIST_ID != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GIST_ID: ${{ vars.GIST_ID }}
+        run: |
+          read total failed < <(python3 -c "
+          import xml.etree.ElementTree as ET
+          t = ET.parse('report.xml').getroot().find('testsuite')
+          print(t.get('tests'), t.get('failures'))
+          ")
+          passed=$((total - failed))
+          echo "{\"schemaVersion\":1,\"label\":\"bash tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/bash-tests.json
+          gh gist edit "$GIST_ID" --add /tmp/bash-tests.json
 
   test-ubuntu-zsh:
     name: "test: Ubuntu zsh"
@@ -72,6 +86,59 @@ jobs:
           path: report-zsh.xml
           reporter: java-junit
           fail-on-error: true
+      - name: Update test count badge
+        if: always() && github.ref == 'refs/heads/main' && vars.GIST_ID != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GIST_ID: ${{ vars.GIST_ID }}
+        run: |
+          read total failed < <(python3 -c "
+          import xml.etree.ElementTree as ET
+          t = ET.parse('report-zsh.xml').getroot().find('testsuite')
+          print(t.get('tests'), t.get('failures'))
+          ")
+          passed=$((total - failed))
+          echo "{\"schemaVersion\":1,\"label\":\"zsh tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/zsh-tests.json
+          gh gist edit "$GIST_ID" --add /tmp/zsh-tests.json
+
+  test-ubuntu-fish:
+    name: "test: Ubuntu fish"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          submodules: true
+      - name: Cache apt packages
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        with:
+          path: ~/.cache/apt
+          key: apt-ubuntu-fish
+      - name: Ensure fish is installed
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fish
+      - name: Run fish tests
+        run: test/_bats/bin/bats test/*/*-fish.bats test/*/*-all.bats --formatter junit | tee report-fish.xml
+      - name: Report
+        uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
+        if: always()
+        with:
+          name: "BATS Test Report (Ubuntu fish)"
+          path: report-fish.xml
+          reporter: java-junit
+          fail-on-error: true
+      - name: Update test count badge
+        if: always() && github.ref == 'refs/heads/main' && vars.GIST_ID != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GIST_ID: ${{ vars.GIST_ID }}
+        run: |
+          read total failed < <(python3 -c "
+          import xml.etree.ElementTree as ET
+          t = ET.parse('report-fish.xml').getroot().find('testsuite')
+          print(t.get('tests'), t.get('failures'))
+          ")
+          passed=$((total - failed))
+          echo "{\"schemaVersion\":1,\"label\":\"fish tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/fish-tests.json
+          gh gist edit "$GIST_ID" --add /tmp/fish-tests.json
 
   test-macos:
     name: "test: macOS zsh"
