@@ -515,19 +515,13 @@ jobs:
         run: |
           version="${{ needs.version.outputs.version }}"
           notes_file=$(mktemp)
-          in_section=false
-          while IFS= read -r line; do
-            if [[ "$line" == "## $version"* ]]; then
-              in_section=true
-              continue
-            fi
-            if $in_section && [[ "$line" == "## "* ]]; then
-              break
-            fi
-            if $in_section; then
-              echo "$line" >> "$notes_file"
-            fi
-          done < CHANGELOG.md
+          # Extract the version section, then strip internal sections
+          # (### Renamed, ### CI) that are not relevant to end users.
+          awk -v ver="$version" '
+            /^## / { if (found) exit; if ($2 == ver) found=1; next }
+            found && /^### / { skip = ($0 ~ /^### Renamed/ || $0 ~ /^### CI/) }
+            found && !skip { print }
+          ' CHANGELOG.md > "$notes_file"
           if [ ! -s "$notes_file" ]; then
             echo "# Release $version" > "$notes_file"
           fi
