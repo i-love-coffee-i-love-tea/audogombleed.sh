@@ -2934,7 +2934,7 @@ _cli_levenshtein() {
 	local -a prev curr
 	local i j cost
 
-	for (( j = 0; j <= len_b; j++ )); do prev[$j]=$j; done
+	for (( j = 0; j <= len_b; j++ )); do prev[j]=$j; done
 
 	for (( i = 1; i <= len_a; i++ )); do
 		curr[0]=$i
@@ -2948,7 +2948,7 @@ _cli_levenshtein() {
 			local v=$(( prev[j] + 1 ))
 			(( curr[j-1] + 1 < v )) && v=$(( curr[j-1] + 1 ))
 			(( prev[j-1] + cost < v )) && v=$(( prev[j-1] + cost ))
-			curr[$j]=$v
+			curr[j]=$v
 		done
 		prev=("${curr[@]}")
 	done
@@ -2957,8 +2957,8 @@ _cli_levenshtein() {
 
 # Suggest the closest valid command when input is not recognized.
 _cli_suggest_command() {
-	local input="$1"
-	local input_len=${#input}
+	local _input="$1"
+	local input_len=${#_input}
 
 	# Skip suggestion for very short input
 	[ "$input_len" -lt 3 ] && return
@@ -2973,7 +2973,7 @@ _cli_suggest_command() {
 
 	# Split input into words
 	local -a input_words
-	read -ra input_words <<< "$input"
+	read -ra input_words <<< "$_input"
 	local num_input_words=${#input_words[@]}
 
 	local best_cmd="" best_dist=$((max_dist + 1)) dist cmd_name

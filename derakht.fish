@@ -2567,9 +2567,13 @@ function _cli_levenshtein -a a b
             set -l val_diag $matrix[$diag]
             set -l v (math "$val_above + 1")
             set -l alt (math "$val_left + 1")
-            if [ $alt -lt $v ]; set v $alt; end
+            if [ $alt -lt $v ]
+                set v $alt
+            end
             set -l alt (math "$val_diag + $cost")
-            if [ $alt -lt $v ]; set v $alt; end
+            if [ $alt -lt $v ]
+                set v $alt
+            end
             set -l pos (math "$row_start + $j")
             set matrix[$pos] $v
         end
