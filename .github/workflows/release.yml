@@ -27,6 +27,15 @@ jobs:
           key: apt-release-test
       - name: Install zsh and fish
         run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh fish
+      - name: Verify version matches tag
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          script_version=$(grep '^__CLI_VERSION=' derakht.sh | cut -d'"' -f2)
+          if [ "$tag_version" != "$script_version" ]; then
+            echo "error: tag version ($tag_version) != script version ($script_version)"
+            exit 1
+          fi
+          echo "--- version $tag_version OK ---"
       - name: Smoke test (bash + zsh + fish)
         run: |
           ln -sf ./derakht.sh ./testcli
@@ -68,7 +77,7 @@ jobs:
       - name: Install build dependencies
         run: sudo apt-get update -qq && sudo apt-get install -y -qq dpkg-dev debhelper zsh
       - name: Build .deb
-        run: ./release.d/70-build-deb.sh
+        run: ./scripts/release.d/70-build-deb.sh
       - name: Install .deb
         run: sudo dpkg -i ../derakht_${PKG_VERSION}_all.deb
       - name: Test installed binary
@@ -196,18 +205,19 @@ jobs:
             cp derakht.sh /tmp/pkg/usr/local/bin/derakht
             chmod 755 /tmp/pkg/usr/local/bin/derakht
             cp derakht.1 /tmp/pkg/usr/local/share/man/man1/
-            cat > /tmp/pkg/+MANIFEST <<MANIFEST
-            name: derakht
-            version: "${PKG_VERSION}"
-            comment: "Create CLIs with auto-completable command trees"
-            desc: "Define commands and arguments in a plain text config file. Tab completion, command abbreviation, and help output all come for free."
-            origin: shells/derakht
-            maintainer: github.com@gobuki.org
-            www: https://github.com/i-love-coffee-i-love-tea/derakht-cli
-            prefix: /usr/local
-            flatsize: 0
-            arch: FreeBSD:14:*
-            MANIFEST
+            cat > /tmp/pkg/+MANIFEST <<'MANIFEST'
+name: derakht
+version: "%%PKG_VERSION%%"
+comment: "Create CLIs with auto-completable command trees"
+desc: "Define commands and arguments in a plain text config file. Tab completion, command abbreviation, and help output all come for free."
+origin: shells/derakht
+maintainer: github.com@gobuki.org
+www: https://github.com/i-love-coffee-i-love-tea/derakht-cli
+prefix: /usr/local
+flatsize: 0
+arch: FreeBSD:14:*
+MANIFEST
+            sed -i "s|%%PKG_VERSION%%|${PKG_VERSION}|" /tmp/pkg/+MANIFEST
             pkg create -m /tmp/pkg -r /tmp/pkg -p /tmp/pkg -o /tmp
             # Install
             pkg add /tmp/derakht-cli-${PKG_VERSION}.pkg
@@ -253,18 +263,19 @@ jobs:
             cp derakht.fish /tmp/pkg/usr/local/bin/derakht-fish
             chmod 755 /tmp/pkg/usr/local/bin/derakht-fish
             cp derakht.1 /tmp/pkg/usr/local/share/man/man1/
-            cat > /tmp/pkg/+MANIFEST <<MANIFEST
-            name: derakht-fish
-            version: "${PKG_VERSION}"
-            comment: "Fish shell support for derakht-cli"
-            desc: "Derakht generates shell CLIs from a plain text config file. This package provides the fish shell implementation."
-            origin: shells/derakht-fish
-            maintainer: github.com@gobuki.org
-            www: https://github.com/i-love-coffee-i-love-tea/derakht-cli
-            prefix: /usr/local
-            flatsize: 0
-            arch: FreeBSD:14:*
-            MANIFEST
+            cat > /tmp/pkg/+MANIFEST <<'MANIFEST'
+name: derakht-fish
+version: "%%PKG_VERSION%%"
+comment: "Fish shell support for derakht-cli"
+desc: "Derakht generates shell CLIs from a plain text config file. This package provides the fish shell implementation."
+origin: shells/derakht-fish
+maintainer: github.com@gobuki.org
+www: https://github.com/i-love-coffee-i-love-tea/derakht-cli
+prefix: /usr/local
+flatsize: 0
+arch: FreeBSD:14:*
+MANIFEST
+            sed -i "s|%%PKG_VERSION%%|${PKG_VERSION}|" /tmp/pkg/+MANIFEST
             pkg create -m /tmp/pkg -r /tmp/pkg -p /tmp/pkg -o /tmp
             # Install
             pkg add /tmp/derakht-cli-fish-${PKG_VERSION}.pkg
@@ -303,10 +314,10 @@ jobs:
         run: brew install bash gawk
       - name: Test formula install
         run: |
-          # Build tarball
+          # Build local tarball for testing
           tar czf "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" .
           sha=$(shasum -a 256 "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
-          # Update formula
+          # Patch formula to point to local tarball for testing
           sed -i '' "s|url .*|url \"file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\"|" \
             packaging/homebrew/derakht-cli.rb
           sed -i '' "s|sha256 .*|sha256 \"$sha\"|" \
@@ -326,6 +337,12 @@ jobs:
           MAX_COMPLETION_MS: 250
           MAX_LARGE_COMPLETION_MS: 350
         run: test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap 2>&1 | tail -20
+      - name: Fix formula for release
+        run: |
+          # Restore formula to point to the GitHub release tarball
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          sed -i '' "s|url .*|url \"$release_url\"|" packaging/homebrew/derakht-cli.rb
+          sed -i '' "s|sha256 .*|sha256 :no_check|" packaging/homebrew/derakht-cli.rb
       - name: Upload formula
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -475,10 +492,10 @@ jobs:
         run: brew install fish gawk
       - name: Test formula install
         run: |
-          # Build tarball
+          # Build local tarball for testing
           tar czf "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" .
           sha=$(shasum -a 256 "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
-          # Update formula
+          # Patch formula to point to local tarball for testing
           sed -i '' "s|url .*|url \"file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\"|" \
             packaging/homebrew/derakht-fish.rb
           sed -i '' "s|sha256 .*|sha256 \"$sha\"|" \
@@ -490,6 +507,12 @@ jobs:
           brew install --build-from-source test-user/derakht-cli/derakht-fish
           test -f "$(brew --prefix)/bin/derakht-fish"
           echo "--- fish package OK ---"
+      - name: Fix formula for release
+        run: |
+          # Restore formula to point to the GitHub release tarball
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          sed -i '' "s|url .*|url \"$release_url\"|" packaging/homebrew/derakht-fish.rb
+          sed -i '' "s|sha256 .*|sha256 :no_check|" packaging/homebrew/derakht-fish.rb
       - name: Upload formula (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
