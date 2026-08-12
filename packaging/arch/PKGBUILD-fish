@@ -1,0 +1,19 @@
+# Maintainer: Steffen Kremsler <github.com@gobuki.org>
+pkgname=derakht-cli-fish
+pkgver=2.0.0
+pkgrel=1
+pkgdesc="Fish shell support for derakht-cli — create CLIs with auto-completion from config"
+arch=('any')
+url="https://github.com/i-love-coffee-i-love-tea/derakht-cli"
+license=('BSD-2-Clause')
+depends=('fish' 'gawk')
+source=("derakht-cli-$pkgver.tar.gz::https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${pkgver}.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+    cd "$srcdir/derakht-cli-$pkgver"
+
+    install -Dm644 derakht.fish "$pkgdir/usr/bin/derakht-fish"
+    install -Dm644 derakht.1 "$pkgdir/usr/share/man/man1/derakht.1"
+    install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

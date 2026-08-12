@@ -30,3 +30,14 @@ Description: Create CLIs with auto-completion, abbreviation and built-in help fr
   * Hierarchical config with include_commands_from
   * Dynamic command words from variables, functions, or static lists
   * Batch mode (-b/--batch) for scripted/non-interactive usage
+
+Package: derakht-cli-fish
+Architecture: all
+Depends: ${misc:Depends}, fish, gawk | mawk
+Description: Fish shell support for derakht-cli
+ Derakht generates shell CLIs from a plain text config file.
+ Define commands and arguments declaratively — tab completion,
+ command abbreviation, help output, and execution all come for free.
+ .
+ This package provides the fish shell implementation.
+ Install derakht-cli for the bash/zsh version.
