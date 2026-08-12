@@ -56,4 +56,4 @@ derakht-cli (2.0.0) unstable; urgency=medium
   * Add CLI_UNDER_TEST env var support — run the full bats test suite against an installed binary
   * Reorganize test suite into category subdirectories with numbered files
 
- -- Steffen Kremsler <github.com@gobuki.org>  Wed, 12 Aug 2026 23:39:29 +0200
+ -- Steffen Kremsler <github.com@gobuki.org>  Thu, 13 Aug 2026 00:43:04 +0200
