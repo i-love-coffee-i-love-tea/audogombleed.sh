@@ -5,15 +5,20 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 dry_run=false
-if [ "${1:-}" = "--dry-run" ]; then
-    dry_run=true
-    shift
-fi
+no_tag=false
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --dry-run) dry_run=true; shift ;;
+        --no-tag)  no_tag=true; shift ;;
+        *) break ;;
+    esac
+done
 
 if [ $# -ne 1 ]; then
-    echo "usage: $0 [--dry-run] <version>"
+    echo "usage: $0 [--dry-run] [--no-tag] <version>"
     echo "  e.g. $0 1.2.0"
     echo "       $0 --dry-run 1.2.0"
+    echo "       $0 --no-tag 1.2.0"
     exit 1
 fi
 
@@ -25,7 +30,7 @@ manpage="derakht.1"
 changelog="debian/changelog"
 hook_dir="$SCRIPT_DIR/release.d"
 
-export version script manpage changelog dry_run
+export version script manpage changelog dry_run no_tag
 
 if $dry_run; then
     echo "[dry-run] Running validation hooks..."
@@ -53,6 +58,11 @@ fi
 
 for hook in "$hook_dir"/*.sh; do
     [ -x "$hook" ] || continue
-    echo "Running hook: $(basename "$hook")"
+    name=$(basename "$hook")
+    if $no_tag && [[ "$name" == 9[0-9]-* ]]; then
+        echo "Skipping hook: $name (--no-tag)"
+        continue
+    fi
+    echo "Running hook: $name"
     "$hook"
 done
