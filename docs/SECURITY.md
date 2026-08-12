@@ -1,6 +1,6 @@
 # Security
 
-This document is an honest account of how derakht.sh works, what it
+This document describes how derakht.sh works, what it
 trusts, and what can go wrong. Read it before using the tool in any
 environment where the config file isn't entirely under your control.
 

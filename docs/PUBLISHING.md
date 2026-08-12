@@ -1,7 +1,7 @@
 # Publishing to Package Repositories
 
 This document covers the steps to publish derakht-cli to Debian, Nix (nixpkgs),
-the Arch User Repository (AUR), Homebrew, Fedora COPR, and Gentoo overlays.
+the Arch User Repository (AUR), Homebrew, and Fedora COPR.
 
 ## Prerequisites (all ecosystems)
 
@@ -445,83 +445,6 @@ derakht --version
 
 ---
 
-## 6. Gentoo (overlay)
-
-### Overview
-
-Gentoo packages live in "overlays" — third-party repositories that users
-add via `layman` or `eselect repository`. The package is an "ebuild" —
-a bash script describing how to fetch, compile, and install.
-
-### Steps
-
-#### 6.1 Create the overlay repository
-
-Create a GitHub repo named `gobuki-overlay` (or any name):
-
-```bash
-gh repo create i-love-coffee-i-love-tea/gobuki-overlay --public
-```
-
-The repo needs this structure:
-```
-gobuki-overlay/
-├── metadata/
-│   └── layout.conf
-└── app-misc/
-    └── derakht/
-        ├── derakht-cli-2.1.0.ebuild
-        └── Manifest
-```
-
-#### 6.2 Create metadata/layout.conf
-
-```bash
-cat > metadata/layout.conf <<'EOF'
-masters = gentoo
-thin-manifests = true
-EOF
-```
-
-#### 6.3 Copy and verify the ebuild
-
-```bash
-mkdir -p app-misc/derakht-cli
-cp /path/to/derakht.sh/packaging/gentoo/derakht-cli-2.1.0.ebuild \
-   app-misc/derakht-cli/
-pushd app-misc/derakht-cli
-ebuild derakht-cli-2.1.0.ebuild manifest
-popd
-```
-
-#### 6.4 Push the overlay
-
-```bash
-git add . && git commit -m "app-misc/derakht-cli: add 2.1.0" && git push
-```
-
-#### 6.5 Test locally
-
-```bash
-eselect repository add gobuki-overlay git https://github.com/i-love-coffee-i-love-tea/gobuki-overlay.git
-emerge --sync gobuki-overlay
-emerge app-misc/derakht-cli
-```
-
-#### 6.6 Update for new versions
-
-1. Copy the ebuild to the new version filename: `cp derakht-cli-2.1.0.ebuild derakht-2.2.0.ebuild`
-2. Run `ebuild derakht-2.2.0.ebuild manifest` to update checksums
-3. Commit and push
-
-### Files
-
-| File | Purpose |
-|------|---------|
-| `packaging/gentoo/derakht-cli-2.1.0.ebuild` | Ebuild: source, deps, install steps |
-
----
-
 ## Version bump checklist
 
 When releasing a new version, update all packaging files:
@@ -531,8 +454,7 @@ When releasing a new version, update all packaging files:
 3. `packaging/arch/PKGBUILD` — update `pkgver` and `sha256sums`
 4. `packaging/homebrew/derakht-cli.rb` — update `url` and `sha256`
 5. `packaging/rpm/derakht.spec` — update `Version:` and add `%changelog` entry
-6. `packaging/gentoo/derakht-<version>.ebuild` — copy to new version, run `ebuild ... manifest`
 
-The `release.d/` hooks handle steps 1-6 automatically during `release.sh`.
+The `release.d/` hooks handle steps 1-5 automatically during `release.sh`.
 
 Then follow the update steps for each ecosystem.

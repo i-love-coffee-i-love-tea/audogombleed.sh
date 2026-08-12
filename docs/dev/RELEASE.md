@@ -78,7 +78,6 @@ This runs every `release.d/*.sh` hook in order:
 | `40-generate-debian-changelog.sh` | Generates `debian/changelog` |
 | `60-stamp-version-in-aur-pkgbuild.sh` | Stamps version in AUR PKGBUILD |
 | `61-stamp-version-in-rpm-spec.sh` | Stamps version in RPM spec |
-| `62-stamp-version-in-gentoo-ebuild.sh` | Stamps version in Gentoo ebuild |
 | `63-stamp-version-in-nix-expression.sh` | Stamps version in Nix expression |
 | `64-stamp-version-in-homebrew-formula.sh` | Stamps version in Homebrew formula |
 | `70-build-deb.sh` | Builds a `.deb` package |
@@ -97,7 +96,7 @@ and release notes from `CHANGELOG.md`.
 ### 5. Publish to package repositories
 
 See `docs/PUBLISHING.md` for per-ecosystem instructions (Debian, Nix,
-AUR, Homebrew, RPM/COPR, Gentoo).
+AUR, Homebrew, RPM/COPR).
 
 
 ## Dev commands

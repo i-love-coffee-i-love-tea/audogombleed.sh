@@ -311,7 +311,7 @@ jobs:
           pkgver=$(grep '^pkgver=' PKGBUILD | cut -d= -f2)
           # Create a source tarball matching GitHub's archive layout
           mkdir /tmp/src && cp -a ../.. "/tmp/src/derakht-cli-${pkgver}"
-          tar czf "/tmp/derakht-cli-${pkgver}.tar.gz" -C /tmp/src "derakht-cli-${pkgver}"
+          ../../scripts/make-tarball.sh "/tmp/derakht-cli-${pkgver}.tar.gz" /tmp/src "derakht-cli-${pkgver}"
           rm -rf /tmp/src
           # Update source to use local tarball
           sed -i "s|source=.*|source=(\"derakht-cli-${pkgver}.tar.gz::file:///tmp/derakht-cli-${pkgver}.tar.gz\")|" PKGBUILD
@@ -348,7 +348,7 @@ jobs:
           # Extract version from formula URL (e.g., v2.1.0.tar.gz -> 2.1.0)
           pkgver=$(grep 'url ' packaging/homebrew/derakht-cli.rb | sed 's|.*v\([0-9.]*\)\.tar\.gz.*|\1|')
           # Replace the GitHub URL with a local path for testing
-          tar czf "/tmp/derakht-cli-${pkgver}.tar.gz" .
+          ./scripts/make-tarball.sh "/tmp/derakht-cli-${pkgver}.tar.gz" .
           sha=$(shasum -a 256 "/tmp/derakht-cli-${pkgver}.tar.gz" | cut -d' ' -f1)
           formula="$(brew --repository)/Library/Taps/i-love-coffee-i-love-tea/homebrew-derakht-cli/Formula/derakht-cli.rb"
           sed -i '' "s|url .*|url \"file:///tmp/derakht-cli-${pkgver}.tar.gz\"|" "$formula"
@@ -371,31 +371,8 @@ jobs:
           pkgver=$(grep '^Version:' packaging/rpm/derakht-cli.spec | awk '{print $2}')
           # Create source tarball matching GitHub's archive layout
           mkdir /tmp/src && cp -a . "/tmp/src/derakht-cli-${pkgver}"
-          tar czf ~/rpmbuild/SOURCES/derakht-cli-${pkgver}.tar.gz -C /tmp/src "derakht-cli-${pkgver}"
+          ./scripts/make-tarball.sh ~/rpmbuild/SOURCES/derakht-cli-${pkgver}.tar.gz /tmp/src "derakht-cli-${pkgver}"
           rm -rf /tmp/src
           rpmbuild -ba packaging/rpm/derakht-cli.spec
           # Verify the RPM was built
           rpm -qip ~/rpmbuild/RPMS/noarch/derakht-cli-${pkgver}-1.*.rpm
-
-  pkg-gentoo:
-    name: "pkg: Gentoo ebuild"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-      - name: Validate ebuild
-        run: |
-          # Find the ebuild file (version in filename)
-          ebuild=$(ls packaging/gentoo/derakht-cli-*.ebuild | head -1)
-          if [ -z "$ebuild" ]; then
-            echo "No ebuild found"
-            exit 1
-          fi
-          # Check bash syntax
-          bash -n "$ebuild"
-          # Check required ebuild variables are defined
-          for var in DESCRIPTION HOMEPAGE SRC_URI LICENSE SLOT KEYWORDS; do
-            grep -q "^${var}=" "$ebuild" || { echo "Missing $var"; exit 1; }
-          done
-          # Check required functions exist
-          grep -q "^src_install()" "$ebuild" || { echo "Missing src_install"; exit 1; }
-          echo "ebuild validation passed: $ebuild"

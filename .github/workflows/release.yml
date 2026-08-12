@@ -65,6 +65,7 @@ jobs:
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -92,7 +93,55 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-deb-${{ needs.version.outputs.version }}
-          path: ../derakht-cli_*_all.deb
+          path: ../derakht-cli_${{ needs.version.outputs.version }}_all.deb
+          retention-days: 5
+
+  # ── Build + test fish .deb (Debian/Ubuntu) ─────────────────────────
+  build-deb-fish:
+    name: "pkg: .deb (fish)"
+    runs-on: ubuntu-latest
+    needs: [test, version]
+    env:
+      PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          submodules: true
+      - name: Install build dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq dpkg-dev fish gawk
+      - name: Build .deb
+        run: |
+          pkgdir="/tmp/derakht-cli-fish-${PKG_VERSION}"
+          mkdir -p "$pkgdir/DEBIAN" "$pkgdir/usr/bin" "$pkgdir/usr/share/man/man1"
+          cat > "$pkgdir/DEBIAN/control" <<EOF
+          Package: derakht-cli-fish
+          Version: ${PKG_VERSION}
+          Architecture: all
+          Maintainer: Steffen Kremsler <debian@gobuki.org>
+          Depends: fish, gawk | mawk
+          Description: Fish shell support for derakht-cli
+           Derakht generates shell CLIs from a plain text config file.
+           This package provides the fish shell implementation.
+          EOF
+          install -m 644 derakht.fish "$pkgdir/usr/bin/derakht-fish"
+          install -m 644 derakht.1 "$pkgdir/usr/share/man/man1/derakht.1"
+          dpkg-deb --build "$pkgdir" "../derakht-cli-fish_${PKG_VERSION}_all.deb"
+      - name: Install .deb
+        run: sudo dpkg -i ../derakht-cli-fish_${PKG_VERSION}_all.deb
+      - name: Test installed file
+        run: |
+          test -f /usr/bin/derakht-fish
+          echo "--- fish package OK ---"
+      - name: Run fish tests against installed file
+        run: |
+          export CLI_UNDER_TEST=/usr/bin/derakht-fish
+          test/_bats/bin/bats test/*/*-fish.bats test/*/*-all.bats --tap
+      - name: Upload .deb (fish)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pkg-deb-fish-${{ needs.version.outputs.version }}
+          path: ../derakht-cli-fish_*_all.deb
           retention-days: 5
 
   # ── Build + test .rpm (Fedora) ────────────────────────────────────
@@ -104,6 +153,7 @@ jobs:
       image: fedora:latest
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -114,8 +164,8 @@ jobs:
         run: |
           rpmdev-setuptree
           mkdir /tmp/src && cp -a . "/tmp/src/derakht-cli-${PKG_VERSION}"
-          tar czf ~/rpmbuild/SOURCES/derakht-cli-${PKG_VERSION}.tar.gz \
-            -C /tmp/src "derakht-cli-${PKG_VERSION}"
+          ./scripts/make-tarball.sh ~/rpmbuild/SOURCES/derakht-cli-${PKG_VERSION}.tar.gz \
+            /tmp/src "derakht-cli-${PKG_VERSION}"
           rm -rf /tmp/src
           rpmbuild -ba packaging/rpm/derakht-cli.spec
       - name: Install .rpm
@@ -144,6 +194,7 @@ jobs:
       image: archlinux:latest
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -154,8 +205,8 @@ jobs:
         run: |
           cd packaging/arch
           mkdir /tmp/src && cp -a ../.. "/tmp/src/derakht-cli-${PKG_VERSION}"
-          tar czf "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" -C /tmp/src \
-            "derakht-cli-${PKG_VERSION}"
+          ../../scripts/make-tarball.sh "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" \
+            /tmp/src "derakht-cli-${PKG_VERSION}"
           rm -rf /tmp/src
           sha=$(sha256sum "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
           sed -i "s|source=.*|source=(\"derakht-cli-${PKG_VERSION}.tar.gz::file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\")|" PKGBUILD
@@ -187,6 +238,7 @@ jobs:
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -245,6 +297,7 @@ MANIFEST
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -302,6 +355,7 @@ MANIFEST
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -316,7 +370,7 @@ MANIFEST
       - name: Test formula install
         run: |
           # Build local tarball for testing
-          tar czf "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" .
+          ./scripts/make-tarball.sh "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" .
           sha=$(shasum -a 256 "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
           # Patch formula to point to local tarball for testing
           sed -i '' "s|url .*|url \"file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\"|" \
@@ -352,53 +406,6 @@ MANIFEST
           path: packaging/homebrew/derakht-cli.rb
           retention-days: 5
 
-  # ── Build + test fish .deb (Debian/Ubuntu) ─────────────────────────
-  build-deb-fish:
-    name: "pkg: .deb (fish)"
-    runs-on: ubuntu-latest
-    needs: [test, version]
-    env:
-      PKG_VERSION: ${{ needs.version.outputs.version }}
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          submodules: true
-      - name: Install build dependencies
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq dpkg-dev fish gawk
-      - name: Build .deb
-        run: |
-          pkgdir="/tmp/derakht-cli-fish-${PKG_VERSION}"
-          mkdir -p "$pkgdir/DEBIAN" "$pkgdir/usr/bin" "$pkgdir/usr/share/man/man1"
-          cat > "$pkgdir/DEBIAN/control" <<EOF
-          Package: derakht-cli-fish
-          Version: ${PKG_VERSION}
-          Architecture: all
-          Maintainer: Steffen Kremsler <debian@gobuki.org>
-          Depends: fish, gawk | mawk
-          Description: Fish shell support for derakht-cli
-           Derakht generates shell CLIs from a plain text config file.
-           This package provides the fish shell implementation.
-          EOF
-          install -m 644 derakht.fish "$pkgdir/usr/bin/derakht-fish"
-          install -m 644 derakht.1 "$pkgdir/usr/share/man/man1/derakht.1"
-          dpkg-deb --build "$pkgdir" "../derakht-cli-fish_${PKG_VERSION}_all.deb"
-      - name: Install .deb
-        run: sudo dpkg -i ../derakht-cli-fish_${PKG_VERSION}_all.deb
-      - name: Test installed file
-        run: |
-          test -f /usr/bin/derakht-fish
-          echo "--- fish package OK ---"
-      - name: Run fish tests against installed file
-        run: |
-          export CLI_UNDER_TEST=/usr/bin/derakht-fish
-          test/_bats/bin/bats test/*/*-fish.bats test/*/*-all.bats --tap
-      - name: Upload .deb (fish)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: pkg-deb-fish-${{ needs.version.outputs.version }}
-          path: ../derakht-cli-fish_*_all.deb
-          retention-days: 5
-
   # ── Build + test fish .rpm (Fedora) ───────────────────────────────
   build-rpm-fish:
     name: "pkg: .rpm (fish)"
@@ -408,6 +415,7 @@ MANIFEST
       image: fedora:latest
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -418,8 +426,8 @@ MANIFEST
         run: |
           rpmdev-setuptree
           mkdir /tmp/src && cp -a . "/tmp/src/derakht-cli-${PKG_VERSION}"
-          tar czf ~/rpmbuild/SOURCES/derakht-cli-${PKG_VERSION}.tar.gz \
-            -C /tmp/src "derakht-cli-${PKG_VERSION}"
+          ./scripts/make-tarball.sh ~/rpmbuild/SOURCES/derakht-cli-${PKG_VERSION}.tar.gz \
+            /tmp/src "derakht-cli-${PKG_VERSION}"
           rm -rf /tmp/src
           rpmbuild -ba packaging/rpm/derakht-cli-fish.spec
       - name: Install .rpm
@@ -448,6 +456,7 @@ MANIFEST
       image: archlinux:latest
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -458,8 +467,8 @@ MANIFEST
         run: |
           cd packaging/arch
           mkdir /tmp/src && cp -a ../.. "/tmp/src/derakht-cli-${PKG_VERSION}"
-          tar czf "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" -C /tmp/src \
-            "derakht-cli-${PKG_VERSION}"
+          ../../scripts/make-tarball.sh "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" \
+            /tmp/src "derakht-cli-${PKG_VERSION}"
           rm -rf /tmp/src
           sha=$(sha256sum "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
           sed -i "s|source=.*|source=(\"derakht-cli-${PKG_VERSION}.tar.gz::file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\")|" PKGBUILD-fish
@@ -491,6 +500,7 @@ MANIFEST
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -500,7 +510,7 @@ MANIFEST
       - name: Test formula install
         run: |
           # Build local tarball for testing
-          tar czf "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" .
+          ./scripts/make-tarball.sh "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" .
           sha=$(shasum -a 256 "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
           # Patch formula to point to local tarball for testing
           sed -i '' "s|url .*|url \"file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\"|" \
@@ -535,6 +545,7 @@ MANIFEST
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -571,6 +582,7 @@ MANIFEST
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -598,77 +610,11 @@ MANIFEST
           path: packaging/nix/default-fish.nix
           retention-days: 5
 
-  # ── Build + test Gentoo ebuild ────────────────────────────────────
-  build-gentoo:
-    name: "pkg: Gentoo"
-    runs-on: ubuntu-latest
-    needs: [test, version]
-    env:
-      PKG_VERSION: ${{ needs.version.outputs.version }}
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          submodules: true
-      - name: Install build dependencies
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq bash gawk zsh
-      - name: Test ebuild install
-        run: |
-          ebuild="packaging/gentoo/derakht-cli-${PKG_VERSION}.ebuild"
-          mkdir -p /tmp/gentoo-test/usr/bin /tmp/gentoo-test/usr/share/man/man1
-          # Simulate src_install from the ebuild
-          install -m 755 derakht.sh /tmp/gentoo-test/usr/bin/derakht
-          install -m 644 derakht.1 /tmp/gentoo-test/usr/share/man/man1/
-          /tmp/gentoo-test/usr/bin/derakht --version | grep -q "$PKG_VERSION"
-          echo "--- version OK ---"
-      - name: Run bats tests against installed binary
-        run: |
-          export CLI_UNDER_TEST=/tmp/gentoo-test/usr/bin/derakht
-          test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
-      - name: Upload ebuild
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: pkg-gentoo-${{ needs.version.outputs.version }}
-          path: packaging/gentoo/derakht-cli-${{ needs.version.outputs.version }}.ebuild
-          retention-days: 5
-
-  # ── Build + test Gentoo ebuild (fish) ─────────────────────────────
-  build-gentoo-fish:
-    name: "pkg: Gentoo (fish)"
-    runs-on: ubuntu-latest
-    needs: [test, version]
-    env:
-      PKG_VERSION: ${{ needs.version.outputs.version }}
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          submodules: true
-      - name: Install fish
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq fish gawk
-      - name: Test ebuild install
-        run: |
-          ebuild="packaging/gentoo/derakht-cli-fish-${PKG_VERSION}.ebuild"
-          mkdir -p /tmp/gentoo-test/usr/bin /tmp/gentoo-test/usr/share/man/man1
-          # Simulate src_install from the ebuild
-          install -m 644 derakht.fish /tmp/gentoo-test/usr/bin/derakht-fish
-          install -m 644 derakht.1 /tmp/gentoo-test/usr/share/man/man1/
-          test -f /tmp/gentoo-test/usr/bin/derakht-fish
-          echo "--- fish package OK ---"
-      - name: Run fish tests against installed file
-        run: |
-          export CLI_UNDER_TEST=/tmp/gentoo-test/usr/bin/derakht-fish
-          test/_bats/bin/bats test/*/*-fish.bats test/*/*-all.bats --tap
-      - name: Upload ebuild (fish)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: pkg-gentoo-fish-${{ needs.version.outputs.version }}
-          path: packaging/gentoo/derakht-cli-fish-${{ needs.version.outputs.version }}.ebuild
-          retention-days: 5
-
   # ── Create GitHub Release (only if all builds pass) ───────────────
   release:
     name: "release: GitHub"
     runs-on: ubuntu-latest
-    needs: [build-deb, build-rpm, build-arch, build-freebsd, build-homebrew, build-deb-fish, build-rpm-fish, build-arch-fish, build-freebsd-fish, build-homebrew-fish, build-nix, build-nix-fish, build-gentoo, build-gentoo-fish, version]
+    needs: [build-deb, build-rpm, build-arch, build-freebsd, build-homebrew, build-deb-fish, build-rpm-fish, build-arch-fish, build-freebsd-fish, build-homebrew-fish, build-nix, build-nix-fish, version]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
@@ -709,8 +655,7 @@ MANIFEST
                    dist/pkg-deb-fish-${PKG_VERSION}/* dist/pkg-rpm-fish-${PKG_VERSION}/* \
                    dist/pkg-arch-fish-${PKG_VERSION}/* dist/pkg-freebsd-fish-${PKG_VERSION}/* \
                    dist/pkg-homebrew-fish-${PKG_VERSION}/* \
-                   dist/pkg-nix-${PKG_VERSION}/* dist/pkg-nix-fish-${PKG_VERSION}/* \
-                   dist/pkg-gentoo-${PKG_VERSION}/* dist/pkg-gentoo-fish-${PKG_VERSION}/*; do
+                   dist/pkg-nix-${PKG_VERSION}/* dist/pkg-nix-fish-${PKG_VERSION}/*; do
             [ -f "$f" ] && assets+=("$f")
           done
           for attempt in 1 2 3; do
@@ -725,3 +670,12 @@ MANIFEST
           done
           echo "error: all 3 attempts to create release failed"
           exit 1
+
+      - name: Publish checksums to Gist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PKG_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          gist_url=$(./scripts/publish-checksums.sh "$PKG_VERSION" dist/)
+          echo "Checksums Gist: $gist_url"
+          echo "gist_url=$gist_url" >> "$GITHUB_OUTPUT"
