@@ -54,11 +54,11 @@ jobs:
           TEST_BADGE_GIST_ID: ${{ vars.TEST_BADGE_GIST_ID }}
         run: |
           read total failed < <(python3 -c "
-          import xml.etree.ElementTree as ET
-          root = ET.parse('report.xml').getroot()
-          total = sum(int(ts.get('tests', 0)) for ts in root.findall('.//testsuite'))
-          failed = sum(int(ts.get('failures', 0)) for ts in root.findall('.//testsuite'))
-          print(total, failed)
+          import re
+          xml = open('report.xml').read()
+          tests = sum(int(m) for m in re.findall(r'tests=\"(\d+)\"', xml))
+          failures = sum(int(m) for m in re.findall(r'failures=\"(\d+)\"', xml))
+          print(tests, failures)
           ")
           passed=$((total - failed))
           echo "{\"schemaVersion\":1,\"label\":\"bash tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/bash-tests.json
@@ -95,11 +95,11 @@ jobs:
           TEST_BADGE_GIST_ID: ${{ vars.TEST_BADGE_GIST_ID }}
         run: |
           read total failed < <(python3 -c "
-          import xml.etree.ElementTree as ET
-          root = ET.parse('report-zsh.xml').getroot()
-          total = sum(int(ts.get('tests', 0)) for ts in root.findall('.//testsuite'))
-          failed = sum(int(ts.get('failures', 0)) for ts in root.findall('.//testsuite'))
-          print(total, failed)
+          import re
+          xml = open('report-zsh.xml').read()
+          tests = sum(int(m) for m in re.findall(r'tests=\"(\d+)\"', xml))
+          failures = sum(int(m) for m in re.findall(r'failures=\"(\d+)\"', xml))
+          print(tests, failures)
           ")
           passed=$((total - failed))
           echo "{\"schemaVersion\":1,\"label\":\"zsh tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/zsh-tests.json
@@ -136,11 +136,11 @@ jobs:
           TEST_BADGE_GIST_ID: ${{ vars.TEST_BADGE_GIST_ID }}
         run: |
           read total failed < <(python3 -c "
-          import xml.etree.ElementTree as ET
-          root = ET.parse('report-fish.xml').getroot()
-          total = sum(int(ts.get('tests', 0)) for ts in root.findall('.//testsuite'))
-          failed = sum(int(ts.get('failures', 0)) for ts in root.findall('.//testsuite'))
-          print(total, failed)
+          import re
+          xml = open('report-fish.xml').read()
+          tests = sum(int(m) for m in re.findall(r'tests=\"(\d+)\"', xml))
+          failures = sum(int(m) for m in re.findall(r'failures=\"(\d+)\"', xml))
+          print(tests, failures)
           ")
           passed=$((total - failed))
           echo "{\"schemaVersion\":1,\"label\":\"fish tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/fish-tests.json
@@ -175,7 +175,7 @@ jobs:
           ln -sf ./derakht.sh ./testcli
           cp example.conf ~/.testcli.conf
           zsh ./testcli echo hello world
-          /opt/homebrew/bin/bash ./testcli echo hello world
+          bash ./testcli echo hello world
           rm -f ./testcli ~/.testcli.conf
       - name: Run zsh tests
         env:
