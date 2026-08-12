@@ -17,9 +17,13 @@
 - Add optional glob filter parameter for `FILE`, `DIR`, and `FILE_OR_DIR` types to restrict completions by pattern (e.g. `*.txt`, `*.log`)
 - Unify config syntax so all parameterized types use `:name:type[:value[:description]]`, where `FILE`/`DIR`/`FILE_OR_DIR` treat the value field as a glob pattern
 - Add formal config grammar specification (`docs/config-grammar.md`) with embedded validator accessible via `--cli-validate-config`
+- Add `--cli-print-validator-script` flag to extract the embedded validator AWK script
+- Add "did you mean?" suggestions for unrecognized commands (Levenshtein distance-based, with positional word comparison for multi-word commands)
 - Add `.deb` packaging (`build-deb.sh`, `debian/` directory)
 - Add Homebrew formula, RPM spec, Gentoo ebuild, Nix expression, and Arch Linux PKGBUILD packaging with CI verification
+- Add separate fish packaging for all 6 formats (deb, rpm, Arch, Homebrew, Nix, Gentoo)
 - Remove `CFG_EXEC_SUBPROCESS` option — redundant with the existing alias mode (`alias mycli='_cli_execute'`)
+- Extract embedded AWK scripts into `lib/` with `embed-awk.sh` for atomic release artifacts
 
 ### Performance
 
