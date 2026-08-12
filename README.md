@@ -1,4 +1,8 @@
 [![Tests](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
+<!-- Test count badges — see .github/workflows/main.yml for setup instructions -->
+[![bash tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/GIST_ID/raw/bash-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
+[![zsh tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/GIST_ID/raw/zsh-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
+[![fish tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/GIST_ID/raw/fish-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
 [![Coverage](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/coverage.yml)
 [![ShellCheck](https://img.shields.io/badge/shellcheck-passing-brightgreen)](https://www.shellcheck.net/)
 [![License](https://img.shields.io/github/license/i-love-coffee-i-love-tea/derakht-cli)](LICENSE)
@@ -102,21 +106,31 @@ functions to maintain.
   config. A multi-level command tree with dynamic arguments and included
   modules needs more, but the same mechanism.
 
-### :dart: Use cases
+### :dart: Use case
 
-- **Kubernetes admins** — `kubectl` commands are long and hard to remember.
-  Wrap `kubectl get pods`, `kubectl logs -f`, `kubectl rollout restart` in a
-  CLI with tab completion for namespaces, deployments, and pods.
-- **DevOps / infrastructure** — shorten `terraform plan -var-file=staging.tfvars`
-  to `tf p st`. Add tab completion for environments, workspaces, and targets.
-- **Internal tools** — your team's shell scripts, deploy scripts, and one-off
-  utilities don't ship with tab completion. Give them a discoverable CLI
-  without writing any completion code.
-- **Shell script collections** — unify a folder of scripts under one command
-  tree with help output and abbreviation. No need to remember script names
-  or flags.
-- **Docker / Podman** — wrap complex `docker compose` or `podman` commands
-  with environment-specific arguments and service name completion.
+Over the years, scripts and tools accumulate in your `~/bin`. Some you use
+daily, others you wrote six months ago and can't quite remember what they do
+or how they're invoked. You may have written `--help` output for them, but
+that doesn't help when you can't remember the command name in the first
+place.
+
+Writing proper shell completions and usage docs for personal scripts is
+rarely worth the effort — so most scripts go without.
+
+Derakht solves both problems at once: define your tools in a config file and
+you get tab completion, abbreviation, help output, and documentation — all
+without touching the scripts themselves. Type the first letter, hit Tab, and
+see what's there.
+
+**Works with AI too.** AI agents can read your scripts to figure out the
+interface — but that costs tokens every time. Tell AI to create a derakht
+config for your scripts once, and it never has to scan them again. The config
+is a persistent, structured interface to your tools.
+
+**Project CLIs for teams.** Check a config file into your repo and everyone
+gets the same commands — `dev test`, `dev lint`, `dev deploy staging` — with
+tab completion and help. No Makefile targets to forget, no README sections
+to go stale. See `dev.conf` in this repo for a working example.
 
 ## :zap: Quick Start
 
