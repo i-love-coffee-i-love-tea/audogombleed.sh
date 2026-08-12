@@ -2927,6 +2927,93 @@ _cli_print_usage() {
 	echo "execute '$__CLI_PROGNAME ?' or '$__CLI_PROGNAME -h' to display available commands"
 }
 
+# Levenshtein distance between two strings (pure bash, two-row DP).
+_cli_levenshtein() {
+	local a="$1" b="$2"
+	local len_a=${#a} len_b=${#b}
+	local -a prev curr
+	local i j cost
+
+	for (( j = 0; j <= len_b; j++ )); do prev[$j]=$j; done
+
+	for (( i = 1; i <= len_a; i++ )); do
+		curr[0]=$i
+		for (( j = 1; j <= len_b; j++ )); do
+			if [ "${a:i-1:1}" = "${b:j-1:1}" ]; then
+				cost=0
+			else
+				cost=1
+			fi
+			# min of prev[j]+1, curr[j-1]+1, prev[j-1]+cost
+			local v=$(( prev[j] + 1 ))
+			(( curr[j-1] + 1 < v )) && v=$(( curr[j-1] + 1 ))
+			(( prev[j-1] + cost < v )) && v=$(( prev[j-1] + cost ))
+			curr[$j]=$v
+		done
+		prev=("${curr[@]}")
+	done
+	echo "${prev[$len_b]}"
+}
+
+# Suggest the closest valid command when input is not recognized.
+_cli_suggest_command() {
+	local input="$1"
+	local input_len=${#input}
+
+	# Skip suggestion for very short input
+	[ "$input_len" -lt 3 ] && return
+
+	# Set max edit distance based on input length
+	local max_dist
+	if [ "$input_len" -le 5 ]; then
+		max_dist=1
+	else
+		max_dist=2
+	fi
+
+	# Split input into words
+	local -a input_words
+	read -ra input_words <<< "$input"
+	local num_input_words=${#input_words[@]}
+
+	local best_cmd="" best_dist=$((max_dist + 1)) dist cmd_name
+	for _l in "${__CLI_CONFIG[@]}"; do
+		cmd_name="${_l%%,*}"
+		cmd_name="${cmd_name%"${cmd_name##*[![:space:]]}"}"
+
+		# Split command name into words and compare positionally
+		local -a cmd_words
+		read -ra cmd_words <<< "$cmd_name"
+		local num_cmd_words=${#cmd_words[@]}
+
+		# Compare word-by-word at matching positions
+		dist=0
+		local min_words=$(( num_input_words < num_cmd_words ? num_input_words : num_cmd_words ))
+		local w
+		for (( w = 0; w < min_words; w++ )); do
+			dist=$(( dist + $(_cli_levenshtein "${input_words[$w]}" "${cmd_words[$w]}") ))
+		done
+
+		if [ "$dist" -lt "$best_dist" ]; then
+			best_dist=$dist
+			best_cmd="$cmd_name"
+		fi
+	done
+
+	if [ "$best_dist" -le "$max_dist" ] && [ -n "$best_cmd" ]; then
+		# Suggest only the matching prefix (up to number of input words)
+		local -a suggest_words
+		read -ra suggest_words <<< "$best_cmd"
+		local suggest=""
+		local s
+		for (( s = 0; s < num_input_words && s < ${#suggest_words[@]}; s++ )); do
+			[ -n "$suggest" ] && suggest="$suggest "
+			suggest="$suggest${suggest_words[$s]}"
+		done
+		echo "did you mean '$suggest'?"
+	fi
+}
+
 # Safe execution: tokenize and exec for simple commands,
 # fall back to eval for commands with shell metacharacters.
 _cli_execute_safe() {
@@ -3030,6 +3117,7 @@ _cli_execute_command() {
 			fi
 		else
 			_cli_print_usage "not a recognized command: '$cmdline'"
+			_cli_suggest_command "$cmdline"
 			exit_code=51
 			_cli_exit_if_not_sourced $exit_code
 			return "$exit_code"
@@ -3232,6 +3320,7 @@ _cli_execute_command() {
 		
 	else
 		_cli_print_usage "not a recognized command: '$cmdline'"
+		_cli_suggest_command "$cmdline"
 		exit_code=51
 		_cli_exit_if_not_sourced $exit_code
 	fi

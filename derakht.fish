@@ -2529,7 +2529,112 @@ function _cli_execute
         return $exit_code
     else
         echo "not a recognized command: '$cmdline'" >&2
+        _cli_suggest_command "$cmdline"
         return 51
+    end
+end
+
+# ── Did you mean? support ──
+
+# Levenshtein distance between two strings.
+# Uses iterative DP with flat array storage.
+function _cli_levenshtein -a a b
+    set -l len_a (string length -- "$a")
+    set -l len_b (string length -- "$b")
+
+    # Use a flat array: index = i * (len_b + 1) + j + 1
+    set -l cols (math "$len_b + 1")
+    set -l matrix
+    for j in (seq 1 $cols)
+        set -a matrix (math "$j - 1")
+    end
+
+    for i in (seq 1 $len_a)
+        set -l row_start (math "$i * $cols + 1")
+        set matrix[$row_start] $i
+        set -l a_char (string sub -s $i -l 1 -- "$a")
+        for j in (seq 1 $len_b)
+            set -l b_char (string sub -s $j -l 1 -- "$b")
+            set -l cost 1
+            if [ "$a_char" = "$b_char" ]
+                set cost 0
+            end
+            set -l above (math "$row_start - $cols + $j")
+            set -l left (math "$row_start + $j - 1")
+            set -l diag (math "$row_start - $cols + $j - 1")
+            set -l val_above $matrix[$above]
+            set -l val_left $matrix[$left]
+            set -l val_diag $matrix[$diag]
+            set -l v (math "$val_above + 1")
+            set -l alt (math "$val_left + 1")
+            if [ $alt -lt $v ]; set v $alt; end
+            set -l alt (math "$val_diag + $cost")
+            if [ $alt -lt $v ]; set v $alt; end
+            set -l pos (math "$row_start + $j")
+            set matrix[$pos] $v
+        end
+    end
+    set -l last (math "$len_a * $cols + $len_b + 1")
+    echo $matrix[$last]
+end
+
+# Suggest the closest valid command when input is not recognized.
+function _cli_suggest_command -a input
+    set -l input_len (string length -- "$input")
+    [ $input_len -lt 3 ] && return
+
+    set -l max_dist 2
+    if [ $input_len -le 5 ]
+        set max_dist 1
+    end
+
+    # Split input into words
+    set -l input_words (string split ' ' -- "$input")
+    set -l num_input_words (count $input_words)
+
+    set -l best_cmd ""
+    set -l best_dist (math "$max_dist + 1")
+
+    for entry in $__CLI_CONFIG
+        set -l cmd_name (string split -m 1 ',' -- $entry)[1]
+        set cmd_name (string trim -- "$cmd_name")
+
+        # Split command name into words and compare positionally
+        set -l cmd_words (string split ' ' -- "$cmd_name")
+        set -l num_cmd_words (count $cmd_words)
+
+        set -l dist 0
+        set -l min_words $num_input_words
+        if [ $num_cmd_words -lt $min_words ]
+            set min_words $num_cmd_words
+        end
+
+        for w in (seq 1 $min_words)
+            set dist (math "$dist + ("(_cli_levenshtein "$input_words[$w]" "$cmd_words[$w]")")")
+        end
+
+        if [ $dist -lt $best_dist ]
+            set best_dist $dist
+            set best_cmd "$cmd_name"
+        end
+    end
+
+    if [ $best_dist -le $max_dist ] && [ -n "$best_cmd" ]
+        # Suggest only the matching prefix (up to number of input words)
+        set -l suggest_words (string split ' ' -- "$best_cmd")
+        set -l suggest ""
+        set -l limit $num_input_words
+        set -l num_suggest (count $suggest_words)
+        if [ $num_suggest -lt $limit ]
+            set limit $num_suggest
+        end
+        for s in (seq 1 $limit)
+            if [ -n "$suggest" ]
+                set suggest "$suggest "
+            end
+            set suggest "$suggest$suggest_words[$s]"
+        end
+        echo "did you mean '$suggest'?" >&2
     end
 end
 
