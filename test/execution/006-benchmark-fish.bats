@@ -6,7 +6,8 @@
 #
 # Tests completion latency (the TAB-press experience) and execution latency.
 # Dev README thresholds: 400ms sluggish, 200ms OK, 100ms good, <100ms very good.
-# Fish thresholds are relaxed slightly due to fish startup overhead.
+# Fish benchmarks source derakht.fish once per test, then time the completion
+# call in-process (same pattern as bash/zsh benchmarks).
 #
 
 LARGE_CONF_GENERATOR="./scripts/generate_large_config.sh"
@@ -58,40 +59,28 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 @test "fish: first-word completion < ${MAX_COMPLETION_MS}ms" {
 	local ms
-	ms=$(_now_ms)
-	_fish_eval '_cli_getfirstwords e' >/dev/null 2>&1
-	local end=$(_now_ms)
-	ms=$(( end - ms ))
+	ms=$(_fish_time_completion '_cli_getfirstwords e')
 	echo "# first-word: ${ms}ms" >&3
 	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
 }
 
 @test "fish: second-word completion < ${MAX_COMPLETION_MS}ms" {
 	local ms
-	ms=$(_now_ms)
-	_fish_eval '_cli_complete_command 2 echo' >/dev/null 2>&1
-	local end=$(_now_ms)
-	ms=$(( end - ms ))
+	ms=$(_fish_time_completion '_cli_complete_command 2 echo')
 	echo "# second-word: ${ms}ms" >&3
 	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
 }
 
 @test "fish: argument list completion < ${MAX_COMPLETION_MS}ms" {
 	local ms
-	ms=$(_now_ms)
-	_fish_eval '_cli_complete_arg 0 "" list-argument static' >/dev/null 2>&1
-	local end=$(_now_ms)
-	ms=$(( end - ms ))
+	ms=$(_fish_time_completion '_cli_complete_arg 0 "" list-argument static')
 	echo "# arg-list: ${ms}ms" >&3
 	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
 }
 
 @test "fish: hierarchical command completion < ${MAX_COMPLETION_MS}ms" {
 	local ms
-	ms=$(_now_ms)
-	_fish_eval '_cli_complete_command 2 k' >/dev/null 2>&1
-	local end=$(_now_ms)
-	ms=$(( end - ms ))
+	ms=$(_fish_time_completion '_cli_complete_command 2 k')
 	echo "# hierarchical: ${ms}ms" >&3
 	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
 }
@@ -101,10 +90,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 @test "fish: large config — first-word completion < ${MAX_LARGE_COMPLETION_MS}ms" {
 	"$LARGE_CONF_GENERATOR" > ~/.testcli.conf
 	local ms
-	ms=$(_now_ms)
-	_fish_eval '_cli_getfirstwords p' >/dev/null 2>&1
-	local end=$(_now_ms)
-	ms=$(( end - ms ))
+	ms=$(_fish_time_completion '_cli_getfirstwords p')
 	echo "# large first-word: ${ms}ms" >&3
 	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
 }
@@ -112,10 +98,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 @test "fish: large config — deep nesting completion < ${MAX_LARGE_COMPLETION_MS}ms" {
 	"$LARGE_CONF_GENERATOR" > ~/.testcli.conf
 	local ms
-	ms=$(_now_ms)
-	_fish_eval '_cli_complete_command 4 provision server bare-metal' >/dev/null 2>&1
-	local end=$(_now_ms)
-	ms=$(( end - ms ))
+	ms=$(_fish_time_completion '_cli_complete_command 4 provision server bare-metal')
 	echo "# large deep: ${ms}ms" >&3
 	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
 }
@@ -123,10 +106,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 @test "fish: large config — argument completion < ${MAX_LARGE_COMPLETION_MS}ms" {
 	"$LARGE_CONF_GENERATOR" > ~/.testcli.conf
 	local ms
-	ms=$(_now_ms)
-	_fish_eval '_cli_complete_arg 0 "" provision server bare-metal us-east deploy' >/dev/null 2>&1
-	local end=$(_now_ms)
-	ms=$(( end - ms ))
+	ms=$(_fish_time_completion '_cli_complete_arg 0 "" provision server bare-metal us-east deploy')
 	echo "# large arg: ${ms}ms" >&3
 	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
 }
@@ -134,10 +114,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 @test "fish: large config — 8-level deep nesting < ${MAX_LARGE_COMPLETION_MS}ms" {
 	"$LARGE_CONF_GENERATOR" > ~/.testcli.conf
 	local ms
-	ms=$(_now_ms)
-	_fish_eval '_cli_complete_command 8 deep level2 level3 level4 level5 level6 level7' >/dev/null 2>&1
-	local end=$(_now_ms)
-	ms=$(( end - ms ))
+	ms=$(_fish_time_completion '_cli_complete_command 8 deep level2 level3 level4 level5 level6 level7')
 	echo "# 8-level deep: ${ms}ms" >&3
 	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
 }

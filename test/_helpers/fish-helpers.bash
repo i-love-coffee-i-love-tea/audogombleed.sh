@@ -44,3 +44,28 @@ _fish_complete() {
 		_cli_complete_ $prog $words
 	' "$@"
 }
+
+# Time a fish completion in a single process (sources derakht.fish once,
+# loads config, then times just the completion call).
+# Usage: _fish_time_completion <code>
+# Prints elapsed milliseconds.
+_fish_time_completion() {
+	local code="$1"
+	local tmp="$PWD/.fish-bench-test"
+	cat > "$tmp" <<SCRIPT
+#!/usr/bin/env fish
+set -g __CLI_PROGNAME testcli
+set -g __cli_wrapper_argv
+source (path dirname (status filename))/derakht.fish
+
+set start (python3 -c 'import time; print(int(time.time()*1000))')
+$code >/dev/null ^/dev/null
+set end (python3 -c 'import time; print(int(time.time()*1000))')
+echo (math "\$end - \$start")
+SCRIPT
+	chmod +x "$tmp"
+	fish "$tmp"
+	local rc=$?
+	rm -f "$tmp"
+	return $rc
+}

@@ -48,10 +48,10 @@ jobs:
           reporter: java-junit
           fail-on-error: true
       - name: Update test count badge
-        if: always() && github.ref == 'refs/heads/main' && matrix.bash-version == '5.3' && vars.GIST_ID != ''
+        if: always() && github.ref == 'refs/heads/main' && matrix.bash-version == '5.3' && vars.TEST_BADGE_GIST_ID != ''
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-          GIST_ID: ${{ vars.GIST_ID }}
+          GH_TOKEN: ${{ secrets.BADGE_GIST_TOKEN }}
+          TEST_BADGE_GIST_ID: ${{ vars.TEST_BADGE_GIST_ID }}
         run: |
           read total failed < <(python3 -c "
           import xml.etree.ElementTree as ET
@@ -60,7 +60,7 @@ jobs:
           ")
           passed=$((total - failed))
           echo "{\"schemaVersion\":1,\"label\":\"bash tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/bash-tests.json
-          gh gist edit "$GIST_ID" --add /tmp/bash-tests.json
+          gh gist edit "$TEST_BADGE_GIST_ID" --add /tmp/bash-tests.json
 
   test-ubuntu-zsh:
     name: "test: Ubuntu zsh"
@@ -87,10 +87,10 @@ jobs:
           reporter: java-junit
           fail-on-error: true
       - name: Update test count badge
-        if: always() && github.ref == 'refs/heads/main' && vars.GIST_ID != ''
+        if: always() && github.ref == 'refs/heads/main' && vars.TEST_BADGE_GIST_ID != ''
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-          GIST_ID: ${{ vars.GIST_ID }}
+          GH_TOKEN: ${{ secrets.BADGE_GIST_TOKEN }}
+          TEST_BADGE_GIST_ID: ${{ vars.TEST_BADGE_GIST_ID }}
         run: |
           read total failed < <(python3 -c "
           import xml.etree.ElementTree as ET
@@ -99,7 +99,7 @@ jobs:
           ")
           passed=$((total - failed))
           echo "{\"schemaVersion\":1,\"label\":\"zsh tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/zsh-tests.json
-          gh gist edit "$GIST_ID" --add /tmp/zsh-tests.json
+          gh gist edit "$TEST_BADGE_GIST_ID" --add /tmp/zsh-tests.json
 
   test-ubuntu-fish:
     name: "test: Ubuntu fish"
@@ -126,10 +126,10 @@ jobs:
           reporter: java-junit
           fail-on-error: true
       - name: Update test count badge
-        if: always() && github.ref == 'refs/heads/main' && vars.GIST_ID != ''
+        if: always() && github.ref == 'refs/heads/main' && vars.TEST_BADGE_GIST_ID != ''
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-          GIST_ID: ${{ vars.GIST_ID }}
+          GH_TOKEN: ${{ secrets.BADGE_GIST_TOKEN }}
+          TEST_BADGE_GIST_ID: ${{ vars.TEST_BADGE_GIST_ID }}
         run: |
           read total failed < <(python3 -c "
           import xml.etree.ElementTree as ET
@@ -138,7 +138,7 @@ jobs:
           ")
           passed=$((total - failed))
           echo "{\"schemaVersion\":1,\"label\":\"fish tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/fish-tests.json
-          gh gist edit "$GIST_ID" --add /tmp/fish-tests.json
+          gh gist edit "$TEST_BADGE_GIST_ID" --add /tmp/fish-tests.json
 
   test-macos:
     name: "test: macOS zsh"
@@ -169,7 +169,7 @@ jobs:
           ln -sf ./derakht.sh ./testcli
           cp example.conf ~/.testcli.conf
           zsh ./testcli echo hello world
-          bash ./testcli echo hello world
+          /opt/homebrew/bin/bash ./testcli echo hello world
           rm -f ./testcli ~/.testcli.conf
       - name: Run zsh tests
         env:
