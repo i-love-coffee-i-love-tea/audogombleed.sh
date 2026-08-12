@@ -227,6 +227,62 @@ jobs:
           path: derakht-cli-*.pkg
           retention-days: 5
 
+  # ── Build + test fish .pkg (FreeBSD) ───────────────────────────────
+  build-freebsd-fish:
+    name: "pkg: FreeBSD (fish)"
+    runs-on: ubuntu-latest
+    needs: [test, version]
+    env:
+      PKG_VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          submodules: true
+      - name: Build and test fish on FreeBSD
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y fish gawk pkg
+            mount -t fdescfs fdesc /dev/fd
+            git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          run: |
+            set -e
+            # Build package
+            mkdir -p /tmp/pkg/usr/local/bin /tmp/pkg/usr/local/share/man/man1
+            cp derakht.fish /tmp/pkg/usr/local/bin/derakht-fish
+            chmod 755 /tmp/pkg/usr/local/bin/derakht-fish
+            cp derakht.1 /tmp/pkg/usr/local/share/man/man1/
+            cat > /tmp/pkg/+MANIFEST <<MANIFEST
+            name: derakht-fish
+            version: "${PKG_VERSION}"
+            comment: "Fish shell support for derakht-cli"
+            desc: "Derakht generates shell CLIs from a plain text config file. This package provides the fish shell implementation."
+            origin: shells/derakht-fish
+            maintainer: github.com@gobuki.org
+            www: https://github.com/i-love-coffee-i-love-tea/derakht-cli
+            prefix: /usr/local
+            flatsize: 0
+            arch: FreeBSD:14:*
+            MANIFEST
+            pkg create -m /tmp/pkg -r /tmp/pkg -p /tmp/pkg -o /tmp
+            # Install
+            pkg add /tmp/derakht-cli-fish-${PKG_VERSION}.pkg
+            # Test
+            test -f /usr/local/bin/derakht-fish
+            echo "--- fish package OK ---"
+            # Run fish tests against installed file
+            export CLI_UNDER_TEST=/usr/local/bin/derakht-fish
+            test/_bats/bin/bats test/*/*-fish.bats test/*/*-all.bats --tap 2>&1 | tail -20
+            # Copy package to workspace
+            cp /tmp/derakht-cli-fish-${PKG_VERSION}.pkg .
+      - name: Upload .pkg (fish)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pkg-freebsd-fish
+          path: derakht-cli-fish-*.pkg
+          retention-days: 5
+
   # ── Build + test Homebrew formula (macOS) ─────────────────────────
   build-homebrew:
     name: "pkg: Homebrew"
@@ -445,7 +501,7 @@ jobs:
   release:
     name: "release: GitHub"
     runs-on: ubuntu-latest
-    needs: [build-deb, build-rpm, build-arch, build-freebsd, build-homebrew, build-deb-fish, build-rpm-fish, build-arch-fish, build-homebrew-fish, version]
+    needs: [build-deb, build-rpm, build-arch, build-freebsd, build-homebrew, build-deb-fish, build-rpm-fish, build-arch-fish, build-freebsd-fish, build-homebrew-fish, version]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
@@ -488,7 +544,8 @@ jobs:
           for f in dist/pkg-deb/* dist/pkg-rpm/* dist/pkg-arch/* \
                    dist/pkg-freebsd/* dist/pkg-homebrew/* \
                    dist/pkg-deb-fish/* dist/pkg-rpm-fish/* \
-                   dist/pkg-arch-fish/* dist/pkg-homebrew-fish/*; do
+                   dist/pkg-arch-fish/* dist/pkg-freebsd-fish/* \
+                   dist/pkg-homebrew-fish/*; do
             [ -f "$f" ] && assets+=("$f")
           done
           gh release create "$GITHUB_REF_NAME" \
