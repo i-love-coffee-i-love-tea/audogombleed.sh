@@ -59,11 +59,12 @@ The ADR records the decision; the grammar doc records the spec.
 * Good, because `validate-config.sh` is a thin wrapper — no separate AWK script.
 * Good, because the grammar doc can evolve independently of the ADR.
 * Neutral, because the grammar must be kept in sync with the AWK parser.
-  The release hook `11-validate-example-config.sh` catches drift.
+  The release hook `14-validate-config.sh` catches drift.
 
 ### Confirmation
 
 * `mycli --cli-validate-config` passes on a valid config.
+* `validate-config.sh dev.conf` passes.
 * `validate-config.sh example.conf` passes.
 * The grammar doc is reviewed when the AWK parser changes.
 

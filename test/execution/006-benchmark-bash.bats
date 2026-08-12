@@ -8,7 +8,7 @@
 # Dev README thresholds: 400ms sluggish, 200ms OK, 100ms good, <100ms very good.
 #
 
-LARGE_CONF_GENERATOR="./generate_large_config.sh"
+LARGE_CONF_GENERATOR="./scripts/generate_large_config.sh"
 MAX_COMPLETION_MS=${MAX_COMPLETION_MS:-150}
 MAX_EXEC_MS=${MAX_EXEC_MS:-150}
 MAX_LARGE_COMPLETION_MS=${MAX_LARGE_COMPLETION_MS:-250}

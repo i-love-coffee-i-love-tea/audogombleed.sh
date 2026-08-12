@@ -8,7 +8,9 @@ BEGIN {
 	cfg_section = ""
 	saw_commands = 0
 	saw_env = 0
-	in_env_func = 0
+	env_brace_depth = 0
+	in_env_string = 0
+	in_cmd_string = 0
 	indent_unit = -1
 	has_command = 0
 	errors = 0
@@ -86,14 +88,16 @@ function report_warn(line, msg, hint) {
 	if (saw_commands) report_error(NR, "[env] must come before [commands]")
 	cfg_section = "env"
 	saw_env = 1
-	in_env_func = 0
+	env_brace_depth = 0
+	in_env_string = 0
 	next
 }
 
 # [env.fish], [env.bash], [env.zsh] section headers
 /^\[env\.(fish|bash|zsh)\]$/ {
 	cfg_section = "env"
-	in_env_func = 0
+	env_brace_depth = 0
+	in_env_string = 0
 	next
 }
 
@@ -102,7 +106,9 @@ function report_warn(line, msg, hint) {
 	if (saw_commands) report_error(NR, "duplicate [commands] section")
 	cfg_section = "commands"
 	saw_commands = 1
-	in_env_func = 0
+	env_brace_depth = 0
+	in_env_string = 0
+	in_cmd_string = 0
 	next
 }
 
@@ -121,8 +127,48 @@ function report_warn(line, msg, hint) {
 # ── [env] section ──
 
 cfg_section == "env" {
-	if ($0 ~ /^[[:space:]]*function[[:space:]]/) in_env_func = 1
-	if (in_env_func && $0 ~ /^[[:space:]]*\}/) in_env_func = 0
+	# Skip lines inside a multi-line string (e.g. bash -c '...')
+	# Count unescaped quote characters; odd count toggles the state.
+	if (in_env_string) {
+		_qcount = 0
+		for (_qi = 1; _qi <= length($0); _qi++) {
+			if (substr($0, _qi, 1) == "\"") _qcount++
+		}
+		if (_qcount % 2 == 1) in_env_string = 0
+		next
+	}
+
+	# Count opening/closing braces to track depth (handles nested blocks,
+	# multi-line command substitutions, and complex shell constructs).
+	_tmp = $0
+	gsub(/[^{}]/, "", _tmp)
+	for (_bi = 1; _bi <= length(_tmp); _bi++) {
+		if (substr(_tmp, _bi, 1) == "{") env_brace_depth++
+		else env_brace_depth--
+	}
+	# Detect transition into a multi-line block (e.g. function, if, for,
+	# or any construct that opens a brace on this line).
+	if (env_brace_depth > 0) {
+		# Still inside the block — skip validation but track definitions
+		if ($0 ~ /^[[:space:]]*function[[:space:]]/) {
+			_func_line = $0
+			sub(/^[[:space:]]*function[[:space:]]+/, "", _func_line)
+			sub(/[[:space:]]*\(\).*/, "", _func_line)
+			sub(/[[:space:]]*\{.*/, "", _func_line)
+			if (_func_line ~ /^[A-Za-z_][A-Za-z0-9_]*$/) {
+				env_vars["_cli_" _func_line "_result"] = 1
+			}
+		}
+		next
+	}
+
+	# Multi-line string: count unescaped double quotes.
+	# Odd number means the string continues on the next line.
+	_qcount = 0
+	for (_qi = 1; _qi <= length($0); _qi++) {
+		if (substr($0, _qi, 1) == "\"") _qcount++
+	}
+	if (_qcount % 2 == 1) in_env_string = 1
 
 	if ($0 ~ /^[[:space:]]*include_commands_from[[:space:]]/) {
 		wc = 0
@@ -132,14 +178,12 @@ cfg_section == "env" {
 	}
 
 	# Track variable assignments: VAR=value, export VAR=value, or set -gx VAR value
-	if (!in_env_func) {
-		_env_line = $0
-		sub(/^export[[:space:]]+/, "", _env_line)
-		if (_env_line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
-			_env_varname = _env_line
-			sub(/=.*/, "", _env_varname)
-			env_vars[_env_varname] = 1
-		}
+	_env_line = $0
+	sub(/^export[[:space:]]+/, "", _env_line)
+	if (_env_line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
+		_env_varname = _env_line
+		sub(/=.*/, "", _env_varname)
+		env_vars[_env_varname] = 1
 	}
 
 	# Track function definitions: function name or function name()
@@ -180,6 +224,18 @@ cfg_section == "commands" {
 	# strip leading whitespace
 	content = $0
 	sub(/^[[:space:]]+/, "", content)
+
+	# Skip lines inside a multi-line shell expression (unclosed quotes).
+	# Count unescaped single and double quotes; odd total toggles state.
+	if (in_cmd_string) {
+		_qcount = 0
+		for (_qi = 1; _qi <= length($0); _qi++) {
+			_qc = substr($0, _qi, 1)
+			if (_qc == "'" || _qc == "\"") _qcount++
+		}
+		if (_qcount % 2 == 1) in_cmd_string = 0
+		next
+	}
 
 	# comments are valid at any level — skip them
 	if (content ~ /^##/) next
@@ -272,6 +328,16 @@ cfg_section == "commands" {
 
 	if (content ~ /:/) {
 		has_command = 1
+		# Detect multi-line shell expressions: if the command expression
+		# has an unclosed quote, subsequent lines are continuation.
+		_cmd_expr = content
+		sub(/^[^:]*:[[:space:]]*/, "", _cmd_expr)
+		_qcount = 0
+		for (_qi = 1; _qi <= length(_cmd_expr); _qi++) {
+			_qc = substr(_cmd_expr, _qi, 1)
+			if (_qc == "'" || _qc == "\"") _qcount++
+		}
+		if (_qcount % 2 == 1) in_cmd_string = 1
 	} else {
 		has_command = 0
 	}

@@ -74,8 +74,8 @@ process, so don't wait for it.
 ```
 derakht.sh      the script — ~4K lines, one file, by design
 derakht.1       manpage
-example.conf         example config (doubles as a CI smoke test)
-dev.conf             the project's own dev CLI — dogfood!
+dev.conf             the project's own dev CLI — real-world config example
+example.conf         test fixture (CI smoke test + parser compatibility tests)
 release.sh           release orchestrator
 release.d/           19 hooks that fire on release
 test/                73 test files — every bash test has a zsh twin

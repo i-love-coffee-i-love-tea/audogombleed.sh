@@ -31,9 +31,12 @@ if [ $# -ge 1 ]; then
     exit $?
 fi
 
-# Release-hook mode: validate example.conf + all test configs
+# Release-hook mode: validate example.conf, dev.conf + all test configs
 echo "Validating example.conf..."
 "$tmpdir/validate" --cli-validate-config example.conf || rc=1
+
+echo "Validating dev.conf..."
+"$tmpdir/validate" --cli-validate-config dev.conf || rc=1
 
 for conf in test/_configs/**/*.conf; do
     [ -f "$conf" ] || continue
