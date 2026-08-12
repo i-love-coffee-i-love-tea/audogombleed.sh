@@ -13,9 +13,13 @@ derakht-cli (2.0.0) unstable; urgency=medium
   * Add optional glob filter parameter for FILE, DIR, and FILE_OR_DIR types to restrict completions by pattern (e.g. *.txt, *.log)
   * Unify config syntax so all parameterized types use :name:type[:value[:description]], where FILE/DIR/FILE_OR_DIR treat the value field as a glob pattern
   * Add formal config grammar specification (docs/config-grammar.md) with embedded validator accessible via --cli-validate-config
+  * Add --cli-print-validator-script flag to extract the embedded validator AWK script
+  * Add "did you mean?" suggestions for unrecognized commands (Levenshtein distance-based, with positional word comparison for multi-word commands)
   * Add .deb packaging (build-deb.sh, debian/ directory)
   * Add Homebrew formula, RPM spec, Gentoo ebuild, Nix expression, and Arch Linux PKGBUILD packaging with CI verification
+  * Add separate fish packaging for all 6 formats (deb, rpm, Arch, Homebrew, Nix, Gentoo)
   * Remove CFG_EXEC_SUBPROCESS option — redundant with the existing alias mode (alias mycli='_cli_execute')
+  * Extract embedded AWK scripts into lib/ with embed-awk.sh for atomic release artifacts
   * [Performance] Eliminate subprocess forks and duplicate AWK calls in the completion path
   * Reduce external tool calls and subshells in hot paths
   * Optimize completion execution time across all command levels
@@ -24,6 +28,8 @@ derakht-cli (2.0.0) unstable; urgency=medium
   * [Fixes] Fix exit codes 52 and 53 (placeholder mismatch and missing required args now work correctly)
   * Fix eval quoting bug in completion
   * Fix include_commands_from under zsh (word splitting via SH_WORD_SPLIT)
+  * Fix [env] variable expansion inconsistency in bash/zsh: VAR=$OTHER now expands $OTHER (was literal), matching export VAR=$OTHER behavior
+  * Fix [env] variable expansion in fish: export VAR=$OTHER now expands $OTHER, matching bash/zsh behavior
   * Fix macOS portability: stat, mktemp, sed -i, awk (BWK vs gawk), and benchmark timing (date +%s%N)
   * Fix FreeBSD portability: stat syntax, shebang, and pipe/regex detection in zsh completion
   * Fix argument completion when preceding file argument has spaces in filename
@@ -50,4 +56,4 @@ derakht-cli (2.0.0) unstable; urgency=medium
   * Add CLI_UNDER_TEST env var support — run the full bats test suite against an installed binary
   * Reorganize test suite into category subdirectories with numbered files
 
- -- Steffen Kremsler <github.com@gobuki.org>  Tue, 11 Aug 2026 20:22:51 +0200
+ -- Steffen Kremsler <github.com@gobuki.org>  Wed, 12 Aug 2026 23:39:29 +0200

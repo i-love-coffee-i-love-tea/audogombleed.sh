@@ -2960,8 +2960,9 @@ _cli_suggest_command() {
 	local _input="$1"
 	local input_len=${#_input}
 
-	# Skip suggestion for very short input
+	# Skip suggestion for very short or absurdly long input
 	[ "$input_len" -lt 3 ] && return
+	[ "$input_len" -gt 200 ] && return
 
 	# Set max edit distance based on input length
 	local max_dist

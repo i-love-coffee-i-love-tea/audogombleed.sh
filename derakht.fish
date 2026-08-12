@@ -2586,6 +2586,7 @@ end
 function _cli_suggest_command -a input
     set -l input_len (string length -- "$input")
     [ $input_len -lt 3 ] && return
+    [ $input_len -gt 200 ] && return
 
     set -l max_dist 2
     if [ $input_len -le 5 ]
