@@ -1,8 +1,7 @@
 [![Tests](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
-<!-- Test count badges — see .github/workflows/main.yml for setup instructions -->
-[![bash tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/GIST_ID/raw/bash-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
-[![zsh tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/GIST_ID/raw/zsh-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
-[![fish tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/GIST_ID/raw/fish-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
+[![bash tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/d78d735477baaf8be3fb7c5cfd75bd1e/raw/bash-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
+[![zsh tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/d78d735477baaf8be3fb7c5cfd75bd1e/raw/zsh-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
+[![fish tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/d78d735477baaf8be3fb7c5cfd75bd1e/raw/fish-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
 [![Coverage](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/coverage.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/coverage.yml)
 [![ShellCheck](https://img.shields.io/badge/shellcheck-passing-brightgreen)](https://www.shellcheck.net/)
 [![License](https://img.shields.io/github/license/i-love-coffee-i-love-tea/derakht-cli)](LICENSE)
