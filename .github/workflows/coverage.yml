@@ -49,9 +49,9 @@ jobs:
         run: |
           mkdir -p coverage/bash
           kcov \
-            --bash-method=DEBUG \
+            --bash-method=PROCURSIVE \
             --bash-parse-files-in-dir="$(pwd)" \
-            --include-pattern=derakht.sh \
+            --include-pattern="$(pwd)/derakht.sh" \
             --exclude-pattern=test,bats \
             coverage/bash \
             test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats

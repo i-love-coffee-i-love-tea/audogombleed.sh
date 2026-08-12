@@ -48,7 +48,7 @@ Chosen option: **kcov, with documented constraints**, because it is the
 only tool that works with bats and can track sourced files, despite its
 limitations with subshells and eval.
 
-kcov is used with `--bash-method=DEBUG` and `--bash-parse-files-in-dir`
+kcov is used with `--bash-method=PROCURSIVE` and `--bash-parse-files-in-dir`
 to track coverage of `derakht.sh` when sourced by bats tests. The
 HTML report is generated in CI and downloadable as an artifact. A local
 `coverage.sh` script provides the same report for developers.

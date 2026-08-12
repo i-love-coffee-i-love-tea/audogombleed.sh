@@ -44,12 +44,12 @@ mkdir -p "$COVERAGE_DIR/bash"
 
 echo "Running bash tests with kcov..."
 kcov \
-    --bash-method=DEBUG \
+    --bash-method=PROCURSIVE \
     --bash-parse-files-in-dir="$SCRIPT_DIR" \
-    --include-pattern=derakht.sh \
+    --include-pattern="$SCRIPT_DIR/derakht.sh" \
     --exclude-pattern=test,bats \
     "$COVERAGE_DIR/bash" \
-    "$SCRIPT_DIR/test/_bats/bin/bats" "$SCRIPT_DIR/test/*/*-bash.bats "$SCRIPT_DIR/test/*/*-all.bats
+    "$SCRIPT_DIR/test/_bats/bin/bats" "$SCRIPT_DIR/test/*/*-bash.bats" "$SCRIPT_DIR/test/*/*-all.bats"
 
 if $RUN_ZSH; then
     echo ""
