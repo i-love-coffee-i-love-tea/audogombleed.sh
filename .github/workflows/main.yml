@@ -55,8 +55,10 @@ jobs:
         run: |
           read total failed < <(python3 -c "
           import xml.etree.ElementTree as ET
-          t = ET.parse('report.xml').getroot().find('testsuite')
-          print(t.get('tests'), t.get('failures'))
+          root = ET.parse('report.xml').getroot()
+          total = sum(int(ts.get('tests', 0)) for ts in root.findall('.//testsuite'))
+          failed = sum(int(ts.get('failures', 0)) for ts in root.findall('.//testsuite'))
+          print(total, failed)
           ")
           passed=$((total - failed))
           echo "{\"schemaVersion\":1,\"label\":\"bash tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/bash-tests.json
@@ -94,8 +96,10 @@ jobs:
         run: |
           read total failed < <(python3 -c "
           import xml.etree.ElementTree as ET
-          t = ET.parse('report-zsh.xml').getroot().find('testsuite')
-          print(t.get('tests'), t.get('failures'))
+          root = ET.parse('report-zsh.xml').getroot()
+          total = sum(int(ts.get('tests', 0)) for ts in root.findall('.//testsuite'))
+          failed = sum(int(ts.get('failures', 0)) for ts in root.findall('.//testsuite'))
+          print(total, failed)
           ")
           passed=$((total - failed))
           echo "{\"schemaVersion\":1,\"label\":\"zsh tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/zsh-tests.json
@@ -133,8 +137,10 @@ jobs:
         run: |
           read total failed < <(python3 -c "
           import xml.etree.ElementTree as ET
-          t = ET.parse('report-fish.xml').getroot().find('testsuite')
-          print(t.get('tests'), t.get('failures'))
+          root = ET.parse('report-fish.xml').getroot()
+          total = sum(int(ts.get('tests', 0)) for ts in root.findall('.//testsuite'))
+          failed = sum(int(ts.get('failures', 0)) for ts in root.findall('.//testsuite'))
+          print(total, failed)
           ")
           passed=$((total - failed))
           echo "{\"schemaVersion\":1,\"label\":\"fish tests\",\"message\":\"${passed}/${total}\",\"color\":\"$([ $failed -eq 0 ] && echo brightgreen || echo red)\"}" > /tmp/fish-tests.json
