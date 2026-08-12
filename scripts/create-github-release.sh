@@ -4,15 +4,19 @@
 # This script is NOT part of the release.d pipeline. Run it after
 # release.sh has committed and tagged the release:
 #
-#   ./release.sh 2.2.0
-#   ./create-github-release.sh 2.2.0
+#   ./scripts/release.sh 2.2.0
+#   ./scripts/create-github-release.sh 2.2.0
 #
 # Requirements:
 #   - gh (GitHub CLI) authenticated
 #   - The tag must already exist locally (created by release.sh)
-#   - A .deb package at ../derakht-cli_<version>_all.deb (optional)
 #
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+cd "$PROJECT_ROOT"
 
 if [ $# -ne 1 ]; then
 	echo "usage: $0 <version>"
