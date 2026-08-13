@@ -4090,6 +4090,14 @@ _cli_execute() {
 	declare -a __CLI_CONFIG
 	_cli_global CONFIG_FILE "$HOME/.${__CLI_PROGNAME}.conf"
 
+	# Check config file permissions before proceeding
+	local _cfg_file_early
+	_cli_global_val CONFIG_FILE _cfg_file_early
+	if ! _cli_check_file_permissions "$_cfg_file_early" "config file"; then
+		_cli_exit_if_not_sourced 54
+		return 54
+	fi
+
 	# Handle --cli-validate-config early — needs only the AWK script, not the full config.
 	for _early_flag in "$@"; do
 		if [ "$_early_flag" = "--cli-validate-config" ]; then
@@ -4286,11 +4294,6 @@ if ! _cli_is_sourced; then
 		echo
 		_cli_close_logfile 2>/dev/null || true
 		exit 49
-	fi
-	# Check config file permissions before executing
-	if ! _cli_check_file_permissions "$__CLI_CONFIG_FILE" "config file"; then
-		_cli_close_logfile 2>/dev/null || true
-		exit 54
 	fi
 	_cli_execute "$@"
 else 
