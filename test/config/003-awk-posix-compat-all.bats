@@ -114,7 +114,7 @@ EOF
 plain-arg: echo
 	:env:list:staging|prod
 EOF
-	run ./testcli --cli-run-awk-command output=commands command_filter="plain-arg"
+	run _run_awk_with /usr/bin/awk "$HOME/.testcli.conf" output=commands command_filter="plain-arg"
 	assert_success
 	assert_line '__CMD_ARG_VALUE[0]="staging|prod"'
 }
@@ -911,7 +911,7 @@ alpha: echo a
 beta: echo b
 gamma: echo c
 EOF
-	run ./testcli --cli-run-awk-command output=commands
+	run _run_awk_with /usr/bin/awk "$HOME/.testcli.conf" output=commands
 	assert_success
 	assert_equal "3" "${#lines[@]}"
 }
