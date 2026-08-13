@@ -289,7 +289,7 @@ jobs:
               'arch: FreeBSD:14:*' \
               > /tmp/pkg/+MANIFEST
             sed -i '' "s|%%PKG_VERSION%%|${PKG_VERSION}|" /tmp/pkg/+MANIFEST
-            pkg create -m /tmp/pkg -r /tmp/pkg -p /tmp/pkg -o /tmp
+            pkg create -m /tmp/pkg -r /tmp/pkg -o /tmp
             # Install
             pkg add /tmp/derakht-cli-${PKG_VERSION}.pkg
             # Test version
@@ -350,7 +350,7 @@ jobs:
               'arch: FreeBSD:14:*' \
               > /tmp/pkg/+MANIFEST
             sed -i '' "s|%%PKG_VERSION%%|${PKG_VERSION}|" /tmp/pkg/+MANIFEST
-            pkg create -m /tmp/pkg -r /tmp/pkg -p /tmp/pkg -o /tmp
+            pkg create -m /tmp/pkg -r /tmp/pkg -o /tmp
             # Install
             pkg add /tmp/derakht-cli-fish-${PKG_VERSION}.pkg
             # Test
