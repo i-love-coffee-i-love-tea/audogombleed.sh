@@ -6,20 +6,13 @@
 # FILE, DIR, STRING, INTEGER, int_range, ENVVAR, USER, GROUP, SSH_HOST, BLKDEV, SERVICE
 #
 
-_SSH_BAK_MARKER="/tmp/.derakht-test-ssh-bak-001-completion-fish"
-_SSH_CREATED_MARKER="/tmp/.derakht-test-ssh-created-001-completion-fish"
-
 setup_file() {
     load '../_helpers/test-setup'
     _test_init_fish
     # Create SSH config for SSH_HOST tests
     mkdir -p ~/.ssh
-    local _bak="$(mktemp)"
-    echo "$_bak" > "$_SSH_BAK_MARKER"
     if [ -f ~/.ssh/config ]; then
-        cp ~/.ssh/config "$_bak"
-    else
-        touch "$_SSH_CREATED_MARKER"
+        cp ~/.ssh/config /tmp/.derakht-ssh-config-bak-001-completion-fish
     fi
     cat > ~/.ssh/config <<'EOF'
 host testhost-alpha
@@ -34,16 +27,10 @@ EOF
 teardown_file() {
     load '../_helpers/test-setup'
     _test_cleanup
-    # Restore original SSH config from temp backup
-    if [ -f "$_SSH_BAK_MARKER" ]; then
-        local _bak
-        _bak="$(cat "$_SSH_BAK_MARKER")"
-        rm -f "$_SSH_BAK_MARKER"
-        if [ -f "$_bak" ]; then
-            mv "$_bak" ~/.ssh/config
-        fi
-    elif [ -f "$_SSH_CREATED_MARKER" ]; then
-        rm -f "$_SSH_CREATED_MARKER"
+    # Restore original SSH config from fixed backup path
+    if [ -f /tmp/.derakht-ssh-config-bak-001-completion-fish ]; then
+        mv /tmp/.derakht-ssh-config-bak-001-completion-fish ~/.ssh/config
+    else
         rm -f ~/.ssh/config
     fi
 }
