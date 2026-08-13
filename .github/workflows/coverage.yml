@@ -58,6 +58,10 @@ jobs:
           /opt/bash4/bin/bash --version | head -1
 
       - name: Run bash tests with coverage
+        env:
+          MAX_EXEC_MS: 2000
+          MAX_COMPLETION_MS: 2000
+          MAX_LARGE_COMPLETION_MS: 3000
         run: |
           mkdir -p coverage/bash
           # bash 4.4 defaults BASH_XTRACEFD to stderr, which bats captures
