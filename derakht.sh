@@ -2384,7 +2384,7 @@ _cli_load_config_environment() {
 	# Extract [env] section lines in bash (avoids AWK fork)
 	local _cfg_file
 	_cli_global_val CONFIG_FILE _cfg_file
-	if ! _cli_check_file_permissions "$_cfg_file" "config file"; then
+	if [ ! -f "$_cfg_file" ]; then
 		return
 	fi
 	local _in_env=0
@@ -3916,6 +3916,68 @@ _cli_get_last_word() {
 	echo "$last_word"
 }
 
+# splits a word like "ijfm" into individual characters for first-letter matching
+# returns 0 if the word looks like a first-letter abbreviation (all alpha, length > 1)
+# returns 1 otherwise
+_cli_split_abbreviated_word() {
+	local word="$1"
+	local len="${#word}"
+
+	# must be at least 2 characters and all alphabetic
+	if [ "$len" -lt 2 ] || [[ ! "$word" =~ ^[a-zA-Z]+$ ]]; then
+		return 1
+	fi
+
+	# output each character on a separate line
+	local i
+	for ((i=0; i<len; i++)); do
+		echo "${word:$i:1}"
+	done
+	return 0
+}
+
+# tries to expand a word as a no-space abbreviation (e.g., "ijfm" -> "install jar from maven")
+# returns 0 and outputs the expanded command if successful
+# returns 1 if the word doesn't look like a valid no-space abbreviation
+_cli_try_nospace_abbreviation() {
+	local word="$1"
+	shift
+	local -a chars
+	chars=($(_cli_split_abbreviated_word "$word"))
+	if [ ${#chars[@]} -eq 0 ]; then
+		return 1
+	fi
+
+	# Try to expand just the characters (no extra args) to see if they
+	# form a valid multi-word command abbreviation
+	local cmd_only
+	cmd_only=$(_cli_expand_abbreviated_command "${chars[@]}")
+	if [ -z "$cmd_only" ]; then
+		return 1
+	fi
+
+	# Verify it's a complete command and that every character maps to a
+	# command word (not swallowed as args). __CLI_CMD_WORDS is set by
+	# _cli_is_command_complete and contains just the matched command.
+	_cli_is_command_complete "$cmd_only"
+	if [ $? -ne 0 ] || [ -z "$__CLI_CMD_WORDS" ]; then
+		return 1
+	fi
+	local cmd_word_count
+	cmd_word_count=$(echo "$__CLI_CMD_WORDS" | wc -w)
+	if [ "$cmd_word_count" -ne "${#chars[@]}" ]; then
+		return 1
+	fi
+
+	# Success — return expanded command with any remaining args appended
+	if [ $# -gt 0 ]; then
+		echo "$cmd_only $*"
+	else
+		echo "$cmd_only"
+	fi
+	return 0
+}
+
 # tries to expand command words
 _cli_expand_abbreviated_command() {
 	local i word matched_word matched_words query
@@ -3923,6 +3985,30 @@ _cli_expand_abbreviated_command() {
 	i=1
 	_cli_log 4 "command: '$*'"
 	matched_words=""
+
+	# Try no-space abbreviation (e.g., "ijfm" -> "install jar from maven")
+	# Only try if the first argument doesn't match any command as a normal abbreviation
+	if [ $# -ge 1 ] && [[ "$1" != *" "* ]]; then
+		# First check if the word matches any command normally
+		local -a normal_matches
+		normal_matches=($(_cli_getmatchingcommands "$1"))
+		if [ ${#normal_matches[@]} -eq 0 ]; then
+			# No normal matches, try no-space abbreviation
+			_cli_log 4 "trying no-space abbreviation for: '$1'"
+			local nospace_result
+			if [ $# -eq 1 ]; then
+				nospace_result=$(_cli_try_nospace_abbreviation "$1")
+			else
+				nospace_result=$(_cli_try_nospace_abbreviation "$1" "${@:2}")
+			fi
+			if [ $? -eq 0 ] && [ -n "$nospace_result" ]; then
+				_cli_log 4 "no-space abbreviation succeeded: '$nospace_result'"
+				echo "$nospace_result"
+				return 0
+			fi
+			_cli_log 4 "no-space abbreviation failed, trying normal matching"
+		fi
+	fi
 	while [ $# -gt 0 ]; do
 		if [ "$matched_words" = "" ]; then
 			query="$1"
@@ -4090,14 +4176,6 @@ _cli_execute() {
 	declare -a __CLI_CONFIG
 	_cli_global CONFIG_FILE "$HOME/.${__CLI_PROGNAME}.conf"
 
-	# Check config file permissions before proceeding
-	local _cfg_file_early
-	_cli_global_val CONFIG_FILE _cfg_file_early
-	if ! _cli_check_file_permissions "$_cfg_file_early" "config file"; then
-		_cli_exit_if_not_sourced 54
-		return 54
-	fi
-
 	# Handle --cli-validate-config early — needs only the AWK script, not the full config.
 	for _early_flag in "$@"; do
 		if [ "$_early_flag" = "--cli-validate-config" ]; then
@@ -4258,6 +4336,13 @@ _cli_execute() {
 			echo
 		fi
 	else
+		# Check config file permissions before executing a command
+		local _cfg_file_exec
+		_cli_global_val CONFIG_FILE _cfg_file_exec
+		if ! _cli_check_file_permissions "$_cfg_file_exec" "config file"; then
+			_cli_exit_if_not_sourced 54
+			return 54
+		fi
 		# 168ms
 		# 118ms
 		# 82ms

@@ -331,6 +331,11 @@ Allow abbreviated commands. For example, with commands `docker list containers`
 and `docker list images`, you can type `d l c` and it expands to
 `docker list containers` — as long as the abbreviation is unambiguous.
 
+You can also use no-space abbreviations by concatenating the first letters of
+each word. For example, `dlc` expands to `docker list containers`, and `ijfm`
+expands to `install jar from maven`. This works as long as the abbreviation
+is unambiguous.
+
 #### `__CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS` (default: "n") — experimental
 
 > [!CAUTION]

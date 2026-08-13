@@ -51,3 +51,35 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
     run _fish_run -b e first second
     assert_failure 51
 }
+
+@test "fish: no-space abbreviation expands: ijfm -> install jar from maven" {
+    run _fish_run ijfm coord123
+    assert_line --partial 'Executing command "install jar from maven"'
+}
+
+@test "fish: no-space abbreviation expands: iwff -> install war from file" {
+    run _fish_run iwff /some/file
+    assert_success
+    assert_line --partial 'Executing command "install war from file"'
+    assert_line "/some/file"
+}
+
+@test "fish: no-space abbreviation expands: ijff -> install jar from file" {
+    run _fish_run ijff /some/file
+    assert_success
+    assert_line --partial 'Executing command "install jar from file"'
+    assert_line "/some/file"
+}
+
+@test "fish: no-space abbreviation ambiguous returns exit 51" {
+    echo 'ambiguous-a: echo a' >> ~/.testcli.conf
+    echo 'ambiguous-b: echo b' >> ~/.testcli.conf
+    run _fish_run amb
+    assert_failure 51
+}
+
+@test "fish: no-space abbreviation disabled by CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS=n" {
+    _set_option __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS '"n"'
+    run _fish_run ijfm coord123
+    assert_failure 51
+}

@@ -2355,10 +2355,94 @@ function _cli_expand_abbreviated_args
     end
 end
 
+# splits a word like "ijfm" into individual characters for first-letter matching
+# returns 0 if the word looks like a first-letter abbreviation (all alpha, length > 1)
+# returns 1 otherwise
+function _cli_split_abbreviated_word
+    set -l word $argv[1]
+    set -l len (string length -- $word)
+
+    # must be at least 2 characters and all alphabetic
+    if test $len -lt 2; or not string match -qr '^[a-zA-Z]+$' -- $word
+        return 1
+    end
+
+    # output each character on a separate line
+    for i in (seq 1 $len)
+        string sub -s $i -l 1 -- $word
+    end
+    return 0
+end
+
+# tries to expand a word as a no-space abbreviation (e.g., "ijfm" -> "install jar from maven")
+# returns 0 and outputs the expanded command if successful
+# returns 1 if the word doesn't look like a valid no-space abbreviation
+function _cli_try_nospace_abbreviation
+    set -l word $argv[1]
+    set -l rest $argv[2..-1]
+
+    set -l chars (_cli_split_abbreviated_word $word)
+    if test (count $chars) -eq 0
+        return 1
+    end
+
+    # Try to expand just the characters (no extra args) to see if they
+    # form a valid multi-word command abbreviation
+    set -l cmd_only (_cli_expand_abbreviated_command $chars)
+    if test (count $cmd_only) -eq 0
+        return 1
+    end
+
+    # Verify it's a complete command and that every character maps to a
+    # command word (not swallowed as args). __CLI_CMD_WORDS is set by
+    # _cli_is_command_complete and contains just the matched command.
+    if not _cli_is_command_complete "$cmd_only"
+        return 1
+    end
+    if test -z "$__CLI_CMD_WORDS"
+        return 1
+    end
+    set -l cmd_word_count (count (string split ' ' -- $__CLI_CMD_WORDS))
+    if test $cmd_word_count -ne (count $chars)
+        return 1
+    end
+
+    # Success — return expanded command with any remaining args appended
+    if test (count $rest) -gt 0
+        echo "$cmd_only $rest"
+    else
+        echo "$cmd_only"
+    end
+    return 0
+end
+
 function _cli_expand_abbreviated_command
     set -l matched_words ""
     set -l remaining $argv
     set -l query
+
+    # Try no-space abbreviation (e.g., "ijfm" -> "install jar from maven")
+    # Only try if the first argument doesn't match any command as a normal abbreviation
+    if test (count $remaining) -ge 1; and not string match -q '* *' -- $remaining[1]
+        # First check if the word matches any command normally
+        set -l normal_matches (_cli_getmatchingcommands $remaining[1])
+        if test (count $normal_matches) -eq 0
+            # No normal matches, try no-space abbreviation
+            _cli_log 4 "trying no-space abbreviation for: '$remaining[1]'"
+            set -l nospace_result
+            if test (count $remaining) -eq 1
+                set nospace_result (_cli_try_nospace_abbreviation $remaining[1])
+            else
+                set nospace_result (_cli_try_nospace_abbreviation $remaining[1] $remaining[2..-1])
+            end
+            if test $status -eq 0; and test -n "$nospace_result"
+                _cli_log 4 "no-space abbreviation succeeded: '$nospace_result'"
+                echo $nospace_result
+                return 0
+            end
+            _cli_log 4 "no-space abbreviation failed, trying normal matching"
+        end
+    end
 
     while test (count $remaining) -gt 0
         if test -z "$matched_words"
@@ -2391,6 +2475,11 @@ function _cli_expand_abbreviated_command
             end
         end
         set -l unique_matches (printf '%s\n' $matches | sort -u)
+
+        # Handle empty matches - in fish, printf on empty array produces an empty line
+        if test (count $matches) -eq 0
+            return 1
+        end
 
         if test (count $unique_matches) -eq 1
             if test -z "$matched_words"

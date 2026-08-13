@@ -64,3 +64,44 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
     run ./testcli -b e first second
     assert_failure 51
 }
+
+# bats test_tags=id:bash-166
+@test "bash: no-space abbreviation expands: ijfm -> install jar from maven" {
+    run ./testcli ijfm coord123
+    assert_line --partial 'Executing command "install jar from maven"'
+}
+
+# bats test_tags=id:bash-167
+@test "bash: no-space abbreviation expands: iwff -> install war from file" {
+    run ./testcli iwff /some/file
+    assert_success
+    assert_line --partial 'Executing command "install war from file"'
+    assert_line "/some/file"
+}
+
+# bats test_tags=id:bash-168
+@test "bash: no-space abbreviation expands: ijff -> install jar from file" {
+    run ./testcli ijff /some/file
+    assert_success
+    assert_line --partial 'Executing command "install jar from file"'
+    assert_line "/some/file"
+}
+
+# bats test_tags=id:bash-169
+@test "bash: no-space abbreviation ambiguous returns exit 51" {
+    # 'i' is ambiguous between install and the echo/list commands
+    # Use a config with truly ambiguous commands
+    echo 'ambiguous-a: echo a' >> ~/.testcli.conf
+    echo 'ambiguous-b: echo b' >> ~/.testcli.conf
+    source ./testcli
+    run ./testcli amb
+    assert_failure 51
+}
+
+# bats test_tags=id:bash-170
+@test "bash: no-space abbreviation disabled by CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS=n" {
+    _set_option __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS '"n"'
+    source ./testcli
+    run ./testcli ijfm coord123
+    assert_failure 51
+}
