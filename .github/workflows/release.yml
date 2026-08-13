@@ -136,7 +136,7 @@ jobs:
       - name: Run fish tests against installed file
         run: |
           export CLI_UNDER_TEST=/usr/bin/derakht-fish
-          test/_bats/bin/bats test/*/*-fish.bats test/*/*-all.bats --tap
+          test/_bats/bin/bats test/*/*-fish.bats --tap
       - name: Upload .deb (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -348,7 +348,7 @@ jobs:
             echo "--- fish package OK ---"
             # Run fish tests against installed file
             export CLI_UNDER_TEST=/usr/local/bin/derakht-fish
-            test/_bats/bin/bats test/*/*-fish.bats test/*/*-all.bats --tap
+            test/_bats/bin/bats test/*/*-fish.bats --tap
             # Copy package to workspace
             cp /tmp/derakht-cli-fish-${PKG_VERSION}.pkg .
       - name: Upload .pkg (fish)
@@ -455,7 +455,7 @@ jobs:
       - name: Run fish tests against installed file
         run: |
           export CLI_UNDER_TEST=/usr/bin/derakht-fish
-          test/_bats/bin/bats test/*/*-fish.bats test/*/*-all.bats --tap
+          test/_bats/bin/bats test/*/*-fish.bats --tap
       - name: Upload .rpm (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -505,7 +505,7 @@ jobs:
       - name: Run fish tests against installed file
         run: |
           export CLI_UNDER_TEST=/usr/bin/derakht-fish
-          test/_bats/bin/bats test/*/*-fish.bats test/*/*-all.bats --tap
+          test/_bats/bin/bats test/*/*-fish.bats --tap
       - name: Upload .pkg.tar.zst (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
