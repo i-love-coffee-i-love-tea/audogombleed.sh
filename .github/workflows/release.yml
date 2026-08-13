@@ -290,8 +290,19 @@ jobs:
               > /tmp/pkg/+MANIFEST
             sed -i '' "s|%%PKG_VERSION%%|${PKG_VERSION}|" /tmp/pkg/+MANIFEST
             pkg create -m /tmp/pkg -r /tmp/pkg -p /tmp/pkg/usr/local -o /tmp
+            # Debug: inspect package contents
+            echo "--- package info ---"
+            pkg info -F /tmp/derakht-cli-${PKG_VERSION}.pkg 2>&1 || true
+            echo "--- manifest ---"
+            cat /tmp/pkg/+MANIFEST
+            echo "--- packing list ---"
+            pkg info -l -F /tmp/derakht-cli-${PKG_VERSION}.pkg 2>&1 || true
             # Install
             pkg add /tmp/derakht-cli-${PKG_VERSION}.pkg
+            # Debug: check what was installed
+            echo "--- installed files ---"
+            pkg info -l derakht-cli 2>&1 || true
+            ls -la /usr/local/bin/derakht* 2>&1 || true
             # Test version
             /usr/local/bin/derakht --version | grep -q "${PKG_VERSION}"
             echo "--- version OK ---"
@@ -351,8 +362,17 @@ jobs:
               > /tmp/pkg/+MANIFEST
             sed -i '' "s|%%PKG_VERSION%%|${PKG_VERSION}|" /tmp/pkg/+MANIFEST
             pkg create -m /tmp/pkg -r /tmp/pkg -p /tmp/pkg/usr/local -o /tmp
+            # Debug: inspect package contents
+            echo "--- package info ---"
+            pkg info -F /tmp/derakht-cli-fish-${PKG_VERSION}.pkg 2>&1 || true
+            echo "--- packing list ---"
+            pkg info -l -F /tmp/derakht-cli-fish-${PKG_VERSION}.pkg 2>&1 || true
             # Install
             pkg add /tmp/derakht-cli-fish-${PKG_VERSION}.pkg
+            # Debug: check what was installed
+            echo "--- installed files ---"
+            pkg info -l derakht-cli-fish 2>&1 || true
+            ls -la /usr/local/bin/derakht-fish* 2>&1 || true
             # Test
             test -f /usr/local/bin/derakht-fish
             echo "--- fish package OK ---"

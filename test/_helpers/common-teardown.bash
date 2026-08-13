@@ -2,6 +2,5 @@
 
 # teardown testcli — idempotent, no errors if files are already gone
 _common_teardown() {
-  rm -f ./testcli || true
-  rm -f ~/.testcli.conf || true
+  (rm -f ./testcli; rm -f ~/.testcli.conf) || true
 }
