@@ -270,6 +270,7 @@ jobs:
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
           run: |
             set -e
+            export PATH="/usr/local/bin:$PATH"
             # Build package
             mkdir -p /tmp/pkg/usr/local/bin /tmp/pkg/usr/local/share/man/man1
             cp derakht.sh /tmp/pkg/usr/local/bin/derakht
@@ -330,6 +331,7 @@ jobs:
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
           run: |
             set -e
+            export PATH="/usr/local/bin:$PATH"
             # Build package
             mkdir -p /tmp/pkg/usr/local/bin /tmp/pkg/usr/local/share/man/man1
             cp derakht.fish /tmp/pkg/usr/local/bin/derakht-fish
