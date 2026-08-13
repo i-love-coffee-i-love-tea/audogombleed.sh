@@ -48,8 +48,12 @@ jobs:
       - name: Run bash tests with coverage
         run: |
           mkdir -p coverage/bash
+          # On bash 5.0+, BASH_XTRACEFD defaults to 2 (stderr) which bats
+          # captures, preventing kcov from receiving trace data. Set it to
+          # a dedicated fd so kcov can read the trace output.
+          export BASH_XTRACEFD=782
           kcov \
-            --bash-method=PS4 \
+            --bash-method=DEBUG \
             --bash-parse-files-in-dir="$(pwd)" \
             --include-pattern="$(pwd)/derakht.sh" \
             --exclude-pattern=test,bats \

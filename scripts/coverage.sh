@@ -43,6 +43,7 @@ rm -rf "$COVERAGE_DIR"
 mkdir -p "$COVERAGE_DIR/bash"
 
 echo "Running bash tests with kcov..."
+export BASH_XTRACEFD=782
 kcov \
     --bash-method=PS4 \
     --bash-parse-files-in-dir="$SCRIPT_DIR" \
