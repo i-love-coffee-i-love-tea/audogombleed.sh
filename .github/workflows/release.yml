@@ -282,7 +282,7 @@ jobs:
             printf 'desc = "Define commands and arguments in a plain text config file. Tab completion, command abbreviation, and help output all come for free."\n' >> /tmp/manifest.ucl
             printf 'origin = shells/derakht\nmaintainer = github.com@gobuki.org\n' >> /tmp/manifest.ucl
             printf 'www = https://github.com/i-love-coffee-i-love-tea/derakht-cli\n' >> /tmp/manifest.ucl
-            printf 'prefix = /usr/local\narch = FreeBSD:14:*\ncategories { }\nlicenses { }\n' >> /tmp/manifest.ucl
+            printf 'prefix = /usr/local\narch = FreeBSD:14:*\ncategories = []\nlicenses = []\n' >> /tmp/manifest.ucl
             # Packing list
             printf 'bin/derakht\nshare/man/man1/derakht.1\n' > /tmp/plist
             pkg create -M /tmp/manifest.ucl -r /tmp/stage -p /tmp/plist -o /tmp
@@ -343,7 +343,7 @@ jobs:
             printf 'desc = "Derakht generates shell CLIs from a plain text config file. This package provides the fish shell implementation."\n' >> /tmp/manifest.ucl
             printf 'origin = shells/derakht-fish\nmaintainer = github.com@gobuki.org\n' >> /tmp/manifest.ucl
             printf 'www = https://github.com/i-love-coffee-i-love-tea/derakht-cli\n' >> /tmp/manifest.ucl
-            printf 'prefix = /usr/local\narch = FreeBSD:14:*\ncategories { }\nlicenses { }\n' >> /tmp/manifest.ucl
+            printf 'prefix = /usr/local\narch = FreeBSD:14:*\ncategories = []\nlicenses = []\n' >> /tmp/manifest.ucl
             # Packing list
             printf 'bin/derakht-fish\nshare/man/man1/derakht.1\n' > /tmp/plist
             pkg create -M /tmp/manifest.ucl -r /tmp/stage -p /tmp/plist -o /tmp
