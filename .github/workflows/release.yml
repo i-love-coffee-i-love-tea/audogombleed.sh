@@ -258,18 +258,18 @@ jobs:
             cp derakht.sh /tmp/pkg/usr/local/bin/derakht
             chmod 755 /tmp/pkg/usr/local/bin/derakht
             cp derakht.1 /tmp/pkg/usr/local/share/man/man1/
-            cat > /tmp/pkg/+MANIFEST <<'MANIFEST'
-name: derakht
-version: "%%PKG_VERSION%%"
-comment: "Create CLIs with auto-completable command trees"
-desc: "Define commands and arguments in a plain text config file. Tab completion, command abbreviation, and help output all come for free."
-origin: shells/derakht
-maintainer: github.com@gobuki.org
-www: https://github.com/i-love-coffee-i-love-tea/derakht-cli
-prefix: /usr/local
-flatsize: 0
-arch: FreeBSD:14:*
-MANIFEST
+            printf '%s\n' \
+              'name: derakht' \
+              'version: "%%PKG_VERSION%%"' \
+              'comment: "Create CLIs with auto-completable command trees"' \
+              'desc: "Define commands and arguments in a plain text config file. Tab completion, command abbreviation, and help output all come for free."' \
+              'origin: shells/derakht' \
+              'maintainer: github.com@gobuki.org' \
+              'www: https://github.com/i-love-coffee-i-love-tea/derakht-cli' \
+              'prefix: /usr/local' \
+              'flatsize: 0' \
+              'arch: FreeBSD:14:*' \
+              > /tmp/pkg/+MANIFEST
             sed -i "s|%%PKG_VERSION%%|${PKG_VERSION}|" /tmp/pkg/+MANIFEST
             pkg create -m /tmp/pkg -r /tmp/pkg -p /tmp/pkg -o /tmp
             # Install
@@ -317,18 +317,18 @@ MANIFEST
             cp derakht.fish /tmp/pkg/usr/local/bin/derakht-fish
             chmod 755 /tmp/pkg/usr/local/bin/derakht-fish
             cp derakht.1 /tmp/pkg/usr/local/share/man/man1/
-            cat > /tmp/pkg/+MANIFEST <<'MANIFEST'
-name: derakht-fish
-version: "%%PKG_VERSION%%"
-comment: "Fish shell support for derakht-cli"
-desc: "Derakht generates shell CLIs from a plain text config file. This package provides the fish shell implementation."
-origin: shells/derakht-fish
-maintainer: github.com@gobuki.org
-www: https://github.com/i-love-coffee-i-love-tea/derakht-cli
-prefix: /usr/local
-flatsize: 0
-arch: FreeBSD:14:*
-MANIFEST
+            printf '%s\n' \
+              'name: derakht-fish' \
+              'version: "%%PKG_VERSION%%"' \
+              'comment: "Fish shell support for derakht-cli"' \
+              'desc: "Derakht generates shell CLIs from a plain text config file. This package provides the fish shell implementation."' \
+              'origin: shells/derakht-fish' \
+              'maintainer: github.com@gobuki.org' \
+              'www: https://github.com/i-love-coffee-i-love-tea/derakht-cli' \
+              'prefix: /usr/local' \
+              'flatsize: 0' \
+              'arch: FreeBSD:14:*' \
+              > /tmp/pkg/+MANIFEST
             sed -i "s|%%PKG_VERSION%%|${PKG_VERSION}|" /tmp/pkg/+MANIFEST
             pkg create -m /tmp/pkg -r /tmp/pkg -p /tmp/pkg -o /tmp
             # Install
