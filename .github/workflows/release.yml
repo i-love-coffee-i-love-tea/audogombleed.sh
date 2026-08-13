@@ -271,11 +271,11 @@ jobs:
           run: |
             set -e
             export PATH="/usr/local/bin:$PATH"
-            # Build package
-            mkdir -p /tmp/pkg/usr/local/bin /tmp/pkg/usr/local/share/man/man1
-            cp derakht.sh /tmp/pkg/usr/local/bin/derakht
-            chmod 755 /tmp/pkg/usr/local/bin/derakht
-            cp derakht.1 /tmp/pkg/usr/local/share/man/man1/
+            # Build package — stage files under /tmp/pkg matching prefix layout
+            mkdir -p /tmp/pkg/bin /tmp/pkg/share/man/man1
+            cp derakht.sh /tmp/pkg/bin/derakht
+            chmod 755 /tmp/pkg/bin/derakht
+            cp derakht.1 /tmp/pkg/share/man/man1/
             printf '%s\n' \
               'name: derakht-cli' \
               'version: "%%PKG_VERSION%%"' \
@@ -289,7 +289,7 @@ jobs:
               'arch: FreeBSD:14:*' \
               > /tmp/pkg/+MANIFEST
             sed -i '' "s|%%PKG_VERSION%%|${PKG_VERSION}|" /tmp/pkg/+MANIFEST
-            pkg create -m /tmp/pkg -r /tmp/pkg/usr/local -o /tmp
+            pkg create -m /tmp/pkg -r /tmp/pkg -o /tmp
             # Debug: inspect package contents
             echo "--- package info ---"
             pkg info -F /tmp/derakht-cli-${PKG_VERSION}.pkg 2>&1 || true
@@ -343,11 +343,11 @@ jobs:
           run: |
             set -e
             export PATH="/usr/local/bin:$PATH"
-            # Build package
-            mkdir -p /tmp/pkg/usr/local/bin /tmp/pkg/usr/local/share/man/man1
-            cp derakht.fish /tmp/pkg/usr/local/bin/derakht-fish
-            chmod 755 /tmp/pkg/usr/local/bin/derakht-fish
-            cp derakht.1 /tmp/pkg/usr/local/share/man/man1/
+            # Build package — stage files under /tmp/pkg matching prefix layout
+            mkdir -p /tmp/pkg/bin /tmp/pkg/share/man/man1
+            cp derakht.fish /tmp/pkg/bin/derakht-fish
+            chmod 755 /tmp/pkg/bin/derakht-fish
+            cp derakht.1 /tmp/pkg/share/man/man1/
             printf '%s\n' \
               'name: derakht-cli-fish' \
               'version: "%%PKG_VERSION%%"' \
@@ -361,7 +361,7 @@ jobs:
               'arch: FreeBSD:14:*' \
               > /tmp/pkg/+MANIFEST
             sed -i '' "s|%%PKG_VERSION%%|${PKG_VERSION}|" /tmp/pkg/+MANIFEST
-            pkg create -m /tmp/pkg -r /tmp/pkg/usr/local -o /tmp
+            pkg create -m /tmp/pkg -r /tmp/pkg -o /tmp
             # Debug: inspect package contents
             echo "--- package info ---"
             pkg info -F /tmp/derakht-cli-fish-${PKG_VERSION}.pkg 2>&1 || true
