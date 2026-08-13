@@ -44,7 +44,7 @@ mkdir -p "$COVERAGE_DIR/bash"
 
 echo "Running bash tests with kcov..."
 kcov \
-    --bash-method=PROCURSIVE \
+    --bash-method=PS4 \
     --bash-parse-files-in-dir="$SCRIPT_DIR" \
     --include-pattern="$SCRIPT_DIR/derakht.sh" \
     --exclude-pattern=test,bats \

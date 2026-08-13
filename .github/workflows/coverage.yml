@@ -49,7 +49,7 @@ jobs:
         run: |
           mkdir -p coverage/bash
           kcov \
-            --bash-method=PROCURSIVE \
+            --bash-method=PS4 \
             --bash-parse-files-in-dir="$(pwd)" \
             --include-pattern="$(pwd)/derakht.sh" \
             --exclude-pattern=test,bats \

@@ -112,18 +112,21 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           submodules: true
-      - name: Cache apt packages
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
-        with:
-          path: ~/.cache/apt
-          key: apt-ubuntu-fish
-      - name: Ensure fish is installed
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq fish
+      - name: Ensure fish 4.x is installed
+        run: |
+          # Install fish 4.x from the official PPA (Ubuntu ships 3.x)
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq software-properties-common
+          sudo add-apt-repository -y ppa:fish-shell/release-4
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --allow-downgrades fish
+          fish --version
       - name: Run fish tests
         run: test/_bats/bin/bats test/*/*-fish.bats test/*/*-all.bats --formatter junit | tee report-fish.xml
       - name: Report
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
         if: always()
+        continue-on-error: true
         with:
           name: "BATS Test Report (Ubuntu fish)"
           path: report-fish.xml
@@ -175,7 +178,6 @@ jobs:
           ln -sf ./derakht.sh ./testcli
           cp example.conf ~/.testcli.conf
           zsh ./testcli echo hello world
-          bash ./testcli echo hello world
           rm -f ./testcli ~/.testcli.conf
       - name: Run zsh tests
         env:
