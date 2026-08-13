@@ -12,8 +12,11 @@ setup_file() {
     # Create SSH config for SSH_HOST tests
     # The tool greps for lowercase "host" in ~/.ssh/config
     mkdir -p ~/.ssh
+    export _SSH_CONFIG_BAK="$(mktemp)"
     if [ -f ~/.ssh/config ]; then
-        cp ~/.ssh/config ~/.ssh/config.bak
+        cp ~/.ssh/config "$_SSH_CONFIG_BAK"
+    else
+        export _SSH_CONFIG_CREATED="1"
     fi
     cat > ~/.ssh/config <<'EOF'
 host testhost-alpha
@@ -28,10 +31,10 @@ EOF
 teardown_file() {
     load '../_helpers/test-setup'
     _test_cleanup
-    # Restore original SSH config
-    if [ -f ~/.ssh/config.bak ]; then
-        mv ~/.ssh/config.bak ~/.ssh/config
-    else
+    # Restore original SSH config from unique temp backup
+    if [ -n "${_SSH_CONFIG_BAK:-}" ] && [ -f "$_SSH_CONFIG_BAK" ]; then
+        mv "$_SSH_CONFIG_BAK" ~/.ssh/config
+    elif [ -n "${_SSH_CONFIG_CREATED:-}" ]; then
         rm -f ~/.ssh/config
     fi
 }
