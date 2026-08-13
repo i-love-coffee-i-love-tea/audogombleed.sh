@@ -141,9 +141,9 @@ platform-specific workarounds.
 - **Files:** Various `-fish.bats` files in security/, execution/, config/
 - **Status:** Known issue, not blocking. Fish-specific tests that use `_fish_run` work correctly.
 
-### EX-017: AWK POSIX compat tests have2 known failures
-- **What:** Tests 4 ("non-$-prefixed arg value is NOT escaped") and 45 ("output=commands with no filter returns all commands") fail.
-- **Why:** Under investigation. May be related to awk implementation differences.
+### EX-017: AWK POSIX compat tests used ./testcli without setup
+- **What:** Tests 4 ("non-$-prefixed arg value is NOT escaped") and 45 ("output=commands with no filter returns all commands") used `./testcli` but the test file's `setup()` doesn't create the testcli symlink.
+- **Why:** The test file loads bats-support/bats-assert directly (not via `_common_setup`) to test the AWK parser in isolation. Two tests accidentally used `./testcli` instead of `_run_awk_with`.
 - **Affected:** All shells (tests run under all awk implementations).
-- **Workaround:** None yet. These are pre-existing failures.
+- **Workaround:** Fixed by using `_run_awk_with /usr/bin/awk` instead of `./testcli`, consistent with the rest of the file.
 - **Files:** `test/config/003-awk-posix-compat-all.bats`
