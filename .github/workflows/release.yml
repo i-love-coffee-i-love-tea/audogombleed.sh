@@ -26,7 +26,10 @@ jobs:
           path: ~/.cache/apt
           key: apt-release-test
       - name: Install zsh and fish
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh fish
+        run: |
+          sudo apt-add-repository -y ppa:fish-shell/release-4
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq zsh fish
       - name: Verify version matches tag
         run: |
           tag_version="${GITHUB_REF_NAME#v}"
@@ -111,7 +114,10 @@ jobs:
         with:
           submodules: true
       - name: Install build dependencies
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq dpkg-dev fish gawk
+        run: |
+          sudo apt-add-repository -y ppa:fish-shell/release-4
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dpkg-dev fish gawk
       - name: Build .deb
         run: |
           pkgdir="/tmp/derakht-cli-fish-${PKG_VERSION}"
