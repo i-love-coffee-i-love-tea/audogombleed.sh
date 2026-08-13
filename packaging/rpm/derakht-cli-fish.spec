@@ -28,7 +28,6 @@ Install derakht-cli for the bash/zsh version.
 %install
 install -Dpm 644 derakht.fish %{buildroot}%{_bindir}/derakht-fish
 install -Dpm 644 derakht.1 %{buildroot}%{_mandir}/man1/derakht.1
-install -Dpm 644 LICENSE %{buildroot}%{_licensedir}/derakht-cli/LICENSE
 
 %files
 %license LICENSE

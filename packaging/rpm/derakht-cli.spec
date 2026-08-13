@@ -27,7 +27,6 @@ Works in both bash and zsh. No dependencies beyond awk and the shell.
 %install
 install -Dpm 755 derakht.sh %{buildroot}%{_bindir}/derakht
 install -Dpm 644 derakht.1 %{buildroot}%{_mandir}/man1/derakht.1
-install -Dpm 644 LICENSE %{buildroot}%{_licensedir}/%{name}/LICENSE
 
 %files
 %license LICENSE
