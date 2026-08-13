@@ -658,6 +658,10 @@ jobs:
                    dist/pkg-nix-${PKG_VERSION}/* dist/pkg-nix-fish-${PKG_VERSION}/*; do
             [ -f "$f" ] && assets+=("$f")
           done
+          # Standalone scripts
+          for f in derakht.sh derakht.fish; do
+            [ -f "$f" ] && assets+=("$f")
+          done
           for attempt in 1 2 3; do
             if gh release create "$GITHUB_REF_NAME" \
               --title "$GITHUB_REF_NAME" \
