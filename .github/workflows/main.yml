@@ -1,8 +1,5 @@
 name: "Automated Tests"
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+on: [workflow_dispatch]
 
 permissions:
   id-token: write
