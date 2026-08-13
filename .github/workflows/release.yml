@@ -252,7 +252,7 @@ jobs:
         with:
           usesh: true
           prepare: |
-            pkg install -y bash zsh gawk pkg
+            pkg install -y bash zsh gawk git pkg
             mount -t fdescfs fdesc /dev/fd
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
           run: |
@@ -311,7 +311,7 @@ jobs:
         with:
           usesh: true
           prepare: |
-            pkg install -y fish gawk pkg
+            pkg install -y fish gawk git pkg
             mount -t fdescfs fdesc /dev/fd
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
           run: |
