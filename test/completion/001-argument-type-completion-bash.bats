@@ -359,10 +359,17 @@ teardown() { load '../_helpers/test-setup'; _test_teardown; }
 # bats test_tags=id:bash-029
 @test "SERVICE argument completion returns results" {
     load '../_helpers/auto-completion-mock-setup'
-    # Skip if no service manager is available
-    if ! command -v systemctl >/dev/null 2>&1 && \
-       ! [ -d /etc/rc.d ] && ! [ -d /usr/local/etc/rc.d ]; then
-        skip "no service manager available"
+    # Skip if no service manager is available or returns no services
+    # (e.g. systemctl exists in Docker but systemd is not running)
+    local has_services=false
+    if command -v systemctl >/dev/null 2>&1 && \
+       systemctl list-units --type=service --no-legend 2>/dev/null | head -1 | grep -q .; then
+        has_services=true
+    elif [ -d /etc/rc.d ] || [ -d /usr/local/etc/rc.d ]; then
+        has_services=true
+    fi
+    if ! $has_services; then
+        skip "no service manager available or no services found"
     fi
     result="$(test_completion 2 "testcli" "test-service")"
     assert_not_empty "$result"

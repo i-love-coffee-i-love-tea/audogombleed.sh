@@ -279,10 +279,16 @@ teardown() { load '../_helpers/test-setup'; _test_teardown; }
 # --- SERVICE ---
 
 @test "fish: SERVICE argument completion returns results" {
-    # Skip if no service manager is available
-    if ! command -v systemctl >/dev/null 2>&1 && \
-       ! [ -d /etc/rc.d ] && ! [ -d /usr/local/etc/rc.d ]; then
-        skip "no service manager available"
+    # Skip if no service manager is available or returns no services
+    local has_services=false
+    if command -v systemctl >/dev/null 2>&1 && \
+       systemctl list-units --type=service --no-legend 2>/dev/null | head -1 | grep -q .; then
+        has_services=true
+    elif [ -d /etc/rc.d ] || [ -d /usr/local/etc/rc.d ]; then
+        has_services=true
+    fi
+    if ! $has_services; then
+        skip "no service manager available or no services found"
     fi
     run _fish_eval '_cli_complete_arg 0 "" test-service'
     assert_success

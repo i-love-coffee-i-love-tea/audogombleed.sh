@@ -326,7 +326,7 @@ jobs:
           usesh: true
           envs: PKG_VERSION
           prepare: |
-            pkg install -y fish gawk git pkg
+            pkg install -y bash fish gawk git pkg
             mount -t fdescfs fdesc /dev/fd
             git config --global --add safe.directory "$GITHUB_WORKSPACE"
           run: |

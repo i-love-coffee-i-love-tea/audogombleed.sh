@@ -256,9 +256,16 @@ teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 @test "zsh: SERVICE argument completion returns results" {
     load '../_helpers/auto-completion-mock-setup-zsh'
-    if ! command -v systemctl >/dev/null 2>&1 && \
-       ! [ -d /etc/rc.d ] && ! [ -d /usr/local/etc/rc.d ]; then
-        skip "no service manager available"
+    # Skip if no service manager is available or returns no services
+    local has_services=false
+    if command -v systemctl >/dev/null 2>&1 && \
+       systemctl list-units --type=service --no-legend 2>/dev/null | head -1 | grep -q .; then
+        has_services=true
+    elif [ -d /etc/rc.d ] || [ -d /usr/local/etc/rc.d ]; then
+        has_services=true
+    fi
+    if ! $has_services; then
+        skip "no service manager available or no services found"
     fi
     result="$(test_completion_zsh 3 "testcli" "test-service" "")"
     assert_not_empty "$result"
