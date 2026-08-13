@@ -159,19 +159,10 @@ jobs:
       # macOS ships bash 3.2 at /bin/bash; bats needs 4.2+
       # awk variants: needed for awk-posix-compat tests
       # coreutils: only for gdate in benchmark tests (not a runtime dependency)
-      - name: Cache Homebrew packages
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
-        with:
-          path: |
-            ~/Library/Caches/Homebrew
-            /opt/homebrew/Cellar/bash
-            /opt/homebrew/Cellar/gawk
-            /opt/homebrew/Cellar/mawk
-            /opt/homebrew/Cellar/coreutils
-          key: brew-macos-${{ runner.os }}-${{ runner.arch }}
       - name: Install test dependencies
         run: |
-          brew install bash gawk mawk coreutils
+          brew install bash gawk mawk coreutils || true
+          brew link --overwrite bash gawk mawk coreutils
           echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
       - name: Smoke test
         run: |
