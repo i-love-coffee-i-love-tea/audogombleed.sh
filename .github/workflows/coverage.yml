@@ -45,6 +45,18 @@ jobs:
           sudo cmake --install build
           kcov --version
 
+      - name: Build bash 4.4 for kcov
+        run: |
+          # bash 5.0+ sets BASH_XTRACEFD to stderr, which bats captures,
+          # preventing kcov from receiving trace data. bash 4.x uses fd 782.
+          curl -sL https://ftpmirror.gnu.org/bash/bash-4.4.18.tar.gz -o /tmp/bash.tar.gz
+          tar xf /tmp/bash.tar.gz -C /tmp
+          cd /tmp/bash-4.4.18
+          ./configure --prefix=/opt/bash4 --without-bash-malloc > /dev/null 2>&1
+          make -j"$(nproc)" > /dev/null 2>&1
+          sudo make install > /dev/null 2>&1
+          /opt/bash4/bin/bash --version | head -1
+
       - name: Run bash tests with coverage
         run: |
           mkdir -p coverage/bash
@@ -58,7 +70,7 @@ jobs:
             --include-pattern="$(pwd)/derakht.sh" \
             --exclude-pattern=test,bats \
             coverage/bash \
-            test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats
+            /opt/bash4/bin/bash test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats
 
       - name: Run zsh tests with coverage
         run: |
