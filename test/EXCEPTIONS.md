@@ -141,6 +141,14 @@ platform-specific workarounds.
 - **Files:** `test/_helpers/test-setup.bash`
 - **Status:** Fixed. All 348 fish tests now pass.
 
+### EX-018: Symlink write-through can corrupt derakht.sh
+- **What:** `./testcli` is a symlink to `derakht.sh`. Writing to `./testcli` (e.g. `cat > ./testcli`) follows the symlink and overwrites the source file.
+- **Why:** POSIX symlink semantics — writes to a symlink target the pointed-to file.
+- **Affected:** All shells (bash/zsh test setup creates the symlink).
+- **Workaround:** Always use `rm -f ./testcli` before writing to create a new regular file. The test helpers (`_test_setup_cli_fish`, `_test_teardown`) already do this. NEVER write to `./testcli` directly without removing the symlink first — use the test helpers instead.
+- **Files:** `test/_helpers/test-setup.bash`, `test/_helpers/common-setup.bash`
+- **Status:** Documented. Existing helpers are correct; problem was operator error.
+
 ### EX-017: AWK POSIX compat tests used ./testcli without setup
 - **What:** Tests 4 ("non-$-prefixed arg value is NOT escaped") and 45 ("output=commands with no filter returns all commands") used `./testcli` but the test file's `setup()` doesn't create the testcli symlink.
 - **Why:** The test file loads bats-support/bats-assert directly (not via `_common_setup`) to test the AWK parser in isolation. Two tests accidentally used `./testcli` instead of `_run_awk_with`.
