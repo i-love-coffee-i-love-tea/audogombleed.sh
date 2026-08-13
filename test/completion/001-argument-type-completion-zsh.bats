@@ -4,17 +4,20 @@
 # Tests tab completion and execution for argument types under zsh:
 # FILE, DIR, FILE_OR_DIR, STRING, INTEGER, int_range, ENVVAR, USER, GROUP, SSH_HOST, BLKDEV, SERVICE
 
+_SSH_BAK_MARKER="/tmp/.derakht-test-ssh-bak-001-completion-zsh"
+_SSH_CREATED_MARKER="/tmp/.derakht-test-ssh-created-001-completion-zsh"
+
 setup_file() {
     load '../_helpers/test-setup'
     _test_init __CLI_CFG_EXEC_SILENT="y"
     # Create SSH config for SSH_HOST tests
     mkdir -p ~/.ssh
     local _bak="$(mktemp)"
-    echo "$_bak" > /tmp/.derakht-test-ssh-bak-$$
+    echo "$_bak" > "$_SSH_BAK_MARKER"
     if [ -f ~/.ssh/config ]; then
         cp ~/.ssh/config "$_bak"
     else
-        touch /tmp/.derakht-test-ssh-created-$$
+        touch "$_SSH_CREATED_MARKER"
     fi
     cat > ~/.ssh/config <<'EOF'
 host testhost-alpha
@@ -39,17 +42,15 @@ teardown_file() {
     load '../_helpers/test-setup'
     _test_cleanup
     rm -rf /tmp/agt-completion-test-zsh
-    local _bak_file="/tmp/.derakht-test-ssh-bak-$$"
-    local _created_file="/tmp/.derakht-test-ssh-created-$$"
-    if [ -f "$_bak_file" ]; then
+    if [ -f "$_SSH_BAK_MARKER" ]; then
         local _bak
-        _bak="$(cat "$_bak_file")"
-        rm -f "$_bak_file"
+        _bak="$(cat "$_SSH_BAK_MARKER")"
+        rm -f "$_SSH_BAK_MARKER"
         if [ -f "$_bak" ]; then
             mv "$_bak" ~/.ssh/config
         fi
-    elif [ -f "$_created_file" ]; then
-        rm -f "$_created_file"
+    elif [ -f "$_SSH_CREATED_MARKER" ]; then
+        rm -f "$_SSH_CREATED_MARKER"
         rm -f ~/.ssh/config
     fi
 }

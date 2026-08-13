@@ -292,7 +292,7 @@ jobs:
             # Install
             pkg add /tmp/derakht-cli-${PKG_VERSION}.pkg
             # Test version
-            derakht --version | grep -q "${PKG_VERSION}"
+            /usr/local/bin/derakht --version | grep -q "${PKG_VERSION}"
             echo "--- version OK ---"
             # Run bats tests against installed binary
             export CLI_SCRIPT_UNDER_TEST=/usr/local/bin/derakht
