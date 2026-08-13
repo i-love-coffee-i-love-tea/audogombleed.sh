@@ -277,25 +277,14 @@ jobs:
             chmod 755 /tmp/stage/usr/local/bin/derakht
             cp derakht.1 /tmp/stage/usr/local/share/man/man1/
             # UCL manifest
-            cat > /tmp/manifest.ucl <<UCL
-name = derakht-cli
-version = ${PKG_VERSION}
-comment = "Create CLIs with auto-completable command trees"
-desc = "Define commands and arguments in a plain text config file. Tab completion, command abbreviation, and help output all come for free."
-origin = shells/derakht
-maintainer = github.com@gobuki.org
-www = https://github.com/i-love-coffee-i-love-tea/derakht-cli
-prefix = /usr/local
-flatsize = 0
-arch = FreeBSD:14:*
-categories { }
-licenses { }
-UCL
+            printf 'name = derakht-cli\nversion = %s\n' "${PKG_VERSION}" > /tmp/manifest.ucl
+            printf 'comment = "Create CLIs with auto-completable command trees"\n' >> /tmp/manifest.ucl
+            printf 'desc = "Define commands and arguments in a plain text config file. Tab completion, command abbreviation, and help output all come for free."\n' >> /tmp/manifest.ucl
+            printf 'origin = shells/derakht\nmaintainer = github.com@gobuki.org\n' >> /tmp/manifest.ucl
+            printf 'www = https://github.com/i-love-coffee-i-love-tea/derakht-cli\n' >> /tmp/manifest.ucl
+            printf 'prefix = /usr/local\narch = FreeBSD:14:*\ncategories { }\nlicenses { }\n' >> /tmp/manifest.ucl
             # Packing list
-            cat > /tmp/plist <<PLIST
-bin/derakht
-share/man/man1/derakht.1
-PLIST
+            printf 'bin/derakht\nshare/man/man1/derakht.1\n' > /tmp/plist
             pkg create -M /tmp/manifest.ucl -r /tmp/stage -p /tmp/plist -o /tmp
             # Install
             pkg add /tmp/derakht-cli-${PKG_VERSION}.pkg
@@ -349,25 +338,14 @@ PLIST
             chmod 755 /tmp/stage/usr/local/bin/derakht-fish
             cp derakht.1 /tmp/stage/usr/local/share/man/man1/
             # UCL manifest
-            cat > /tmp/manifest.ucl <<UCL
-name = derakht-cli-fish
-version = ${PKG_VERSION}
-comment = "Fish shell support for derakht-cli"
-desc = "Derakht generates shell CLIs from a plain text config file. This package provides the fish shell implementation."
-origin = shells/derakht-fish
-maintainer = github.com@gobuki.org
-www = https://github.com/i-love-coffee-i-love-tea/derakht-cli
-prefix = /usr/local
-flatsize = 0
-arch = FreeBSD:14:*
-categories { }
-licenses { }
-UCL
+            printf 'name = derakht-cli-fish\nversion = %s\n' "${PKG_VERSION}" > /tmp/manifest.ucl
+            printf 'comment = "Fish shell support for derakht-cli"\n' >> /tmp/manifest.ucl
+            printf 'desc = "Derakht generates shell CLIs from a plain text config file. This package provides the fish shell implementation."\n' >> /tmp/manifest.ucl
+            printf 'origin = shells/derakht-fish\nmaintainer = github.com@gobuki.org\n' >> /tmp/manifest.ucl
+            printf 'www = https://github.com/i-love-coffee-i-love-tea/derakht-cli\n' >> /tmp/manifest.ucl
+            printf 'prefix = /usr/local\narch = FreeBSD:14:*\ncategories { }\nlicenses { }\n' >> /tmp/manifest.ucl
             # Packing list
-            cat > /tmp/plist <<PLIST
-bin/derakht-fish
-share/man/man1/derakht.1
-PLIST
+            printf 'bin/derakht-fish\nshare/man/man1/derakht.1\n' > /tmp/plist
             pkg create -M /tmp/manifest.ucl -r /tmp/stage -p /tmp/plist -o /tmp
             echo "--- package contents ---"
             pkg info -l -F /tmp/derakht-cli-fish-${PKG_VERSION}.pkg 2>&1 || true
