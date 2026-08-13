@@ -70,11 +70,6 @@ WRAPPER
     rm -f ./fancy_cli ~/.fancy_cli.conf
 }
 
-@test "fish: direct execution as derakht.sh fails (bash script under fish)" {
-    run -49 fish ./derakht.sh greet
-    assert_failure
-}
-
 # ===================================================================
 @test "fish: valid __CLI_ variable name is accepted" {
     cat > ~/.testcli.conf <<'CONF'

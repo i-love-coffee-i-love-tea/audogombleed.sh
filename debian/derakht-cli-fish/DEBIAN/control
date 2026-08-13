@@ -1,0 +1,16 @@
+Package: derakht-cli-fish
+Source: derakht-cli
+Version: 2.0.0
+Architecture: all
+Maintainer: Steffen Kremsler <debian@gobuki.org>
+Installed-Size: 128
+Depends: fish, gawk | mawk
+Section: utils
+Priority: optional
+Description: Fish shell support for derakht-cli
+ Derakht generates shell CLIs from a plain text config file.
+ Define commands and arguments declaratively — tab completion,
+ command abbreviation, help output, and execution all come for free.
+ .
+ This package provides the fish shell implementation.
+ Install derakht-cli for the bash/zsh version.

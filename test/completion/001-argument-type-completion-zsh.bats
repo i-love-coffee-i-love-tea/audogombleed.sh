@@ -9,11 +9,12 @@ setup_file() {
     _test_init __CLI_CFG_EXEC_SILENT="y"
     # Create SSH config for SSH_HOST tests
     mkdir -p ~/.ssh
-    export _SSH_CONFIG_BAK="$(mktemp)"
+    local _bak="$(mktemp)"
+    echo "$_bak" > /tmp/.derakht-test-ssh-bak-$$
     if [ -f ~/.ssh/config ]; then
-        cp ~/.ssh/config "$_SSH_CONFIG_BAK"
+        cp ~/.ssh/config "$_bak"
     else
-        export _SSH_CONFIG_CREATED="1"
+        touch /tmp/.derakht-test-ssh-created-$$
     fi
     cat > ~/.ssh/config <<'EOF'
 host testhost-alpha
@@ -38,9 +39,17 @@ teardown_file() {
     load '../_helpers/test-setup'
     _test_cleanup
     rm -rf /tmp/agt-completion-test-zsh
-    if [ -n "${_SSH_CONFIG_BAK:-}" ] && [ -f "$_SSH_CONFIG_BAK" ]; then
-        mv "$_SSH_CONFIG_BAK" ~/.ssh/config
-    elif [ -n "${_SSH_CONFIG_CREATED:-}" ]; then
+    local _bak_file="/tmp/.derakht-test-ssh-bak-$$"
+    local _created_file="/tmp/.derakht-test-ssh-created-$$"
+    if [ -f "$_bak_file" ]; then
+        local _bak
+        _bak="$(cat "$_bak_file")"
+        rm -f "$_bak_file"
+        if [ -f "$_bak" ]; then
+            mv "$_bak" ~/.ssh/config
+        fi
+    elif [ -f "$_created_file" ]; then
+        rm -f "$_created_file"
         rm -f ~/.ssh/config
     fi
 }
