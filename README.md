@@ -1,4 +1,3 @@
-[![Tests](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
 [![bash tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/d78d735477baaf8be3fb7c5cfd75bd1e/raw/bash-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
 [![zsh tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/d78d735477baaf8be3fb7c5cfd75bd1e/raw/zsh-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)
 [![fish tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/i-love-coffee-i-love-tea/d78d735477baaf8be3fb7c5cfd75bd1e/raw/fish-tests.json)](https://github.com/i-love-coffee-i-love-tea/derakht-cli/actions/workflows/main.yml)

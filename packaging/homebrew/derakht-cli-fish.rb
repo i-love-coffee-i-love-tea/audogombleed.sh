@@ -1,4 +1,4 @@
-class DerakhtFish < Formula
+class DerakhtCliFish < Formula
   desc "Fish shell support for derakht-cli — create CLIs with auto-completable command trees"
   homepage "https://github.com/i-love-coffee-i-love-tea/derakht-cli"
   url "https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v2.0.0.tar.gz"

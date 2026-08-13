@@ -5,15 +5,16 @@
 # Config is loaded per-test via _test_load_fish from test/_configs/.
 
 _common_setup_fish() {
+	local fish_src="${CLI_SCRIPT_UNDER_TEST:-./derakht.fish}"
 	# Remove any existing testcli (may be a symlink to derakht.sh)
 	# before creating the fish wrapper — otherwise cat follows the symlink
 	# and overwrites the bash script.
 	rm -f ./testcli
-	cat > ./testcli <<'WRAPPER'
+	cat > ./testcli <<WRAPPER
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME testcli
-set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/derakht.fish
+set -g __cli_wrapper_argv \$argv
+source $fish_src
 WRAPPER
 	chmod +x ./testcli
 }

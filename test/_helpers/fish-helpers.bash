@@ -14,12 +14,13 @@ _fish_run() {
 # Usage: run _fish_eval '_cli_getfirstwords e'
 _fish_eval() {
 	local code="$1"
+	local fish_src="${CLI_SCRIPT_UNDER_TEST:-./derakht.fish}"
 	local tmp="$PWD/.fish-eval-test"
 	cat > "$tmp" <<SCRIPT
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME testcli
 set -g __cli_wrapper_argv
-source (path dirname (status filename))/derakht.fish
+source $fish_src
 $code
 SCRIPT
 	chmod +x "$tmp"
@@ -29,34 +30,19 @@ SCRIPT
 	return $rc
 }
 
-# Run _cli_complete_ under fish with given commandline words and return completions.
-# Usage: _fish_complete word1 word2 ...
-# The first word is the program name.
-_fish_complete() {
-	fish -c '
-		source ./testcli
-		# Build the commandline words as fish would see them
-		set -l cmdline $argv
-		set -l prog $cmdline[1]
-		set -l words $cmdline[2..-1]
-
-		# Call the completion function
-		_cli_complete_ $prog $words
-	' "$@"
-}
-
 # Time a fish completion in a single process (sources derakht.fish once,
 # loads config, then times just the completion call).
 # Usage: _fish_time_completion <code>
 # Prints elapsed milliseconds.
 _fish_time_completion() {
 	local code="$1"
+	local fish_src="${CLI_SCRIPT_UNDER_TEST:-./derakht.fish}"
 	local tmp="$PWD/.fish-bench-test"
 	cat > "$tmp" <<SCRIPT
 #!/usr/bin/env fish
 set -g __CLI_PROGNAME testcli
 set -g __cli_wrapper_argv
-source (path dirname (status filename))/derakht.fish
+source $fish_src
 
 set start (python3 -c 'import time; print(int(time.time()*1000))')
 $code >/dev/null ^/dev/null

@@ -38,7 +38,7 @@ jobs:
           echo "--- version $tag_version OK ---"
       - name: Smoke test (bash + zsh + fish)
         run: |
-          ln -sf ./derakht.sh ./testcli
+          ln -sf "${CLI_SCRIPT_UNDER_TEST:-./derakht.sh}" ./testcli
           cp example.conf ~/.testcli.conf
           bash ./testcli echo hello world
           zsh ./testcli echo hello world
@@ -87,7 +87,7 @@ jobs:
           echo "--- version OK ---"
       - name: Run bats tests against installed binary
         run: |
-          export CLI_UNDER_TEST=/usr/bin/derakht
+          export CLI_SCRIPT_UNDER_TEST=/usr/bin/derakht
           test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
       - name: Upload .deb
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -135,7 +135,7 @@ jobs:
           echo "--- fish package OK ---"
       - name: Run fish tests against installed file
         run: |
-          export CLI_UNDER_TEST=/usr/bin/derakht-fish
+          export CLI_SCRIPT_UNDER_TEST=/usr/bin/derakht-fish
           test/_bats/bin/bats test/*/*-fish.bats --tap
       - name: Upload .deb (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -180,7 +180,7 @@ jobs:
           echo "--- version OK ---"
       - name: Run bats tests against installed binary
         run: |
-          export CLI_UNDER_TEST=/usr/bin/derakht
+          export CLI_SCRIPT_UNDER_TEST=/usr/bin/derakht
           test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
       - name: Upload .rpm
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -230,7 +230,7 @@ jobs:
           echo "--- version OK ---"
       - name: Run bats tests against installed binary
         run: |
-          export CLI_UNDER_TEST=/usr/bin/derakht
+          export CLI_SCRIPT_UNDER_TEST=/usr/bin/derakht
           test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
       - name: Upload .pkg.tar.zst
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -268,7 +268,7 @@ jobs:
             chmod 755 /tmp/pkg/usr/local/bin/derakht
             cp derakht.1 /tmp/pkg/usr/local/share/man/man1/
             printf '%s\n' \
-              'name: derakht' \
+              'name: derakht-cli' \
               'version: "%%PKG_VERSION%%"' \
               'comment: "Create CLIs with auto-completable command trees"' \
               'desc: "Define commands and arguments in a plain text config file. Tab completion, command abbreviation, and help output all come for free."' \
@@ -287,7 +287,7 @@ jobs:
             derakht --version | grep -q "${PKG_VERSION}"
             echo "--- version OK ---"
             # Run bats tests against installed binary
-            export CLI_UNDER_TEST=/usr/local/bin/derakht
+            export CLI_SCRIPT_UNDER_TEST=/usr/local/bin/derakht
             export MAX_EXEC_MS=200 MAX_COMPLETION_MS=200 MAX_LARGE_COMPLETION_MS=300
             test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
             # Copy package to workspace
@@ -328,7 +328,7 @@ jobs:
             chmod 755 /tmp/pkg/usr/local/bin/derakht-fish
             cp derakht.1 /tmp/pkg/usr/local/share/man/man1/
             printf '%s\n' \
-              'name: derakht-fish' \
+              'name: derakht-cli-fish' \
               'version: "%%PKG_VERSION%%"' \
               'comment: "Fish shell support for derakht-cli"' \
               'desc: "Derakht generates shell CLIs from a plain text config file. This package provides the fish shell implementation."' \
@@ -347,7 +347,7 @@ jobs:
             test -f /usr/local/bin/derakht-fish
             echo "--- fish package OK ---"
             # Run fish tests against installed file
-            export CLI_UNDER_TEST=/usr/local/bin/derakht-fish
+            export CLI_SCRIPT_UNDER_TEST=/usr/local/bin/derakht-fish
             test/_bats/bin/bats test/*/*-fish.bats --tap
             # Copy package to workspace
             cp /tmp/derakht-cli-fish-${PKG_VERSION}.pkg .
@@ -394,12 +394,14 @@ jobs:
           cp packaging/homebrew/derakht-cli.rb \
             "$(brew --repository)/Library/Taps/test-user/homebrew-derakht-cli/Formula/"
           brew install --build-from-source test-user/derakht-cli/derakht-cli
+          # Create config file for installed binary (avoids "not a regular file" error)
+          cp example.conf ~/.derakht.conf
           # Test version
           derakht --version | grep -q "$PKG_VERSION"
           echo "--- version OK ---"
       - name: Run bats tests against installed binary
         env:
-          CLI_UNDER_TEST: /usr/local/bin/derakht
+          CLI_SCRIPT_UNDER_TEST: /usr/local/bin/derakht
           MAX_EXEC_MS: 250
           MAX_COMPLETION_MS: 250
           MAX_LARGE_COMPLETION_MS: 350
@@ -454,7 +456,7 @@ jobs:
           echo "--- fish package OK ---"
       - name: Run fish tests against installed file
         run: |
-          export CLI_UNDER_TEST=/usr/bin/derakht-fish
+          export CLI_SCRIPT_UNDER_TEST=/usr/bin/derakht-fish
           test/_bats/bin/bats test/*/*-fish.bats --tap
       - name: Upload .rpm (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -504,7 +506,7 @@ jobs:
           echo "--- fish package OK ---"
       - name: Run fish tests against installed file
         run: |
-          export CLI_UNDER_TEST=/usr/bin/derakht-fish
+          export CLI_SCRIPT_UNDER_TEST=/usr/bin/derakht-fish
           test/_bats/bin/bats test/*/*-fish.bats --tap
       - name: Upload .pkg.tar.zst (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -536,12 +538,12 @@ jobs:
           sha=$(shasum -a 256 "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
           # Patch formula to point to local tarball for testing
           sed -i '' "s|url .*|url \"file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\"|" \
-            packaging/homebrew/derakht-fish.rb
+            packaging/homebrew/derakht-cli-fish.rb
           sed -i '' "s|sha256 .*|sha256 \"$sha\"|" \
-            packaging/homebrew/derakht-fish.rb
+            packaging/homebrew/derakht-cli-fish.rb
           # Create tap and install
           brew tap-new test-user/derakht-cli
-          cp packaging/homebrew/derakht-fish.rb \
+          cp packaging/homebrew/derakht-cli-fish.rb \
             "$(brew --repository)/Library/Taps/test-user/homebrew-derakht-cli/Formula/"
           brew install --build-from-source test-user/derakht-cli/derakht-fish
           test -f "$(brew --prefix)/bin/derakht-fish"
@@ -551,13 +553,13 @@ jobs:
           # Restore formula to point to the GitHub release tarball with real SHA256
           release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
           release_sha=$(curl -sL "$release_url" | shasum -a 256 | cut -d' ' -f1)
-          sed -i '' "s|url .*|url \"$release_url\"|" packaging/homebrew/derakht-fish.rb
-          sed -i '' "s|sha256 .*|sha256 \"$release_sha\"|" packaging/homebrew/derakht-fish.rb
+          sed -i '' "s|url .*|url \"$release_url\"|" packaging/homebrew/derakht-cli-fish.rb
+          sed -i '' "s|sha256 .*|sha256 \"$release_sha\"|" packaging/homebrew/derakht-cli-fish.rb
       - name: Upload formula (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-homebrew-fish-${{ needs.version.outputs.version }}
-          path: packaging/homebrew/derakht-fish.rb
+          path: packaging/homebrew/derakht-cli-fish.rb
           retention-days: 5
 
   # ── Build + test Nix expression ───────────────────────────────────
