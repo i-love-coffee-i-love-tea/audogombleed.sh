@@ -184,7 +184,9 @@ jobs:
           MAX_EXEC_MS: 250
           MAX_COMPLETION_MS: 250
           MAX_LARGE_COMPLETION_MS: 350
-        run: test/_bats/bin/bats test/*/*-zsh.bats test/*/*-all.bats --formatter junit | tee report-macos-zsh.xml
+        run: |
+          export PATH="$(brew --prefix)/bin:$PATH"
+          test/_bats/bin/bats test/*/*-zsh.bats test/*/*-all.bats --formatter junit | tee report-macos-zsh.xml
       - name: Report
         uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
         if: always()
