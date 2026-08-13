@@ -155,11 +155,13 @@ jobs:
       PKG_VERSION: ${{ needs.version.outputs.version }}
       SOURCE_DATE_EPOCH: 0
     steps:
+      - name: Install git for checkout
+        run: dnf install -y git
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           submodules: true
       - name: Install build dependencies
-        run: dnf install -y rpm-build rpmdevtools bash gawk zsh git
+        run: dnf install -y rpm-build rpmdevtools bash gawk zsh
       - name: Build .rpm
         run: |
           rpmdev-setuptree
@@ -196,11 +198,13 @@ jobs:
       PKG_VERSION: ${{ needs.version.outputs.version }}
       SOURCE_DATE_EPOCH: 0
     steps:
+      - name: Install git for checkout
+        run: pacman -Sy --noconfirm git
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           submodules: true
       - name: Install dependencies
-        run: pacman -Syu --noconfirm bash gawk zsh git base-devel
+        run: pacman -Syu --noconfirm bash gawk zsh base-devel
       - name: Build .pkg.tar.zst
         run: |
           cd packaging/arch
@@ -417,11 +421,13 @@ jobs:
       PKG_VERSION: ${{ needs.version.outputs.version }}
       SOURCE_DATE_EPOCH: 0
     steps:
+      - name: Install git for checkout
+        run: dnf install -y git
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           submodules: true
       - name: Install build dependencies
-        run: dnf install -y rpm-build rpmdevtools fish gawk git
+        run: dnf install -y rpm-build rpmdevtools fish gawk
       - name: Build .rpm
         run: |
           rpmdev-setuptree
@@ -458,11 +464,13 @@ jobs:
       PKG_VERSION: ${{ needs.version.outputs.version }}
       SOURCE_DATE_EPOCH: 0
     steps:
+      - name: Install git for checkout
+        run: pacman -Sy --noconfirm git
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           submodules: true
       - name: Install dependencies
-        run: pacman -Syu --noconfirm fish gawk git base-devel
+        run: pacman -Syu --noconfirm fish gawk base-devel
       - name: Build .pkg.tar.zst
         run: |
           cd packaging/arch
