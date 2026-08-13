@@ -2350,8 +2350,10 @@ function _cli_expand_abbreviated_args
     end
 
     # Append any remaining args beyond the defined ones
-    for j in (seq (math $i) (count $args))
-        set -a __CLI_EXPANDED_ARGS $args[$j]
+    if test $i -le (count $args)
+        for j in (seq (math $i) (count $args))
+            set -a __CLI_EXPANDED_ARGS $args[$j]
+        end
     end
 end
 
@@ -2602,7 +2604,8 @@ function _cli_execute
         # This must run before exit 53 check
         set -l placeholder_count 0
         for n in 1 2 3 4 5 6 7 8 9
-            if string match -q -- "*\\$n*" "$cmd_expr"
+            set -l ph "\\$n"
+            if string match -q -- "*$ph*" "$cmd_expr"
                 set placeholder_count $n
             end
         end
@@ -2678,8 +2681,11 @@ function _cli_execute
         set -l remaining_args
         set -l i 1
         for arg in $args
-            if string match -q -- "*\\$i*" "$cmd_expr"
-                set cmd_expr (string replace "\\$i" $arg -- $cmd_expr)
+            # Build placeholder outside the glob pattern — fish 4.6+
+            # treats \$ inside "*...*" as a literal $ instead of expanding.
+            set -l ph "\\$i"
+            if string match -q -- "*$ph*" "$cmd_expr"
+                set cmd_expr (string replace "$ph" $arg -- $cmd_expr)
             else
                 set -a remaining_args $arg
             end

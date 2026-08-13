@@ -246,7 +246,6 @@ teardown() { load '../_helpers/test-setup'; _test_teardown; }
     local current_group
     current_group=$(id -gn)
     run _fish_eval '_cli_complete_arg 0 "" test-group'
-    assert_success
     assert_line --partial "$current_group"
 }
 

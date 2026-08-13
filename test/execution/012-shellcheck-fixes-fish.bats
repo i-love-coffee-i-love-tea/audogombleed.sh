@@ -40,6 +40,7 @@ CONF
 [env.fish]
 set -gx __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS y
 set -gx __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS n
+set -gx __CLI_CFG_EXEC_SILENT y
 
 [commands]
 echo: \0 \1
@@ -55,6 +56,7 @@ CONF
 [env.fish]
 set -gx __CLI_CFG_EXEC_EXPAND_ABBREVIATED_ARGS y
 set -gx __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS n
+set -gx __CLI_CFG_EXEC_SILENT y
 
 [commands]
 echo: \0 \1
