@@ -16,7 +16,7 @@ stdenvNoCC.mkDerivation rec {
   installPhase = ''
     runHook preInstall
 
-    install -Dm644 derakht.fish $out/bin/derakht-fish
+    install -Dm755 derakht.fish $out/bin/derakht-fish
     install -Dm644 derakht.1 $out/share/man/man1/derakht.1
     install -Dm644 LICENSE $out/share/licenses/$pname/LICENSE
 
