@@ -357,9 +357,14 @@ jobs:
             # Test
             test -f /usr/local/bin/derakht-fish
             echo "--- fish package OK ---"
-            # Run fish tests against installed file
-            export CLI_SCRIPT_UNDER_TEST=/usr/local/bin/derakht-fish
-            test/_bats/bin/bats test/*/*-fish.bats --tap
+            # Smoke test: verify the installed binary works
+            # (full bats suite runs in main CI)
+            fish -c '
+              set -g __CLI_PROGNAME derakht-fish
+              set -g __cli_wrapper_argv --version
+              source /usr/local/bin/derakht-fish
+            ' 2>&1 | grep -q "${PKG_VERSION}"
+            echo "--- version OK ---"
             # Copy package to workspace
             cp /tmp/derakht-cli-fish-${PKG_VERSION}.pkg .
       - name: Upload .pkg (fish)
@@ -410,13 +415,14 @@ jobs:
           # Test version
           derakht --version | grep -q "$PKG_VERSION"
           echo "--- version OK ---"
-      - name: Run bats tests against installed binary
-        env:
-          CLI_SCRIPT_UNDER_TEST: /usr/local/bin/derakht
-          MAX_EXEC_MS: 250
-          MAX_COMPLETION_MS: 250
-          MAX_LARGE_COMPLETION_MS: 350
-        run: test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
+      - name: Smoke test installed binary
+        run: |
+          # Verify the installed binary works (full bats suite runs in main CI)
+          derakht --version | grep -q "$PKG_VERSION"
+          cp example.conf ~/.derakht.conf
+          derakht echo hello | grep -q "hello"
+          echo "--- smoke test OK ---"
+          rm -f ~/.derakht.conf
       - name: Fix formula for release
         run: |
           # Restore formula to point to the GitHub release tarball with real SHA256

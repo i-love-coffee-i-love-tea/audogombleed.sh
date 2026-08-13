@@ -28,8 +28,7 @@ _test_init() {
 
 # Call from teardown_file() — removes testcli artifacts.
 _test_cleanup() {
-	load '../_helpers/common-teardown'
-	_common_teardown || true
+	rm -f ./testcli ~/.testcli.conf 2>/dev/null || true
 }
 
 # Modify a single config option in ~/.testcli.conf.
