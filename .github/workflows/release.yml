@@ -370,7 +370,9 @@ jobs:
           path: ~/Library/Caches/Homebrew
           key: brew-release-${{ runner.os }}
       - name: Install dependencies
-        run: brew install bash gawk
+        run: |
+          brew install bash gawk || true
+          brew link --overwrite bash gawk
       - name: Test formula install
         run: |
           # Build local tarball for testing
@@ -514,7 +516,9 @@ jobs:
         with:
           submodules: true
       - name: Install fish
-        run: brew install fish gawk
+        run: |
+          brew install fish gawk || true
+          brew link --overwrite fish gawk
       - name: Test formula install
         run: |
           # Build local tarball for testing
