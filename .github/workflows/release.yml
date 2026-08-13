@@ -42,9 +42,9 @@ jobs:
           cp example.conf ~/.testcli.conf
           bash ./testcli echo hello world
           zsh ./testcli echo hello world
-          rm -f ./testcli ~/.testcli.conf
           # Fish smoke test (sourcing, not executing)
           fish -c 'set -g __CLI_PROGNAME testcli; set -g __cli_wrapper_argv echo hello world; source ./derakht.fish'
+          rm -f ./testcli ~/.testcli.conf
       - name: Run tests
         run: test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
 
