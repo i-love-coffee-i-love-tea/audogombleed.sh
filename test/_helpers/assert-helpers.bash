@@ -26,7 +26,9 @@ assert_at_most() {
 # Assert a string is non-empty.
 assert_not_empty() {
 	if [ -z "$1" ]; then
-		batslib_print_header_for "${FUNCNAME[1]}"
+		if type batslib_print_header_for >/dev/null 2>&1; then
+			batslib_print_header_for "${FUNCNAME[1]}"
+		fi
 		echo "expected: non-empty string"
 		echo "actual:   ''"
 		return 1

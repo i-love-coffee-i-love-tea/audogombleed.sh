@@ -30,12 +30,12 @@ EOF
 teardown_file() {
     load '../_helpers/test-setup'
     _test_cleanup
-    # Restore original SSH config from fixed backup path
+    # Restore original SSH config — ||true prevents bats teardown_file misreport
     if [ -f /tmp/.derakht-ssh-config-bak-001-completion-bash ]; then
-        mv /tmp/.derakht-ssh-config-bak-001-completion-bash ~/.ssh/config
+        mv /tmp/.derakht-ssh-config-bak-001-completion-bash ~/.ssh/config || true
     else
-        rm -f ~/.ssh/config
-    fi
+        rm -f ~/.ssh/config || true
+    fi || true
 }
 
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }

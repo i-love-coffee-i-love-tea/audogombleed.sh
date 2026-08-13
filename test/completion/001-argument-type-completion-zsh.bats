@@ -36,10 +36,10 @@ teardown_file() {
     _test_cleanup
     rm -rf /tmp/agt-completion-test-zsh
     if [ -f /tmp/.derakht-ssh-config-bak-001-completion-zsh ]; then
-        mv /tmp/.derakht-ssh-config-bak-001-completion-zsh ~/.ssh/config
+        mv /tmp/.derakht-ssh-config-bak-001-completion-zsh ~/.ssh/config || true
     else
-        rm -f ~/.ssh/config
-    fi
+        rm -f ~/.ssh/config || true
+    fi || true
 }
 
 setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
