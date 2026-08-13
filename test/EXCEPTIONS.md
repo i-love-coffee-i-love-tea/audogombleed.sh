@@ -133,13 +133,13 @@ platform-specific workarounds.
 - **Workaround:** Always check for stray files when tests fail with unexpected glob symptoms.
 - **Files:** N/A (environment issue)
 
-### EX-016: fish tests have known failures (bash syntax incompatibility)
-- **What:** ~221 fish tests fail because `./testcli` (bash script) has syntax that fish doesn't support.
-- **Why:** fish is not POSIX-compatible. The `./testcli` symlink points to `derakht.sh` (bash script).
+### EX-016: fish tests had failures from bash symlink (FIXED)
+- **What:** ~222 fish tests failed because `_test_load_fish()` called `_test_setup_cli()` which created a bash symlink to `derakht.sh`, but fish tests need a fish wrapper script.
+- **Why:** `_test_setup_cli()` creates `ln -sf derakht.sh ./testcli` (bash), but `fish ./testcli` can't parse bash syntax.
 - **Affected:** fish only.
-- **Workaround:** Fish tests should use `_fish_run` (which runs `fish ./testcli`) or `derakht.fish` directly. Many fish tests still use `run ./testcli` which fails.
-- **Files:** Various `-fish.bats` files in security/, execution/, config/
-- **Status:** Known issue, not blocking. Fish-specific tests that use `_fish_run` work correctly.
+- **Fix:** Added `_test_setup_cli_fish()` that creates a proper fish wrapper script, and updated `_test_load_fish()` to call it.
+- **Files:** `test/_helpers/test-setup.bash`
+- **Status:** Fixed. All 348 fish tests now pass.
 
 ### EX-017: AWK POSIX compat tests used ./testcli without setup
 - **What:** Tests 4 ("non-$-prefixed arg value is NOT escaped") and 45 ("output=commands with no filter returns all commands") used `./testcli` but the test file's `setup()` doesn't create the testcli symlink.

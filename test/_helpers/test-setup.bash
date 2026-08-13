@@ -91,6 +91,21 @@ _test_setup_cli() {
 	cp example.conf ~/.testcli.conf
 }
 
+# Create the fish testcli wrapper and install the default config.
+# Call from setup() in fish tests — ensures clean state before each test.
+_test_setup_cli_fish() {
+	local fish_src="${CLI_SCRIPT_UNDER_TEST:-./derakht.fish}"
+	rm -f ./testcli
+	cat > ./testcli <<WRAPPER
+#!/usr/bin/env fish
+set -g __CLI_PROGNAME testcli
+set -g __cli_wrapper_argv \$argv
+source $fish_src
+WRAPPER
+	chmod +x ./testcli
+	cp example.conf ~/.testcli.conf
+}
+
 # Remove testcli artifacts. Call from teardown().
 _test_teardown() {
 	rm -f ./testcli
@@ -107,7 +122,7 @@ _test_init_fish() {
 # Call from setup() in fish tests — copies config from _configs/ and loads helpers.
 # Config files are immutable source of truth in test/_configs/<category>/<test>.conf.
 _test_load_fish() {
-	_test_setup_cli
+	_test_setup_cli_fish
 	_test_install_config
 	load '../_test_helper/bats-support/load'
 	load '../_test_helper/bats-assert/load'
