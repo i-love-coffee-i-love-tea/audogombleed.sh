@@ -18,7 +18,13 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+# EXCEPTION: EX-014 — AWK POSIX compat tests use direct bats-support load
+# This file loads bats-support/bats-assert directly (not via _test_load_bash)
+# because it tests the AWK parser in isolation across multiple awk binaries
+# and doesn't need the full _test_load_bash machinery (config install, etc.).
+# See test/EXCEPTIONS.md#ex-014
 setup()        { load '../_test_helper/bats-support/load'; load '../_test_helper/bats-assert/load'; }
+teardown()     { load '../_helpers/test-setup'; _test_teardown; }
 
 # ── Helper: run the AWK parser with a specific awk binary ──────────
 #

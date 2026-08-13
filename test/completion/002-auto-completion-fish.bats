@@ -4,6 +4,7 @@
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # echo
 @test "fish: returns correct completion list: echo -> first" {

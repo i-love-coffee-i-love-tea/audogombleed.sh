@@ -12,11 +12,8 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 teardown() {
 	rm -f /tmp/err-test-*.conf /tmp/err-test-*.sh
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-	# Restore symlink for _zsh_run compatibility
-	rm -f ./testcli
-	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
+	load '../_helpers/test-setup'
+	_test_teardown
 }
 
 # ===================================================================
@@ -36,7 +33,7 @@ teardown() {
 # bats test_tags=id:zsh-083
 @test "zsh: CLI name with underscores is accepted by _cli_validate_progname" {
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
+    ln -sf "${CLI_SCRIPT_UNDER_TEST:-./derakht.sh}" ./testcli
     source ./testcli
     __CLI_PROGNAME="fancy_cli"
     run _cli_validate_progname
@@ -120,7 +117,7 @@ CONF
 
     # Restore bash symlink for _zsh_run
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
+    ln -sf "${CLI_SCRIPT_UNDER_TEST:-./derakht.sh}" ./testcli
     run _zsh_run tilde-cmd
     assert_success
     assert_output "expanded"
@@ -200,7 +197,7 @@ CONF
 # bats test_tags=id:zsh-093
 @test "zsh: _cli_check_file_permissions rejects nonexistent file" {
     rm -f ./testcli
-    ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
+    ln -sf "${CLI_SCRIPT_UNDER_TEST:-./derakht.sh}" ./testcli
     source ./testcli
     run _cli_check_file_permissions "/nonexistent/module.conf" "include file"
     assert_failure

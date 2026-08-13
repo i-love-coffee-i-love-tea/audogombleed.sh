@@ -7,13 +7,13 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # CFG_EXEC_ALWAYS_RETURN_0
 
 # bats test_tags=id:bash-099
 @test "bash: ALWAYS_RETURN_0 returns 0 for failing command" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_ALWAYS_RETURN_0 '"y"'
     source ./testcli
     run ./testcli false
@@ -22,7 +22,6 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-100
 @test "bash: ALWAYS_RETURN_0 returns 0 for exit code 2" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_ALWAYS_RETURN_0 '"y"'
     source ./testcli
     run ./testcli return2
@@ -31,7 +30,6 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-101
 @test "bash: ALWAYS_RETURN_0=n preserves real exit code" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_ALWAYS_RETURN_0 '"n"'
     source ./testcli
     run ./testcli return2
@@ -43,7 +41,6 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-102
 @test "bash: ARGS_ALLOW_COMPLETION_RESULTS_ONLY does not affect execution" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY '"y"'
     source ./testcli
     # The option only affects tab completion, not command execution
@@ -54,7 +51,6 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-103
 @test "bash: ARGS_ALLOW_COMPLETION_RESULTS_ONLY=n allows any value" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY '"n"'
     source ./testcli
     run ./testcli list-argument static not-in-list
@@ -66,14 +62,13 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-104
 @test "bash: LOG_LEVEL=4 creates log file" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_LOG_LEVEL '4'
     source ./testcli
     run ./testcli echo first second
     assert_success
     local logfile
     logfile=$(ls /tmp/cli-*-bash.log 2>/dev/null | head -1)
-    [ -n "$logfile" ]
+    assert_not_empty "$logfile"
     rm -f /tmp/cli-*-bash.log
 }
 

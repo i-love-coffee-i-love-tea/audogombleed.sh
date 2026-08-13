@@ -43,6 +43,7 @@ teardown_file() {
 }
 
 setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # --- FILE execution ---
 
@@ -59,21 +60,21 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 @test "zsh: FILE argument completion returns results" {
     load '../_helpers/auto-completion-mock-setup-zsh'
     result="$(test_completion_zsh 3 "testcli" "test-a-file" "")"
-    [ -n "$result" ]
+    assert_not_empty "$result"
 }
 
 @test "zsh: FILE argument completion includes filenames with spaces" {
     load '../_helpers/auto-completion-mock-setup-zsh'
-    result="$(test_completion_zsh 3 "testcli" "test-a-file" "/tmp/agt-completion-test-zsh/")"
-    [[ "$result" == *"my file.txt"* ]]
-    [[ "$result" == *"alpha.txt"* ]]
+    run test_completion_zsh 3 "testcli" "test-a-file" "/tmp/agt-completion-test-zsh/"
+    assert_output --partial "my file.txt"
+    assert_output --partial "alpha.txt"
 }
 
 @test "zsh: FILE with no glob filter returns all files" {
     load '../_helpers/auto-completion-mock-setup-zsh'
-    result="$(test_completion_zsh 3 "testcli" "test-a-file" "/tmp/agt-completion-test-zsh/")"
-    [[ "$result" == *"alpha.txt"* ]]
-    [[ "$result" == *"beta.log"* ]]
+    run test_completion_zsh 3 "testcli" "test-a-file" "/tmp/agt-completion-test-zsh/"
+    assert_output --partial "alpha.txt"
+    assert_output --partial "beta.log"
 }
 
 # --- DIR ---
@@ -87,7 +88,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 @test "zsh: DIR argument completion returns results" {
     load '../_helpers/auto-completion-mock-setup-zsh'
     result="$(test_completion_zsh 3 "testcli" "test-dir" "")"
-    [ -n "$result" ]
+    assert_not_empty "$result"
 }
 
 # --- FILE_OR_DIR ---
@@ -107,26 +108,27 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 @test "zsh: FILE_OR_DIR argument completion returns results" {
     load '../_helpers/auto-completion-mock-setup-zsh'
     result="$(test_completion_zsh 3 "testcli" "test-file-or-dir" "")"
-    [ -n "$result" ]
+    assert_not_empty "$result"
 }
 
 @test "zsh: FILE_OR_DIR argument completion includes both files and directories" {
     load '../_helpers/auto-completion-mock-setup-zsh'
-    result="$(test_completion_zsh 3 "testcli" "test-file-or-dir" "/tmp/agt-completion-test-zsh/")"
-    [[ "$result" == *"alpha.txt"* ]]
-    [[ "$result" == *"subdir"* ]]
+    run test_completion_zsh 3 "testcli" "test-file-or-dir" "/tmp/agt-completion-test-zsh/"
+    assert_output --partial "alpha.txt"
+    assert_output --partial "subdir"
 }
 
 # --- FILE/FILE_OR_DIR glob filter ---
-# NOTE: glob filter matching uses [[ "$name" == $glob ]] which doesn't
-# do glob expansion in zsh (variable is treated as literal). This is a
-# known script limitation — the glob filter feature doesn't filter in zsh.
+# EXCEPTION: EX-001 — zsh [[ == $glob ]] treats variable as literal
+# See test/EXCEPTIONS.md#ex-001
 
 @test "zsh: FILE with glob filter only returns matching files" {
+    # EXCEPTION: EX-001 — zsh glob filter broken
     skip "zsh [[ == \$glob ]] treats variable as literal; glob filter broken in zsh"
 }
 
 @test "zsh: FILE_OR_DIR with glob filter only returns matching entries" {
+    # EXCEPTION: EX-001 — zsh glob filter broken
     skip "zsh [[ == \$glob ]] treats variable as literal; glob filter broken in zsh"
 }
 
@@ -198,8 +200,8 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 @test "zsh: ENVVAR argument completion includes known env vars" {
     load '../_helpers/auto-completion-mock-setup-zsh'
-    result="$(test_completion_zsh 3 "testcli" "test-envvar" "")"
-    [[ "$result" == *"PATH"* ]]
+    run test_completion_zsh 3 "testcli" "test-envvar" ""
+    assert_output --partial "PATH"
 }
 
 # --- USER ---
@@ -208,8 +210,8 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     load '../_helpers/auto-completion-mock-setup-zsh'
     local current_user
     current_user=$(id -un)
-    result="$(test_completion_zsh 3 "testcli" "test-user" "")"
-    [[ "$result" == *"$current_user"* ]]
+    run test_completion_zsh 3 "testcli" "test-user" ""
+    assert_output --partial "$current_user"
 }
 
 # --- GROUP ---
@@ -218,18 +220,18 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
     load '../_helpers/auto-completion-mock-setup-zsh'
     local current_group
     current_group=$(id -gn)
-    result="$(test_completion_zsh 3 "testcli" "test-group" "")"
-    [[ "$result" == *"$current_group"* ]]
+    run test_completion_zsh 3 "testcli" "test-group" ""
+    assert_output --partial "$current_group"
 }
 
 # --- SSH_HOST ---
 
 @test "zsh: SSH_HOST argument completion includes test hosts" {
     load '../_helpers/auto-completion-mock-setup-zsh'
-    result="$(test_completion_zsh 3 "testcli" "test-ssh-host" "")"
-    [[ "$result" == *"testhost-alpha"* ]]
-    [[ "$result" == *"testhost-beta"* ]]
-    [[ "$result" == *"testhost-gamma"* ]]
+    run test_completion_zsh 3 "testcli" "test-ssh-host" ""
+    assert_output --partial "testhost-alpha"
+    assert_output --partial "testhost-beta"
+    assert_output --partial "testhost-gamma"
 }
 
 # --- BLKDEV ---
@@ -245,7 +247,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
         skip "no block devices found"
     fi
     result="$(test_completion_zsh 3 "testcli" "test-blkdev" "")"
-    [ -n "$result" ]
+    assert_not_empty "$result"
 }
 
 # --- SERVICE ---
@@ -257,5 +259,5 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
         skip "no service manager available"
     fi
     result="$(test_completion_zsh 3 "testcli" "test-service" "")"
-    [ -n "$result" ]
+    assert_not_empty "$result"
 }

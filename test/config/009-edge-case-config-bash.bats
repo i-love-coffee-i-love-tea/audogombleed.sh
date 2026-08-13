@@ -12,33 +12,9 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_bash; }
+setup()        { load '../_helpers/test-setup'; _test_load_bash; load '../_helpers/fuzz-helpers'; }
 
-teardown() {
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
-	source ./testcli
-}
-
-# ===================================================================
-# Helper: generate random config content
-# ===================================================================
-
-_fuzz_config() {
-	local bytes="${1:-1000}"
-	# Generate random bytes, filter to printable ASCII + newlines
-	# This produces valid UTF-8-ish content that won't hang the terminal
-	dd if=/dev/urandom bs=1 count="$bytes" 2>/dev/null | tr -cd '[:print:]\n' | head -c "$bytes"
-}
-
-_fuzz_with_header() {
-	local bytes="${1:-1000}"
-	{
-		echo "[commands]"
-		_fuzz_config "$bytes"
-	} > ~/.testcli.conf
-}
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # ===================================================================
 # Random ASCII content
@@ -47,26 +23,23 @@ _fuzz_with_header() {
 # bats test_tags=id:bash-125
 @test "bash: edge-case: random 500-byte config does not crash" {
 	_fuzz_with_header 500
-	source ./testcli
 	# exit code doesn't matter — we just want no crash/hang
 	run timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd'
-	[ "$status" -ne 124 ]  # fail if timeout killed it
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-126
 @test "bash: edge-case: random 2000-byte config does not crash" {
 	_fuzz_with_header 2000
-	source ./testcli
 	run timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd'
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-127
 @test "bash: edge-case: random 5000-byte config does not crash" {
 	_fuzz_with_header 5000
-	source ./testcli
 	run timeout 5 bash -c 'source ./testcli; ./testcli nonexistent-cmd'
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # ===================================================================
@@ -81,7 +54,7 @@ _fuzz_with_header() {
 CONF
 	source ./testcli
 	run timeout 5 ./testcli '!@#$%^&*()_+-=[]{}|;'"'"':",./<>?'
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-129
@@ -101,7 +74,7 @@ a
 CONF
 	source ./testcli
 	run timeout 5 ./testcli a b c d e f g h i j
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-130
@@ -112,7 +85,7 @@ CONF
 CONF
 	source ./testcli
 	run timeout 5 ./testcli '::'
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-131
@@ -124,7 +97,7 @@ test-cmd: echo \1
 CONF
 	source ./testcli
 	run timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd"
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-132
@@ -136,7 +109,7 @@ test-cmd: echo \\\\\\\\\\\\\\\\\\\\\\\\
 CONF
 	source ./testcli
 	run timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd"
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-133
@@ -148,7 +121,7 @@ test-cmd: echo """""""""""""""""
 CONF
 	source ./testcli
 	run timeout 5 ./testcli --cli-run-awk-command output=commands command_filter="test-cmd"
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # ===================================================================
@@ -165,7 +138,7 @@ cmd-b: echo b
 CONF
 	source ./testcli
 	run timeout 5 ./testcli cmd-b
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-135
@@ -179,7 +152,7 @@ __CLI_CFG_EXEC_SILENT="y"
 CONF
 	source ./testcli
 	run timeout 5 ./testcli cmd-a
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-136
@@ -196,7 +169,7 @@ CONF
 	printf '\n\n\n\n\n\n\n\n\n\n' > ~/.testcli.conf
 	source ./testcli
 	run timeout 5 ./testcli hello
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-138
@@ -204,7 +177,7 @@ CONF
 	printf '[commands]\n\t\t\thello: echo "world"\n' > ~/.testcli.conf
 	source ./testcli
 	run timeout 5 ./testcli hello
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-139
@@ -217,7 +190,7 @@ CONF
 CONF
 	source ./testcli
 	run timeout 5 ./testcli cmd-a
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # ===================================================================
@@ -229,7 +202,7 @@ CONF
 	cp example.conf ~/.testcli.conf
 	source ./testcli
 	run timeout 5 ./testcli --cli-run-awk-command
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-141
@@ -237,7 +210,7 @@ CONF
 	cp example.conf ~/.testcli.conf
 	source ./testcli
 	run timeout 5 ./testcli --cli-run-awk-command output=commands command_filter=""
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }
 
 # bats test_tags=id:bash-142
@@ -245,5 +218,5 @@ CONF
 	cp example.conf ~/.testcli.conf
 	source ./testcli
 	run timeout 5 ./testcli --cli-run-awk-command output=invalid
-	[ "$status" -ne 124 ]
+	assert_not_equal "$status" 124
 }

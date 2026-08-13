@@ -12,6 +12,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # Helper: write a config with a variable set to $1 and a command using it.

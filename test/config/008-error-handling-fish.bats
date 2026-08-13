@@ -14,17 +14,8 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 teardown() {
 	rm -f /tmp/err-test-*.conf /tmp/err-test-*.sh
 	rm -rf /tmp/err-test-dir-* 2>/dev/null || true
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-	# Restore fish wrapper
-	rm -f ./testcli
-	cat > ./testcli <<'WRAPPER'
-#!/usr/bin/env fish
-set -g __CLI_PROGNAME testcli
-set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/derakht.fish
-WRAPPER
-	chmod +x ./testcli
+	load '../_helpers/test-setup'
+	_test_teardown
 }
 
 # ===================================================================

@@ -15,29 +15,10 @@ MAX_COMPLETION_MS=${MAX_COMPLETION_MS:-200}
 MAX_EXEC_MS=${MAX_EXEC_MS:-200}
 MAX_LARGE_COMPLETION_MS=${MAX_LARGE_COMPLETION_MS:-400}
 
-_now_ms() {
-	local _date="date"
-	command -v gdate &>/dev/null && _date="gdate"
-	local ns
-	ns=$("$_date" '+%s%N' 2>/dev/null)
-	if [ "${#ns}" -gt 10 ]; then
-		echo $(( 10#$ns / 1000000 ))
-	else
-		perl -MTime::HiRes -e 'printf "%d\n", Time::HiRes::time()*1000'
-	fi
-}
-
-_time_ms() {
-	local start end
-	start=$(_now_ms)
-	"$@" >/dev/null 2>&1
-	end=$(_now_ms)
-	echo $(( end - start ))
-}
-
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
+setup()        { load '../_helpers/test-setup'; _test_load_fish; load '../_helpers/benchmark-helpers'; }
 
 # --- Execution benchmarks ---
 
@@ -45,14 +26,14 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 	local ms
 	ms=$(_time_ms _fish_run -b echo hello)
 	echo "# exec: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_EXEC_MS" ]
+	assert_at_most "$ms" "$MAX_EXEC_MS"
 }
 
 @test "fish: hierarchical command execution < ${MAX_EXEC_MS}ms" {
 	local ms
 	ms=$(_time_ms _fish_run -b install jar from file /tmp/test.jar)
 	echo "# exec: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_EXEC_MS" ]
+	assert_at_most "$ms" "$MAX_EXEC_MS"
 }
 
 # --- Completion benchmarks (simple config) ---
@@ -61,28 +42,28 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 	local ms
 	ms=$(_fish_time_completion '_cli_getfirstwords e')
 	echo "# first-word: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_COMPLETION_MS"
 }
 
 @test "fish: second-word completion < ${MAX_COMPLETION_MS}ms" {
 	local ms
 	ms=$(_fish_time_completion '_cli_complete_command 2 echo')
 	echo "# second-word: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_COMPLETION_MS"
 }
 
 @test "fish: argument list completion < ${MAX_COMPLETION_MS}ms" {
 	local ms
 	ms=$(_fish_time_completion '_cli_complete_arg 0 "" list-argument static')
 	echo "# arg-list: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_COMPLETION_MS"
 }
 
 @test "fish: hierarchical command completion < ${MAX_COMPLETION_MS}ms" {
 	local ms
 	ms=$(_fish_time_completion '_cli_complete_command 2 k')
 	echo "# hierarchical: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_COMPLETION_MS"
 }
 
 # --- Completion benchmarks (large config) ---
@@ -92,7 +73,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 	local ms
 	ms=$(_fish_time_completion '_cli_getfirstwords p')
 	echo "# large first-word: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_LARGE_COMPLETION_MS"
 }
 
 @test "fish: large config — deep nesting completion < ${MAX_LARGE_COMPLETION_MS}ms" {
@@ -100,7 +81,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 	local ms
 	ms=$(_fish_time_completion '_cli_complete_command 4 provision server bare-metal')
 	echo "# large deep: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_LARGE_COMPLETION_MS"
 }
 
 @test "fish: large config — argument completion < ${MAX_LARGE_COMPLETION_MS}ms" {
@@ -108,7 +89,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 	local ms
 	ms=$(_fish_time_completion '_cli_complete_arg 0 "" provision server bare-metal us-east deploy')
 	echo "# large arg: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_LARGE_COMPLETION_MS"
 }
 
 @test "fish: large config — 8-level deep nesting < ${MAX_LARGE_COMPLETION_MS}ms" {
@@ -116,5 +97,5 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 	local ms
 	ms=$(_fish_time_completion '_cli_complete_command 8 deep level2 level3 level4 level5 level6 level7')
 	echo "# 8-level deep: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_LARGE_COMPLETION_MS"
 }

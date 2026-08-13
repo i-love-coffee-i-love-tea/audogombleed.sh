@@ -12,6 +12,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # Helper: write a config with a variable set to $1 and a command using it.

@@ -29,6 +29,7 @@ teardown_file() {
     rm -f ./_ext_word_helper
 }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # --- external variable changes ---
 

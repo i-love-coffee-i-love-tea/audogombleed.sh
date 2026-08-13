@@ -8,10 +8,7 @@
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
-teardown() {
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-}
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 @test "fish: echo command passes all placeholder args (not just first)" {
     cat > ~/.testcli.conf <<'CONF'

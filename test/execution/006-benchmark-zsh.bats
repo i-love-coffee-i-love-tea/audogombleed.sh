@@ -13,31 +13,9 @@ MAX_COMPLETION_MS=${MAX_COMPLETION_MS:-150}
 MAX_EXEC_MS=${MAX_EXEC_MS:-200}
 MAX_LARGE_COMPLETION_MS=${MAX_LARGE_COMPLETION_MS:-250}
 
-# Portable millisecond timestamp.
-# gdate (GNU coreutils): %s%N gives seconds+nanoseconds.
-# date (GNU): same. macOS BSD date: %N not supported, fall back to perl.
-_now_ms() {
-	local _date="date"
-	command -v gdate &>/dev/null && _date="gdate"
-	local ns
-	ns=$("$_date" '+%s%N' 2>/dev/null)
-	if [ "${#ns}" -gt 10 ]; then
-		echo $(( 10#$ns / 1000000 ))
-	else
-		perl -MTime::HiRes -e 'printf "%d\n", Time::HiRes::time()*1000'
-	fi
-}
-
-_time_ms() {
-	local start end
-	start=$(_now_ms)
-	"$@" >/dev/null 2>&1
-	end=$(_now_ms)
-	echo $(( end - start ))
-}
-
-# Time a single _cli_complete_ call under zsh.
-# Runs everything inside a single zsh process: source, set up, measure.
+# _zsh_timed_completion must stay here (not in benchmark-helpers.bash) because
+# it embeds _now_ms() inside a zsh subshell string literal — moving it to a
+# .bash helper wouldn't help since the function body is passed as a string to zsh.
 _zsh_timed_completion() {
 	zsh -c '
 		autoload -Uz compinit bashcompinit
@@ -73,7 +51,8 @@ _zsh_timed_completion() {
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
-setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
+setup()        { load '../_helpers/test-setup'; _test_load_zsh; load '../_helpers/benchmark-helpers'; }
 
 # --- Execution benchmarks ---
 
@@ -82,7 +61,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	local ms
 	ms=$(_time_ms ./testcli -b echo hello)
 	echo "# exec: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_EXEC_MS" ]
+	assert_at_most "$ms" "$MAX_EXEC_MS"
 }
 
 # bats test_tags=id:zsh-113
@@ -90,7 +69,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	local ms
 	ms=$(_time_ms ./testcli -b install jar from file /tmp/test.jar)
 	echo "# exec: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_EXEC_MS" ]
+	assert_at_most "$ms" "$MAX_EXEC_MS"
 }
 
 # --- Completion benchmarks (simple config) ---
@@ -100,7 +79,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	local ms
 	ms=$(_zsh_timed_completion 2 "testcli" "e")
 	echo "# first-word: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_COMPLETION_MS"
 }
 
 # bats test_tags=id:zsh-115
@@ -108,7 +87,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	local ms
 	ms=$(_zsh_timed_completion 3 "testcli" "echo" "")
 	echo "# second-word: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_COMPLETION_MS"
 }
 
 # bats test_tags=id:zsh-116
@@ -116,7 +95,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	local ms
 	ms=$(_zsh_timed_completion 3 "testcli" "list-argument" "static" "")
 	echo "# arg-list: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_COMPLETION_MS"
 }
 
 # bats test_tags=id:zsh-117
@@ -124,7 +103,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	local ms
 	ms=$(_zsh_timed_completion 2 "testcli" "k" "")
 	echo "# hierarchical: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_COMPLETION_MS"
 }
 
 # --- Completion benchmarks (large config) ---
@@ -135,7 +114,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	local ms
 	ms=$(_zsh_timed_completion 2 "testcli" "p")
 	echo "# large first-word: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_LARGE_COMPLETION_MS"
 }
 
 # bats test_tags=id:zsh-119
@@ -144,7 +123,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	local ms
 	ms=$(_zsh_timed_completion 5 "testcli" "provision" "server" "bare-metal" "" "")
 	echo "# large deep: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_LARGE_COMPLETION_MS"
 }
 
 # bats test_tags=id:zsh-120
@@ -153,7 +132,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	local ms
 	ms=$(_zsh_timed_completion 7 "testcli" "provision" "server" "bare-metal" "us-east" "deploy" "")
 	echo "# large arg: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_LARGE_COMPLETION_MS"
 }
 
 # bats test_tags=id:zsh-121
@@ -162,5 +141,5 @@ setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 	local ms
 	ms=$(_zsh_timed_completion 9 "testcli" "deep" "level2" "level3" "level4" "level5" "level6" "level7" "level8-a")
 	echo "# 8-level deep: ${ms}ms" >&3
-	[ "$ms" -lt "$MAX_LARGE_COMPLETION_MS" ]
+	assert_at_most "$ms" "$MAX_LARGE_COMPLETION_MS"
 }

@@ -6,6 +6,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 @test "smoke: environment diagnostics" {
 	local sep="────────────────────────────────────────"

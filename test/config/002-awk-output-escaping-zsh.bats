@@ -3,6 +3,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # bats test_tags=id:zsh-064

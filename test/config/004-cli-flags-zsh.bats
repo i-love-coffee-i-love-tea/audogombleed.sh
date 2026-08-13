@@ -7,13 +7,14 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # bats test_tags=id:zsh-066
 @test "zsh: --version prints version string" {
     run _zsh_run --version
     assert_success
-    [[ "$output" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+    assert_output --regexp '^[0-9]+\.[0-9]+\.[0-9]+$'
 }
 
 # bats test_tags=id:zsh-067

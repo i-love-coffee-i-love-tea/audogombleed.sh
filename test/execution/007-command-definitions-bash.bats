@@ -16,6 +16,7 @@ setup_file() {
     chmod +x ~/bin/install-maven-war.sh
 }
 teardown_file() {
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
     load '../_helpers/test-setup'
     _test_cleanup
     rm -f ~/bin/install-maven-war.sh

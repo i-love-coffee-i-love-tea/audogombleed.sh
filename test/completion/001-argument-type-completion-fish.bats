@@ -36,6 +36,7 @@ teardown_file() {
 }
 
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # --- FILE ---
 

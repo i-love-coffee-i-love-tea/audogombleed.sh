@@ -22,6 +22,7 @@ setup_file() {
     cp test/help-test-config.conf ~/.testcli.conf
 }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # --- global help ---

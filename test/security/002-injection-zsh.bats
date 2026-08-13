@@ -9,11 +9,7 @@ setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
-teardown() {
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
-}
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # ===================================================================
 # Command injection via config values
@@ -132,7 +128,7 @@ source '$tmpscript'
 quote-cmd: echo \$QUOTE_VAR
 CONF
 	run _zsh_run quote-cmd 2>&1
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 	rm -f "$tmpscript"
 }
 
@@ -145,7 +141,7 @@ CONF
 	printf '[commands]\ntest-cmd: echo "hello"\n' > ~/.testcli.conf
 	printf '\x00' >> ~/.testcli.conf
 	run _zsh_run test-cmd 2>&1
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 }
 
 # ===================================================================
@@ -161,7 +157,7 @@ CONF
 $long_name: echo "long"
 CONF
 	run _zsh_run "$long_name" 2>&1
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 }
 
 # bats test_tags=id:zsh-220
@@ -174,7 +170,7 @@ test-cmd: echo \1
 	:arg:STRING
 CONF
 	run _zsh_run test-cmd "$long_value" 2>&1
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 }
 
 # bats test_tags=id:zsh-221

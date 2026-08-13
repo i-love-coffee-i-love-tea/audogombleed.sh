@@ -37,6 +37,7 @@ teardown_file() {
 }
 
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # --- FILE ---
 
@@ -53,7 +54,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 @test "FILE argument completion returns results" {
     load '../_helpers/auto-completion-mock-setup'
     result="$(test_completion 2 "testcli" "test-a-file")"
-    [ -n "$result" ]
+    assert_not_empty "$result"
 }
 
 # bats test_tags=id:bash-003
@@ -62,11 +63,11 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
     mkdir -p /tmp/test-completion-spaces
     touch "/tmp/test-completion-spaces/my file.txt"
     touch "/tmp/test-completion-spaces/normal.txt"
-    result="$(test_completion 2 "testcli" "test-a-file" "/tmp/test-completion-spaces/")"
+    run test_completion 2 "testcli" "test-a-file" "/tmp/test-completion-spaces/"
     # Files with spaces should appear in completions (raw path, no literal quotes)
-    [[ "$result" == *"my file.txt"* ]]
+    assert_output --partial "my file.txt"
     # Normal files should also appear
-    [[ "$result" == *"normal.txt"* ]]
+    assert_output --partial "normal.txt"
     rm -rf /tmp/test-completion-spaces
 }
 
@@ -135,7 +136,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 @test "DIR argument completion returns results" {
     load '../_helpers/auto-completion-mock-setup'
     result="$(test_completion 2 "testcli" "test-dir")"
-    [ -n "$result" ]
+    assert_not_empty "$result"
 }
 
 # --- FILE_OR_DIR ---
@@ -162,7 +163,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 @test "FILE_OR_DIR argument completion returns results" {
     load '../_helpers/auto-completion-mock-setup'
     result="$(test_completion 2 "testcli" "test-file-or-dir")"
-    [ -n "$result" ]
+    assert_not_empty "$result"
 }
 
 # bats test_tags=id:bash-011
@@ -171,9 +172,9 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
     mkdir -p /tmp/test-file-or-dir-completion
     touch /tmp/test-file-or-dir-completion/somefile.txt
     mkdir -p /tmp/test-file-or-dir-completion/somedir
-    result="$(test_completion 2 "testcli" "test-file-or-dir" "/tmp/test-file-or-dir-completion/")"
-    [[ "$result" == *"somefile.txt"* ]]
-    [[ "$result" == *"somedir"* ]]
+    run test_completion 2 "testcli" "test-file-or-dir" "/tmp/test-file-or-dir-completion/"
+    assert_output --partial "somefile.txt"
+    assert_output --partial "somedir"
     rm -rf /tmp/test-file-or-dir-completion
 }
 
@@ -186,10 +187,10 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
     touch /tmp/test-glob-filter/readme.txt
     touch /tmp/test-glob-filter/data.log
     touch /tmp/test-glob-filter/notes.txt
-    result="$(test_completion 2 "testcli" "test-glob-a-file" "/tmp/test-glob-filter/")"
-    [[ "$result" == *"readme.txt"* ]]
-    [[ "$result" == *"notes.txt"* ]]
-    [[ "$result" != *"data.log"* ]]
+    run test_completion 2 "testcli" "test-glob-a-file" "/tmp/test-glob-filter/"
+    assert_output --partial "readme.txt"
+    assert_output --partial "notes.txt"
+    refute_output --partial "data.log"
     rm -rf /tmp/test-glob-filter
 }
 
@@ -200,10 +201,10 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
     touch /tmp/test-glob-file-or-dir/file.txt
     touch /tmp/test-glob-file-or-dir/file.log
     mkdir -p /tmp/test-glob-file-or-dir/subdir
-    result="$(test_completion 2 "testcli" "test-glob-file-or-dir" "/tmp/test-glob-file-or-dir/")"
-    [[ "$result" == *"file.txt"* ]]
-    [[ "$result" != *"file.log"* ]]
-    [[ "$result" != *"subdir"* ]]
+    run test_completion 2 "testcli" "test-glob-file-or-dir" "/tmp/test-glob-file-or-dir/"
+    assert_output --partial "file.txt"
+    refute_output --partial "file.log"
+    refute_output --partial "subdir"
     rm -rf /tmp/test-glob-file-or-dir
 }
 
@@ -213,9 +214,9 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
     mkdir -p /tmp/test-no-glob
     touch /tmp/test-no-glob/a.txt
     touch /tmp/test-no-glob/b.log
-    result="$(test_completion 2 "testcli" "test-a-file" "/tmp/test-no-glob/")"
-    [[ "$result" == *"a.txt"* ]]
-    [[ "$result" == *"b.log"* ]]
+    run test_completion 2 "testcli" "test-a-file" "/tmp/test-no-glob/"
+    assert_output --partial "a.txt"
+    assert_output --partial "b.log"
     rm -rf /tmp/test-no-glob
 }
 
@@ -294,9 +295,9 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 # bats test_tags=id:bash-024
 @test "ENVVAR argument completion includes known env vars" {
     load '../_helpers/auto-completion-mock-setup'
-    result="$(test_completion 2 "testcli" "test-envvar")"
+    run test_completion 2 "testcli" "test-envvar"
     # PATH is set on all systems
-    [[ "$result" == *"PATH"* ]]
+    assert_output --partial "PATH"
 }
 
 # --- USER ---
@@ -306,8 +307,8 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
     load '../_helpers/auto-completion-mock-setup'
     local current_user
     current_user=$(id -un)
-    result="$(test_completion 2 "testcli" "test-user")"
-    [[ "$result" == *"$current_user"* ]]
+    run test_completion 2 "testcli" "test-user"
+    assert_output --partial "$current_user"
 }
 
 # --- GROUP ---
@@ -317,8 +318,8 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
     load '../_helpers/auto-completion-mock-setup'
     local current_group
     current_group=$(id -gn)
-    result="$(test_completion 2 "testcli" "test-group")"
-    [[ "$result" == *"$current_group"* ]]
+    run test_completion 2 "testcli" "test-group"
+    assert_output --partial "$current_group"
 }
 
 # --- SSH_HOST ---
@@ -326,10 +327,10 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 # bats test_tags=id:bash-027
 @test "SSH_HOST argument completion includes test hosts" {
     load '../_helpers/auto-completion-mock-setup'
-    result="$(test_completion 2 "testcli" "test-ssh-host")"
-    [[ "$result" == *"testhost-alpha"* ]]
-    [[ "$result" == *"testhost-beta"* ]]
-    [[ "$result" == *"testhost-gamma"* ]]
+    run test_completion 2 "testcli" "test-ssh-host"
+    assert_output --partial "testhost-alpha"
+    assert_output --partial "testhost-beta"
+    assert_output --partial "testhost-gamma"
 }
 
 # --- BLKDEV ---
@@ -346,7 +347,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
         skip "no block devices found"
     fi
     result="$(test_completion 2 "testcli" "test-blkdev")"
-    [ -n "$result" ]
+    assert_not_empty "$result"
 }
 
 # --- SERVICE ---
@@ -360,5 +361,5 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
         skip "no service manager available"
     fi
     result="$(test_completion 2 "testcli" "test-service")"
-    [ -n "$result" ]
+    assert_not_empty "$result"
 }

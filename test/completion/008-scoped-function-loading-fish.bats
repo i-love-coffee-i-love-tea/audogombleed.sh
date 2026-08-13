@@ -15,6 +15,7 @@ teardown_file() {
     rm -f /tmp/fish-test-call.log
 }
 setup() {
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
     load '../_helpers/test-setup'
     _test_load_fish
     # Clear the log before each test

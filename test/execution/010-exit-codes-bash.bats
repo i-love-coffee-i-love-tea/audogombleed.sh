@@ -7,6 +7,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-222
@@ -64,7 +65,6 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 # bats test_tags=id:bash-227
 @test "exit code 53: command with missing required args" {
     # When required args are missing, exit code 53 should be returned.
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_SILENT '"n"'
     source ./testcli
     run ./testcli echo

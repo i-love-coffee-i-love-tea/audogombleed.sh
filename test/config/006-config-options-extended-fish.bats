@@ -7,26 +7,24 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # CFG_EXEC_ALWAYS_RETURN_0
 
 @test "fish: ALWAYS_RETURN_0 returns 0 for failing command" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_ALWAYS_RETURN_0 '"y"'
     run _fish_run false
     assert_success
 }
 
 @test "fish: ALWAYS_RETURN_0 returns 0 for exit code 2" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_ALWAYS_RETURN_0 '"y"'
     run _fish_run return2
     assert_success
 }
 
 @test "fish: ALWAYS_RETURN_0=n preserves real exit code" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_ALWAYS_RETURN_0 '"n"'
     run _fish_run return2
     assert_failure 2
@@ -36,7 +34,6 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 # Note: this option is enforced at completion time, not execution time.
 
 @test "fish: ARGS_ALLOW_COMPLETION_RESULTS_ONLY does not affect execution" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY '"y"'
     # The option only affects tab completion, not command execution
     run _fish_run list-argument static not-in-list
@@ -45,7 +42,6 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 }
 
 @test "fish: ARGS_ALLOW_COMPLETION_RESULTS_ONLY=n allows any value" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_ARGS_ALLOW_COMPLETION_RESULTS_ONLY '"n"'
     run _fish_run list-argument static not-in-list
     assert_success
@@ -55,13 +51,12 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 # CFG_LOG_LEVEL
 
 @test "fish: LOG_LEVEL=4 creates log file" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_LOG_LEVEL '4'
     run _fish_run echo first second
     assert_success
     local logfile
     logfile=$(ls /tmp/cli-*-fish.log 2>/dev/null | head -1)
-    [ -n "$logfile" ]
+    assert_not_empty "$logfile"
     rm -f /tmp/cli-*-fish.log
 }
 

@@ -7,13 +7,14 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="y"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-094
 @test "bash: --version prints version string" {
     run ./testcli --version
     assert_success
-    [[ "$output" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+    assert_output --regexp '^[0-9]+\.[0-9]+\.[0-9]+$'
 }
 
 # bats test_tags=id:bash-095

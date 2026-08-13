@@ -7,11 +7,7 @@
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
-teardown() {
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
-}
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # ── value type with 4-field arg list ──────────────────────────────
 

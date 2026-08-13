@@ -7,18 +7,7 @@
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
-teardown() {
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-	rm -f ./testcli
-	cat > ./testcli <<'WRAPPER'
-#!/usr/bin/env fish
-set -g __CLI_PROGNAME testcli
-set -g __cli_wrapper_argv $argv
-source (path dirname (status filename))/derakht.fish
-WRAPPER
-	chmod +x ./testcli
-}
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # ── value type with 4-field arg list ──────────────────────────────
 

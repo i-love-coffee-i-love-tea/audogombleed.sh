@@ -16,6 +16,7 @@ teardown_file() {
     rm -f "$_TEST_CALL_LOG"
 }
 setup() {
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
     load '../_helpers/test-setup'
     _test_load_zsh
     # Clear the log before each test

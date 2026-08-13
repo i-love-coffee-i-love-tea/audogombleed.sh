@@ -10,10 +10,7 @@ setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
-teardown() {
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-}
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # ===================================================================
 # Command injection via config values
@@ -118,7 +115,7 @@ CONF
 	# Should not crash; may succeed or fail depending on how nulls are handled
 	run _fish_run test-cmd 2>&1
 	# The key assertion: the process didn't crash (exit code is defined)
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 }
 
 # ===================================================================
@@ -136,7 +133,7 @@ $long_name: echo "long"
 CONF
 	run _fish_run "$long_name" 2>&1
 	# Should not crash
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 }
 
 # bats test_tags=id:fish-348
@@ -151,7 +148,7 @@ test-cmd: echo \1
 CONF
 	run _fish_run test-cmd "$long_value" 2>&1
 	# Should not crash
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 }
 
 # bats test_tags=id:fish-349
@@ -206,6 +203,6 @@ quote-cmd: echo \$QUOTE_VAR
 CONF
 	run _fish_run quote-cmd 2>&1
 	# May succeed or fail depending on quoting, but should not crash
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 	rm -f "$tmpscript"
 }

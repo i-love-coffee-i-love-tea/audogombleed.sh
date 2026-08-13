@@ -10,12 +10,7 @@ setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
-teardown() {
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
-	source ./testcli
-}
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # ===================================================================
 # Command injection via config values
@@ -128,7 +123,7 @@ CONF
 	# Should not crash; may succeed or fail depending on how nulls are handled
 	run ./testcli test-cmd 2>&1
 	# The key assertion: the process didn't crash (exit code is defined)
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 }
 
 # ===================================================================
@@ -147,7 +142,7 @@ CONF
 	source ./testcli
 	run ./testcli "$long_name" 2>&1
 	# Should not crash
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 }
 
 # bats test_tags=id:bash-302
@@ -163,7 +158,7 @@ CONF
 	source ./testcli
 	run ./testcli test-cmd "$long_value" 2>&1
 	# Should not crash
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 }
 
 # bats test_tags=id:bash-303
@@ -221,6 +216,6 @@ CONF
 	source ./testcli
 	run ./testcli quote-cmd 2>&1
 	# May succeed or fail depending on quoting, but should not crash
-	[ "$status" -le 53 ]
+	assert_at_most "$status" 53
 	rm -f "$tmpscript"
 }

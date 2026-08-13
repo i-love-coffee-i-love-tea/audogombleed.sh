@@ -142,7 +142,4 @@ CONF
     assert_line "test"
 }
 
-teardown() {
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-}
+teardown() { load '../_helpers/test-setup'; _test_teardown; }

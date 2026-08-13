@@ -7,6 +7,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n" __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS="n"; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-159
@@ -52,7 +53,6 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 # bats test_tags=id:bash-164
 @test "bash: abbreviation disabled by CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS=n" {
-    load '../_helpers/common-setup'
     _set_option __CLI_CFG_EXEC_EXPAND_ABBREVIATED_COMMANDS '"n"'
     source ./testcli
     run ./testcli e first second

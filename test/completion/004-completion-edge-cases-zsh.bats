@@ -171,8 +171,4 @@ CONF
     [[ "$result" == *"test"* ]]
 }
 
-teardown() {
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
-}
+teardown() { load '../_helpers/test-setup'; _test_teardown; }

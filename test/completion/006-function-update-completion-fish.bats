@@ -12,6 +12,7 @@
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # Helper: write a config with a function that echoes its body and a command using it.
 _write_func_config() {

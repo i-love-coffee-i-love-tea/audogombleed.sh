@@ -7,6 +7,7 @@
 
 setup_file()   { load '../_helpers/test-setup'; _test_init; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
 @test "did you mean: typo suggests closest command" {

@@ -9,6 +9,7 @@
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
 teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
+teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 # Step 1: word-removal loop in _cli_is_command_complete
 # Exercises the path where the command is not a prefix match and

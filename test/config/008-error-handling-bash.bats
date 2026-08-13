@@ -14,10 +14,8 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 teardown() {
 	rm -f /tmp/err-test-*.conf /tmp/err-test-*.sh
 	rm -rf /tmp/err-test-dir-* 2>/dev/null || true
-	rm -f ~/.testcli.conf
-	cp example.conf ~/.testcli.conf
-	ln -sf "${CLI_UNDER_TEST:-./derakht.sh}" ./testcli
-	source ./testcli
+	load '../_helpers/test-setup'
+	_test_teardown
 }
 
 # ===================================================================
