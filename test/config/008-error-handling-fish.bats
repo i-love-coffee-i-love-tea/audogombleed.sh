@@ -71,7 +71,7 @@ WRAPPER
 }
 
 @test "fish: direct execution as derakht.sh fails (bash script under fish)" {
-    run fish ./derakht.sh greet
+    run -49 fish ./derakht.sh greet
     assert_failure
 }
 

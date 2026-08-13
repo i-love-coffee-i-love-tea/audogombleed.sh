@@ -4287,6 +4287,11 @@ if ! _cli_is_sourced; then
 		_cli_close_logfile 2>/dev/null || true
 		exit 49
 	fi
+	# Check config file permissions before executing
+	if ! _cli_check_file_permissions "$__CLI_CONFIG_FILE" "config file"; then
+		_cli_close_logfile 2>/dev/null || true
+		exit 54
+	fi
 	_cli_execute "$@"
 else 
 	# shellcheck disable=SC2154

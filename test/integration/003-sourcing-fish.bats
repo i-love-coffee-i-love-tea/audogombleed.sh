@@ -25,7 +25,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 
 # bats test_tags=id:fish-328
 @test "fish: direct execution of bash script fails" {
-    run fish ./derakht.sh
+    run -49 fish ./derakht.sh
     assert_failure
 }
 

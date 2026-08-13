@@ -39,7 +39,7 @@ CONF
     source ./testcli
 
     run ./testcli deploy-staging
-    assert_failure
+    assert_failure 54
 }
 
 # ===================================================================

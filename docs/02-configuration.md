@@ -405,6 +405,7 @@ The following options are for development and debugging only:
 | 51 | Abbreviated command expansion failed |
 | 52 | Not all positional arguments could be resolved |
 | 53 | Not enough arguments provided |
+| 54 | Config file rejected — permissions or symlink issue |
 | 127 | Command not found by the shell |
 
 

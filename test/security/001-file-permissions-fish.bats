@@ -37,7 +37,7 @@ CONF
     chmod 777 "$tmpconf"
     ln -sf "$tmpconf" ~/.testcli.conf
 
-    run _fish_run deploy-staging
+    run -54 _fish_run deploy-staging
     assert_failure
 }
 

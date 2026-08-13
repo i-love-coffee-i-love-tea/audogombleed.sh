@@ -47,13 +47,35 @@ function _cli_check_file_permissions
         set context file
     end
 
+    # check if it's a symlink and validate the target
+    if test -L "$file"
+        set -l target (readlink -f "$file" 2>/dev/null)
+        if test -z "$target"
+            echo "config error: $context '$file' is a symlink that cannot be resolved" >&2
+            return 1
+        end
+        if not test -f "$target"
+            echo "config error: $context '$file' symlink target '$target' is not a regular file" >&2
+            return 1
+        end
+        set -l target_perms (stat -L -c '%a' "$target" 2>/dev/null; or stat -L -f '%Lp' "$target" 2>/dev/null)
+        if test -n "$target_perms"
+            set -l others (string sub -s -1 -- $target_perms)
+            if test "$others" = 7
+                echo "config error: $context '$file' symlink target '$target' is world-writable" >&2
+                return 1
+            end
+        end
+    end
+
     if not test -f "$file"
         echo "config error: $context '$file' is not a regular file" >&2
         return 1
     end
 
     # Check for world-executable permission (7xx)
-    set -l perms (stat -c '%a' "$file" 2>/dev/null; or stat -f '%Lp' "$file" 2>/dev/null)
+    # Use -L to follow symlinks to the target's permissions
+    set -l perms (stat -L -c '%a' "$file" 2>/dev/null; or stat -L -f '%Lp' "$file" 2>/dev/null)
     if test -n "$perms"
         set -l others (string sub -s -1 -- $perms)
         if test "$others" = 7
@@ -2756,6 +2778,12 @@ set -g __CLI_CONFIG_FILE "$HOME/.$__CLI_PROGNAME.conf"
 
 _cli_read_awk_script
 _cli_read_validator_script
+
+# Check config file permissions before loading
+if not _cli_check_file_permissions "$__CLI_CONFIG_FILE" "config file"
+    exit 54
+end
+
 _cli_load_config_environment
 _cli_completion_init
 _cli_load_command_word_functions
