@@ -79,8 +79,10 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq dpkg-dev debhelper build-essential zsh
       - name: Build .deb
         run: ./scripts/release.d/70-build-deb.sh
+      - name: Copy .deb into workspace
+        run: cp ../derakht-cli_${PKG_VERSION}_all.deb .
       - name: Install .deb
-        run: sudo dpkg -i ../derakht-cli_${PKG_VERSION}_all.deb
+        run: sudo dpkg -i derakht-cli_${PKG_VERSION}_all.deb
       - name: Test installed binary
         run: |
           derakht --version | grep -q "$PKG_VERSION"
@@ -93,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-deb-${{ needs.version.outputs.version }}
-          path: ../derakht-cli_${{ needs.version.outputs.version }}_all.deb
+          path: derakht-cli_${{ needs.version.outputs.version }}_all.deb
           retention-days: 5
 
   # ── Build + test fish .deb (Debian/Ubuntu) ─────────────────────────
@@ -126,9 +128,9 @@ jobs:
           EOF
           install -m 644 derakht.fish "$pkgdir/usr/bin/derakht-fish"
           install -m 644 derakht.1 "$pkgdir/usr/share/man/man1/derakht.1"
-          dpkg-deb --build "$pkgdir" "../derakht-cli-fish_${PKG_VERSION}_all.deb"
+          dpkg-deb --build "$pkgdir" "derakht-cli-fish_${PKG_VERSION}_all.deb"
       - name: Install .deb
-        run: sudo dpkg -i ../derakht-cli-fish_${PKG_VERSION}_all.deb
+        run: sudo dpkg -i derakht-cli-fish_${PKG_VERSION}_all.deb
       - name: Test installed file
         run: |
           test -f /usr/bin/derakht-fish
@@ -141,7 +143,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-deb-fish-${{ needs.version.outputs.version }}
-          path: ../derakht-cli-fish_*_all.deb
+          path: derakht-cli-fish_*_all.deb
           retention-days: 5
 
   # ── Build + test .rpm (Fedora) ────────────────────────────────────
@@ -545,7 +547,7 @@ jobs:
           brew tap-new test-user/derakht-cli
           cp packaging/homebrew/derakht-cli-fish.rb \
             "$(brew --repository)/Library/Taps/test-user/homebrew-derakht-cli/Formula/"
-          brew install --build-from-source test-user/derakht-cli/derakht-fish
+          brew install --build-from-source test-user/derakht-cli/derakht-cli-fish
           test -f "$(brew --prefix)/bin/derakht-fish"
           echo "--- fish package OK ---"
       - name: Fix formula for release
