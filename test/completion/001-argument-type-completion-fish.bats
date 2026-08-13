@@ -28,11 +28,13 @@ teardown_file() {
     load '../_helpers/test-setup'
     _test_cleanup
     # Restore original SSH config from fixed backup path
-    if [ -f /tmp/.derakht-ssh-config-bak-001-completion-fish ]; then
-        mv /tmp/.derakht-ssh-config-bak-001-completion-fish ~/.ssh/config || true
-    else
-        rm -f ~/.ssh/config || true
-    fi || true
+    (
+        if [ -f /tmp/.derakht-ssh-config-bak-001-completion-fish ]; then
+            mv /tmp/.derakht-ssh-config-bak-001-completion-fish ~/.ssh/config
+        else
+            rm -f ~/.ssh/config
+        fi
+    ) || true
 }
 
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
