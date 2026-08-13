@@ -76,7 +76,7 @@ jobs:
           path: ~/.cache/apt
           key: apt-release-deb
       - name: Install build dependencies
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq dpkg-dev debhelper zsh
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq dpkg-dev debhelper build-essential zsh
       - name: Build .deb
         run: ./scripts/release.d/70-build-deb.sh
       - name: Install .deb
