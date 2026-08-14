@@ -1,14 +1,17 @@
 name: "Release"
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 2.1.0)"
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.version }}
   cancel-in-progress: false
 
 jobs:
@@ -30,15 +33,14 @@ jobs:
           sudo apt-add-repository -y ppa:fish-shell/release-4
           sudo apt-get update -qq
           sudo apt-get install -y -qq zsh fish
-      - name: Verify version matches tag
+      - name: Verify version matches script
         run: |
-          tag_version="${GITHUB_REF_NAME#v}"
           script_version=$(grep '^__CLI_VERSION=' derakht.sh | cut -d'"' -f2)
-          if [ "$tag_version" != "$script_version" ]; then
-            echo "error: tag version ($tag_version) != script version ($script_version)"
+          if [ "${{ inputs.version }}" != "$script_version" ]; then
+            echo "error: input version (${{ inputs.version }}) != script version ($script_version)"
             exit 1
           fi
-          echo "--- version $tag_version OK ---"
+          echo "--- version ${{ inputs.version }} OK ---"
       - name: Smoke test (bash + zsh + fish)
         run: |
           ln -sf "${CLI_SCRIPT_UNDER_TEST:-./derakht.sh}" ./testcli
@@ -59,7 +61,7 @@ jobs:
       version: ${{ steps.v.outputs.version }}
     steps:
       - id: v
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
 
   # ── Build + test .deb (Debian/Ubuntu) ─────────────────────────────
   build-deb:
@@ -694,9 +696,16 @@ jobs:
             mv dist/pkg-nix-fish-${PKG_VERSION}/default-fish.nix dist/pkg-nix-fish-${PKG_VERSION}/derakht-cli-fish.nix
           ./scripts/publish-checksums.sh "$PKG_VERSION" dist/
 
+      - name: Create and push tag
+        env:
+          PKG_VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          git tag "v${PKG_VERSION}"
+          git push origin "v${PKG_VERSION}"
+
       - name: Create GitHub release
         env:
-          GH_TOKEN: ${{ secrets.BADGE_GIST_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           PKG_VERSION: ${{ needs.version.outputs.version }}
         run: |
           assets=()
@@ -714,8 +723,8 @@ jobs:
             [ -f "$f" ] && assets+=("$f")
           done
           for attempt in 1 2 3; do
-            if gh release create "$GITHUB_REF_NAME" \
-              --title "$GITHUB_REF_NAME" \
+            if gh release create "v${PKG_VERSION}" \
+              --title "v${PKG_VERSION}" \
               --notes-file "${{ steps.notes.outputs.notes_file }}" \
               "${assets[@]}"; then
               exit 0
