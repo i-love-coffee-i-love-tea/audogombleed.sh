@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Publish SHA256 checksums for release artifacts to a GitHub Gist.
+# Generate SHA256 checksums for release artifacts.
 #
-# Usage: publish-checksums.sh <version> <artifact-dir> [gh-auth-args...]
+# Usage: publish-checksums.sh <version> <artifact-dir>
 #
-# Requires: gh (GitHub CLI) authenticated with gist scope.
-# Prints the Gist URL to stdout.
+# Writes checksums to SHA256SUMS-<version>.txt and optionally
+# publishes to a GitHub Gist if GH_TOKEN has gist scope.
 set -euo pipefail
 
 if [ $# -lt 2 ]; then
@@ -14,36 +14,29 @@ fi
 
 version="$1"
 artifact_dir="$2"
-
-if ! command -v gh &>/dev/null; then
-    echo "error: gh (GitHub CLI) not found" >&2
-    exit 1
-fi
+outfile="SHA256SUMS-${version}.txt"
 
 # Collect all regular files from the artifact directory tree.
-checksums=$(mktemp)
-trap 'rm -f "$checksums"' EXIT
-
 find "$artifact_dir" -type f -print0 | sort -z | while IFS= read -r -d '' f; do
     sha=$(sha256sum "$f" | cut -d' ' -f1)
     basename_f=$(basename "$f")
     echo "${sha}  ${basename_f}"
-done > "$checksums"
+done > "$outfile"
 
-if [ ! -s "$checksums" ]; then
+if [ ! -s "$outfile" ]; then
     echo "error: no artifacts found in $artifact_dir" >&2
     exit 1
 fi
 
-echo "--- checksums ---" >&2
-cat "$checksums" >&2
-echo "---" >&2
+echo "--- SHA256SUMS ---"
+cat "$outfile"
+echo "---"
 
-# Create a public Gist.
-gist_url=$(gh gist create "$checksums" \
-    --public \
-    --filename "checksums-${version}.txt" \
-    -d "derakht-cli v${version} SHA256 checksums" \
-    2>&1)
-
-echo "$gist_url"
+# Optionally publish to a Gist if gh is available and token has gist scope.
+if command -v gh &>/dev/null && [ -n "${GH_TOKEN:-}" ]; then
+    gist_url=$(gh gist create "$outfile" \
+        --public \
+        --filename "$outfile" \
+        -d "derakht-cli v${version} SHA256 checksums" \
+        2>&1) && echo "Gist: $gist_url" || echo "Warning: could not create Gist" >&2
+fi
