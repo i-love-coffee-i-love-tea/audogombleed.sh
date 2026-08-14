@@ -1,10 +1,10 @@
-.TH DERAKHT 1 "2026" "2.0.0" "User Commands"
+.TH DERAKHT 1 "2026" "2.0.0+1" "User Commands"
 .SH NAME
 derakht \- create CLIs with auto\-completable command trees
 .SH SYNOPSIS
 .B Create a symlink (the filename becomes the CLI name):
 .RS
-ln \-s __INSTALLED_PATH__ ~/bin/\fICLINAME\fR
+ln \-s /usr/bin/derakht ~/bin/\fICLINAME\fR
 .RE
 .PP
 .B Create a config file (must match the symlink name):
@@ -66,7 +66,7 @@ Get
 into a directory of your choice (e\&.g\&.
 .BR ~/bin/ )\&.
 The path
-.B __INSTALLED_PATH__
+.B /usr/bin/derakht
 in the examples below should then be replaced with
 .BR ~/bin/derakht.sh .
 .SS Create CLI symlinks
@@ -86,7 +86,7 @@ The symlink filename becomes the CLI name, determines the config file
 path, and is used to register tab completion:
 .RS
 .nf
-ln \-s __INSTALLED_PATH__ ~/bin/mycli
+ln \-s /usr/bin/derakht ~/bin/mycli
 .fi
 .RE
 .PP
@@ -167,8 +167,8 @@ Tab completion always runs in your shell regardless of mode\&.
 Each symlink gets its own config file and variable namespace:
 .RS
 .nf
-ln \-s __INSTALLED_PATH__ ~/bin/cluster
-ln \-s __INSTALLED_PATH__ ~/bin/music
+ln \-s /usr/bin/derakht ~/bin/cluster
+ln \-s /usr/bin/derakht ~/bin/music
 .fi
 .RE
 .I cluster

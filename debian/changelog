@@ -1,4 +1,4 @@
-derakht-cli (2.0.0) unstable; urgency=medium
+derakht-cli (2.0.0+1) unstable; urgency=medium
 
   * [Features] Add fish shell support: config loading, tab completion, and command execution
   * Add FreeBSD support: platform detection, BSD stat syntax, portable shebang (#!/usr/bin/env bash), and :arg:SERVICE completion using rc.d scripts
@@ -56,4 +56,4 @@ derakht-cli (2.0.0) unstable; urgency=medium
   * Add CLI_UNDER_TEST env var support — run the full bats test suite against an installed binary
   * Reorganize test suite into category subdirectories with numbered files
 
- -- Steffen Kremsler <github.com@gobuki.org>  Thu, 13 Aug 2026 00:43:04 +0200
+ -- Steffen Kremsler <github.com@gobuki.org>  Fri, 14 Aug 2026 20:15:41 +0200
