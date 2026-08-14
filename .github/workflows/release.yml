@@ -1,14 +1,17 @@
 name: "Release"
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 2.0.0)"
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.version }}
   cancel-in-progress: false
 
 jobs:
@@ -32,13 +35,12 @@ jobs:
           sudo apt-get install -y -qq zsh fish
       - name: Verify version matches tag
         run: |
-          tag_version="${GITHUB_REF_NAME#v}"
           script_version=$(grep '^__CLI_VERSION=' derakht.sh | cut -d'"' -f2)
-          if [ "$tag_version" != "$script_version" ]; then
-            echo "error: tag version ($tag_version) != script version ($script_version)"
+          if [ "${{ inputs.version }}" != "$script_version" ]; then
+            echo "error: input version (${{ inputs.version }}) != script version ($script_version)"
             exit 1
           fi
-          echo "--- version $tag_version OK ---"
+          echo "--- version ${{ inputs.version }} OK ---"
       - name: Smoke test (bash + zsh + fish)
         run: |
           ln -sf "${CLI_SCRIPT_UNDER_TEST:-./derakht.sh}" ./testcli
@@ -59,7 +61,7 @@ jobs:
       version: ${{ steps.v.outputs.version }}
     steps:
       - id: v
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
 
   # ── Build + test .deb (Debian/Ubuntu) ─────────────────────────────
   build-deb:
@@ -706,8 +708,8 @@ jobs:
             [ -f "$f" ] && assets+=("$f")
           done
           for attempt in 1 2 3; do
-            if gh release create "$GITHUB_REF_NAME" \
-              --title "$GITHUB_REF_NAME" \
+            if gh release create "v${{ inputs.version }}" \
+              --title "v${{ inputs.version }}" \
               --notes-file "${{ steps.notes.outputs.notes_file }}" \
               "${assets[@]}"; then
               exit 0
