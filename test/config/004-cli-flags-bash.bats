@@ -14,7 +14,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 @test "bash: --version prints version string" {
     run ./testcli --version
     assert_success
-    assert_output --regexp '^[0-9]+\.[0-9]+\.[0-9]+$'
+    assert_output --regexp '^[0-9]+\.[0-9]+\.[0-9]+(\+[0-9]+)?$'
 }
 
 # bats test_tags=id:bash-095

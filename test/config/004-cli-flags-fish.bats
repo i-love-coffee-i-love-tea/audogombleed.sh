@@ -13,7 +13,7 @@ setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 @test "fish: --version prints version string" {
     run _fish_run --version
     assert_success
-    assert_output --regexp '[0-9]+\.[0-9]+\.[0-9]+'
+    assert_output --regexp '[0-9]+\.[0-9]+\.[0-9]+(\+[0-9]+)?'
 }
 
 @test "fish: --cli-print-awk-script prints the AWK script" {
