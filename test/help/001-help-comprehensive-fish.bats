@@ -16,7 +16,7 @@
 #
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
-teardown_file() { rm -f ./testcli ~/.testcli.conf 2>/dev/null; }
+teardown_file() { set +e; rm -f ./testcli ~/.testcli.conf 2>/dev/null; true; }
 teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 

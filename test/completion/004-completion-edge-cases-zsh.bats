@@ -5,7 +5,7 @@
 # Covers: _cli_compgen flags, _cli_is_integer edge cases, multi-word completion
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="y"; }
-teardown_file() { rm -f ./testcli ~/.testcli.conf 2>/dev/null; }
+teardown_file() { set +e; rm -f ./testcli ~/.testcli.conf 2>/dev/null; true; }
 setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 # ===================================================================

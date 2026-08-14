@@ -17,7 +17,7 @@
 #   - clear_array portability (no bare "delete array")
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
-teardown_file() { rm -f ./testcli ~/.testcli.conf 2>/dev/null; }
+teardown_file() { set +e; rm -f ./testcli ~/.testcli.conf 2>/dev/null; true; }
 # EXCEPTION: EX-014 — AWK POSIX compat tests use direct bats-support load
 # This file loads bats-support/bats-assert directly (not via _test_load_bash)
 # because it tests the AWK parser in isolation across multiple awk binaries

@@ -5,7 +5,7 @@
 # Run this first to diagnose environment issues (e.g. wrong awk on macOS).
 
 setup_file()   { load '../_helpers/test-setup'; _test_init; }
-teardown_file() { rm -f ./testcli ~/.testcli.conf 2>/dev/null; }
+teardown_file() { set +e; rm -f ./testcli ~/.testcli.conf 2>/dev/null; true; }
 teardown() { load '../_helpers/test-setup'; _test_teardown; }
 
 @test "smoke: environment diagnostics" {
