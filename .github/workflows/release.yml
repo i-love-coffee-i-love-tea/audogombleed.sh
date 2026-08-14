@@ -686,6 +686,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PKG_VERSION: ${{ needs.version.outputs.version }}
         run: |
+          # Rename Nix files for clearer release asset names
+          [ -f dist/pkg-nix-${PKG_VERSION}/default.nix ] && \
+            mv dist/pkg-nix-${PKG_VERSION}/default.nix dist/pkg-nix-${PKG_VERSION}/derakht-cli.nix
+          [ -f dist/pkg-nix-fish-${PKG_VERSION}/default-fish.nix ] && \
+            mv dist/pkg-nix-fish-${PKG_VERSION}/default-fish.nix dist/pkg-nix-fish-${PKG_VERSION}/derakht-cli-fish.nix
           assets=()
           for f in dist/pkg-deb-${PKG_VERSION}/* dist/pkg-rpm-${PKG_VERSION}/* \
                    dist/pkg-arch-${PKG_VERSION}/* dist/pkg-freebsd-${PKG_VERSION}/* \
@@ -715,7 +720,7 @@ jobs:
 
       - name: Publish checksums to Gist
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.BADGE_GIST_TOKEN }}
           PKG_VERSION: ${{ needs.version.outputs.version }}
         run: |
           gist_url=$(./scripts/publish-checksums.sh "$PKG_VERSION" dist/)
