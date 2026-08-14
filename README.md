@@ -16,7 +16,7 @@
 Create CLIs with auto-completable command trees — no coding required.
 
 Define commands and arguments in a plain text config file. Tab completion,
-command abbreviation, and help output all come for free.
+command abbreviation, and help output all follow from a single definition.
 
 ```
                     ┌──────────────┐
