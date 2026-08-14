@@ -16,7 +16,12 @@ _common_setup() {
 	# install test files (remove if exists to avoid 'ln: Already exists')
 	# Set CLI_SCRIPT_UNDER_TEST=/usr/bin/derakht to test an installed binary.
 	rm -f ./testcli
-	ln -sf "${CLI_SCRIPT_UNDER_TEST:-./derakht.sh}" ./testcli
+	if [ -n "${CLI_SCRIPT_UNDER_TEST:-}" ]; then
+		cp "$CLI_SCRIPT_UNDER_TEST" ./testcli
+		chmod 755 ./testcli
+	else
+		ln -sf ./derakht.sh ./testcli
+	fi
 	cp example.conf ~/.testcli.conf
 
 	source ./testcli
