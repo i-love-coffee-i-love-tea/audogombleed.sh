@@ -16,7 +16,7 @@ MAX_EXEC_MS=${MAX_EXEC_MS:-200}
 MAX_LARGE_COMPLETION_MS=${MAX_LARGE_COMPLETION_MS:-400}
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
-teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown_file() { rm -f ./testcli ~/.testcli.conf 2>/dev/null; }
 teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; load '../_helpers/benchmark-helpers'; }
 

@@ -2,7 +2,7 @@
 # bats file_tags=category:config, shell:fish
 
 setup_file()   { load '../_helpers/test-setup'; _test_init_fish; }
-teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown_file() { rm -f ./testcli ~/.testcli.conf 2>/dev/null; }
 teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_fish; }
 

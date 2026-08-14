@@ -28,16 +28,13 @@ EOF
 }
 
 teardown_file() {
-    load '../_helpers/test-setup'
-    _test_cleanup
-    # Restore original SSH config — entire block wrapped to prevent bats teardown_file misreport
-    (
-        if [ -f /tmp/.derakht-ssh-config-bak-001-completion-bash ]; then
-            mv /tmp/.derakht-ssh-config-bak-001-completion-bash ~/.ssh/config
-        else
-            rm -f ~/.ssh/config
-        fi
-    ) || true
+    rm -f ./testcli ~/.testcli.conf 2>/dev/null
+    # Restore original SSH config
+    if [ -f /tmp/.derakht-ssh-config-bak-001-completion-bash ]; then
+        mv /tmp/.derakht-ssh-config-bak-001-completion-bash ~/.ssh/config
+    else
+        rm -f ~/.ssh/config
+    fi
 }
 
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }

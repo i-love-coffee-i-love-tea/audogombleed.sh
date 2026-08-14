@@ -5,7 +5,7 @@
 #
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n"; }
-teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown_file() { rm -f ./testcli ~/.testcli.conf 2>/dev/null; }
 setup()        { load '../_helpers/test-setup'; _test_load_zsh; }
 
 teardown() { load '../_helpers/test-setup'; _test_teardown; }

@@ -2,7 +2,7 @@
 # bats file_tags=category:execution, shell:bash
 
 setup_file()   { load '../_helpers/test-setup'; _test_init __CLI_CFG_EXEC_SILENT="n" __CLI_CFG_EXEC_ACK_EXPANDED_COMMANDS="n"; }
-teardown_file(){ load '../_helpers/test-setup'; _test_cleanup; }
+teardown_file() { rm -f ./testcli ~/.testcli.conf 2>/dev/null; }
 teardown() { load '../_helpers/test-setup'; _test_teardown; }
 setup()        { load '../_helpers/test-setup'; _test_load_bash; }
 
