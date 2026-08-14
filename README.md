@@ -81,7 +81,7 @@ expands to `tf plan staging`. You can also use no-space abbreviations like
 
 ### :question: Why not just use shell autocompletion?
 
-Bash and zsh have built-in completion, but it requires one completion script
+Bash, zsh, and fish have built-in completion, but it requires one completion script
 per command (or a big hardcoded function). If you change a parameter, you
 have to update the completion code too.
 
@@ -98,7 +98,7 @@ functions to maintain.
   aliases, Python scripts, you name it. CLI frameworks like Cobra (Go) or
   Click (Python) only work within their language.
 - :package: **Zero dependencies** — the config parser is an embedded AWK script. The
-  only runtime requirements are bash (or zsh) and awk, which are on every
+  only runtime requirements are bash, zsh, or fish and awk, which are on every
   Unix system. Nothing to install.
 - :rocket: **Scales from trivial to complex** — a one-command CLI needs 3 lines of
   config. A multi-level command tree with dynamic arguments and included
@@ -160,10 +160,10 @@ example with command trees and argument types.
 | Doc | What it covers |
 |-----|---------------|
 | [Getting Started](docs/01-getting-started.md) | Install, first CLI, source vs alias, testing completions |
-| [Configuration Reference](docs/02-configuration.md) | `[commands]` and `[env]` sections, argument types (`:list:`, `:eval:`, `:FILE`, etc.), config options, CLI flags, exit codes, zsh setup |
+| [Configuration Reference](docs/02-configuration.md) | `[commands]` and `[env]` sections, argument types (`:list:`, `:eval:`, `:FILE`, etc.), config options, CLI flags, exit codes, zsh/fish setup |
 | [Advanced Commands](docs/03-advanced-command-configurations.md) | Expand one definition into multiple commands with `$variable`, `&function`, or `val1\|val2` lists; argument placeholders (`\0`, `\1`, `\2`) |
 | [Hierarchical Configuration](docs/04-hierarchical-configuration.md) | `include_commands_from` — split your config across multiple files, merge at runtime |
-| [Shell Compatibility](docs/05-shell-compatibility.md) | Bash/zsh differences, execution model, `SH_WORD_SPLIT` requirement, known limitations |
-| [FAQ](docs/10-faq.md) | Common issues: globbing `?`, zsh setup, config debugging, multiple CLIs |
+| [Shell Compatibility](docs/05-shell-compatibility.md) | Bash/zsh/fish differences, execution model, `SH_WORD_SPLIT` requirement, known limitations |
+| [FAQ](docs/10-faq.md) | Common issues: globbing `?`, zsh/fish setup, config debugging, multiple CLIs |
 | [Config Grammar](docs/config-grammar.md) | Formal ABNF-like specification — the authoritative spec for the config file format |
 | [Security](docs/SECURITY.md) | Trust model, `eval` implications, attack surface, recommendations |
