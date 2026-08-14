@@ -14,9 +14,13 @@ _common_setup() {
 	local optvalue
 
 	# install test files (remove if exists to avoid 'ln: Already exists')
-	# Set CLI_SCRIPT_UNDER_TEST=/usr/bin/derakht to test an installed binary.
+	# Set CLI_SCRIPT_UNDER_TEST=/path/to/derakht to test an installed binary.
 	rm -f ./testcli
 	if [ -n "${CLI_SCRIPT_UNDER_TEST:-}" ]; then
+		if [ ! -f "$CLI_SCRIPT_UNDER_TEST" ]; then
+			echo "ERROR: CLI_SCRIPT_UNDER_TEST=$CLI_SCRIPT_UNDER_TEST: No such file" >&2
+			return 1
+		fi
 		cp "$CLI_SCRIPT_UNDER_TEST" ./testcli
 		chmod 755 ./testcli
 	else

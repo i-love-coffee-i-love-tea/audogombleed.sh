@@ -413,11 +413,13 @@ jobs:
           echo "--- version OK ---"
       - name: Run bats tests against installed binary
         env:
-          CLI_SCRIPT_UNDER_TEST: /usr/local/bin/derakht
           MAX_EXEC_MS: 250
           MAX_COMPLETION_MS: 250
           MAX_LARGE_COMPLETION_MS: 350
-        run: test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
+        run: |
+          export CLI_SCRIPT_UNDER_TEST="$(command -v derakht)"
+          echo "Testing installed binary at: $CLI_SCRIPT_UNDER_TEST"
+          test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
       - name: Fix formula for release
         run: |
           # Restore formula to point to the GitHub release tarball with real SHA256

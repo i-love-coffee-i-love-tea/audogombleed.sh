@@ -155,3 +155,31 @@ platform-specific workarounds.
 - **Affected:** All shells (tests run under all awk implementations).
 - **Workaround:** Fixed by using `_run_awk_with /usr/bin/awk` instead of `./testcli`, consistent with the rest of the file.
 - **Files:** `test/config/003-awk-posix-compat-all.bats`
+
+### EX-019: bats 1.11.0 macOS teardown_file reports "failed with status 0"
+- **What:** `teardown_file` functions that return exit code 0 are reported by bats as "setup_file failed" on macOS with Homebrew bash 5.x. The error message shows `_test_cleanup' failed with status 0` even though the function succeeds.
+- **Why:** bats 1.11.0 bug on macOS. The `set -e` / errexit interaction with `teardown_file` in bats-exec-file causes false failure detection. The `bats_file_exit_trap` function checks `BATS_SETUP_FILE_COMPLETED` which may be empty due to the errexit trap firing prematurely.
+- **Affected:** macOS only (Homebrew bash 5.x + bats 1.11.0). Linux is unaffected.
+- **Workaround:** Inline `teardown_file` cleanup (no `load`), use `set +e` before cleanup commands, and end with `true` as the final command.
+- **Files:** All `.bats` test files with `teardown_file`
+
+### EX-020: `source ./testcli` fails on macOS bats for installed binaries
+- **What:** When `CLI_SCRIPT_UNDER_TEST` points to an installed binary, `source ./testcli` (a symlink) fails with "No such file or directory" on macOS under bats 1.11.0 with Homebrew bash 5.x. The symlink exists but `source` cannot follow it.
+- **Why:** macOS bats 1.11.0 with Homebrew bash 5.x has issues following symlinks in `source` commands within test setup. The `ln -sf` approach works on Linux but not on macOS in this context.
+- **Affected:** macOS only (Homebrew bash 5.x + bats 1.11.0).
+- **Workaround:** Use `cp` instead of `ln -sf` when `CLI_SCRIPT_UNDER_TEST` is set. The `_common_setup` function copies the binary instead of symlinking.
+- **Files:** `test/_helpers/common-setup.bash`
+
+### EX-021: fish 4.6 `seq 2 1` returns descending sequence
+- **What:** `seq 2 1` returns `2 1` in fish 4.6, but returned empty in fish 4.2. This caused `_cli_expand_abbreviated_args` to append original (unexpanded) arguments to `__CLI_EXPANDED_ARGS`.
+- **Why:** fish 4.6 changed `seq` behavior: `seq HIGH LOW` now counts down instead of returning empty.
+- **Affected:** fish 4.6+ only.
+- **Workaround:** Guard the remaining-args loop with `if test $i -le (count $args)`.
+- **Files:** `derakht.fish:2352`
+
+### EX-022: fish 4.6 `\$var` inside `"*...*"` prevents variable expansion
+- **What:** `"*\\$i*"` inside a `string match` pattern produces `*$i*` (literal `$i`) in fish 4.6, but produced `*\0*` (expanded) in fish 4.2. This broke placeholder substitution in command expressions.
+- **Why:** fish 4.6 treats `\$` inside double-quoted strings as an escape for a literal `$`, preventing variable expansion. Previously `\\` was an escaped backslash and `$i` was still expanded.
+- **Affected:** fish 4.6+ only.
+- **Workaround:** Build the placeholder as a variable first: `set -l ph "\\$i"` then use `"*$ph*"`.
+- **Files:** `derakht.fish:2605, derakht.fish:2684`
