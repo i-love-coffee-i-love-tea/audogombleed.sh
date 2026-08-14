@@ -117,8 +117,7 @@ rarely worth the effort — so most scripts go without.
 
 Derakht solves both problems at once: define your tools in a config file and
 you get tab completion, abbreviation, help output, and documentation — all
-without touching the scripts themselves. Type the first letter, hit Tab, and
-see what's there.
+without touching the scripts themselves. Hit Tab and see what's there.
 
 **Works with AI too.** AI agents can read your scripts to figure out the
 interface — but that costs tokens every time. Tell AI to create a derakht
