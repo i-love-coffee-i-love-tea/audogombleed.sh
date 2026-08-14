@@ -249,11 +249,19 @@ jobs:
         run: |
           export CLI_SCRIPT_UNDER_TEST=/usr/bin/derakht
           test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
+      - name: Fix PKGBUILD for release
+        run: |
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          release_sha=$(curl -sL "$release_url" | sha256sum | cut -d' ' -f1)
+          sed -i "s|source=.*|source=(\"derakht-cli-${PKG_VERSION}.tar.gz::${release_url}\")|" packaging/arch/PKGBUILD
+          sed -i "s|sha256sums=.*|sha256sums=('${release_sha}')|" packaging/arch/PKGBUILD
       - name: Upload .pkg.tar.zst
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-arch-${{ needs.version.outputs.version }}
-          path: packaging/arch/derakht-cli-*.pkg.tar.zst
+          path: |
+            packaging/arch/derakht-cli-*.pkg.tar.zst
+            packaging/arch/PKGBUILD
           retention-days: 5
 
   # ── Build + test .pkg (FreeBSD) ───────────────────────────────────
@@ -541,11 +549,19 @@ jobs:
         run: |
           export CLI_SCRIPT_UNDER_TEST=/usr/bin/derakht-fish
           test/_bats/bin/bats test/*/*-fish.bats --tap
+      - name: Fix PKGBUILD-fish for release
+        run: |
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          release_sha=$(curl -sL "$release_url" | sha256sum | cut -d' ' -f1)
+          sed -i "s|source=.*|source=(\"derakht-cli-${PKG_VERSION}.tar.gz::${release_url}\")|" packaging/arch/PKGBUILD-fish
+          sed -i "s|sha256sums=.*|sha256sums=('${release_sha}')|" packaging/arch/PKGBUILD-fish
       - name: Upload .pkg.tar.zst (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-arch-fish-${{ needs.version.outputs.version }}
-          path: packaging/arch/derakht-cli-fish-*.pkg.tar.zst
+          path: |
+            packaging/arch/derakht-cli-fish-*.pkg.tar.zst
+            packaging/arch/PKGBUILD-fish
           retention-days: 5
 
   # ── Build + test fish Homebrew formula (macOS) ────────────────────
@@ -623,19 +639,25 @@ jobs:
         run: |
           export PATH="$HOME/.nix-profile/bin:$PATH"
           # Verify expression parses
-          nix-instantiate --parse packaging/nix/default.nix > /dev/null
+          nix-instantiate --parse packaging/nix/derakht.nix > /dev/null
           # Build with local source override
           nix-build -E "let pkgs = import <nixpkgs> {}; in \
-            (pkgs.callPackage packaging/nix/default.nix {}).overrideAttrs (old: { \
+            (pkgs.callPackage packaging/nix/derakht.nix {}).overrideAttrs (old: { \
               src = pkgs.lib.cleanSource ./.; \
             })"
           result/bin/derakht --version | grep -q "$PKG_VERSION"
           echo "--- version OK ---"
+      - name: Fix nix expression for release
+        run: |
+          export PATH="$HOME/.nix-profile/bin:$PATH"
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          release_sha=$(nix-prefetch-url --unpack "$release_url" 2>/dev/null)
+          sed -i "s|sha256 = \"[^\"]*\"|sha256 = \"${release_sha}\"|" packaging/nix/derakht.nix
       - name: Upload nix expression
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-nix-${{ needs.version.outputs.version }}
-          path: packaging/nix/default.nix
+          path: packaging/nix/derakht.nix
           retention-days: 5
 
   # ── Build + test Nix expression (fish) ────────────────────────────
@@ -661,18 +683,24 @@ jobs:
       - name: Build and test via nix
         run: |
           export PATH="$HOME/.nix-profile/bin:$PATH"
-          nix-instantiate --parse packaging/nix/default-fish.nix > /dev/null
+          nix-instantiate --parse packaging/nix/derakht-fish.nix > /dev/null
           nix-build -E "let pkgs = import <nixpkgs> {}; in \
-            (pkgs.callPackage packaging/nix/default-fish.nix {}).overrideAttrs (old: { \
+            (pkgs.callPackage packaging/nix/derakht-fish.nix {}).overrideAttrs (old: { \
               src = pkgs.lib.cleanSource ./.; \
             })"
           test -x result/bin/derakht-fish
           echo "--- fish package OK ---"
+      - name: Fix nix expression for release
+        run: |
+          export PATH="$HOME/.nix-profile/bin:$PATH"
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          release_sha=$(nix-prefetch-url --unpack "$release_url" 2>/dev/null)
+          sed -i "s|sha256 = \"[^\"]*\"|sha256 = \"${release_sha}\"|" packaging/nix/derakht-fish.nix
       - name: Upload nix expression (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pkg-nix-fish-${{ needs.version.outputs.version }}
-          path: packaging/nix/default-fish.nix
+          path: packaging/nix/derakht-fish.nix
           retention-days: 5
 
   # ── Create GitHub Release (only if all builds pass) ───────────────
@@ -714,11 +742,6 @@ jobs:
         env:
           PKG_VERSION: ${{ needs.version.outputs.version }}
         run: |
-          # Rename Nix files for clearer release asset names
-          [ -f dist/pkg-nix-${PKG_VERSION}/default.nix ] && \
-            mv dist/pkg-nix-${PKG_VERSION}/default.nix dist/pkg-nix-${PKG_VERSION}/derakht-cli.nix
-          [ -f dist/pkg-nix-fish-${PKG_VERSION}/default-fish.nix ] && \
-            mv dist/pkg-nix-fish-${PKG_VERSION}/default-fish.nix dist/pkg-nix-fish-${PKG_VERSION}/derakht-cli-fish.nix
           ./scripts/publish-checksums.sh "$PKG_VERSION" dist/
 
       - name: Create and push tag

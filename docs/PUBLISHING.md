@@ -164,14 +164,14 @@ git checkout -b derakht-cli
 
 #### 2.3 Create the package expression
 
-Copy `packaging/nix/default.nix` into the nixpkgs tree:
+Copy `packaging/nix/derakht.nix` into the nixpkgs tree:
 
 ```bash
 mkdir -p pkgs/by-name/de/derakht-cli
-cp /path/to/derakht.sh/packaging/nix/default.nix pkgs/by-name/de/derakht-cli/package.nix
+cp /path/to/derakht.sh/packaging/nix/derakht.nix pkgs/by-name/de/derakht-cli/package.nix
 ```
 
-Note: nixpkgs uses `package.nix` as the filename, not `default.nix`.
+Note: nixpkgs uses `package.nix` as the filename, not `derakht.nix`.
 
 #### 2.4 Get the source hash
 
@@ -224,7 +224,7 @@ nix profile install nixpkgs#derakht-cli
 
 | File | Purpose |
 |------|---------|
-| `packaging/nix/default.nix` | Package expression (source, build, metadata) |
+| `packaging/nix/derakht.nix` | Package expression (source, build, metadata) |
 
 ---
 
@@ -450,7 +450,7 @@ derakht --version
 When releasing a new version, update all packaging files:
 
 1. `debian/changelog` — add a new entry at the top
-2. `packaging/nix/default.nix` — update `version` and `sha256`
+2. `packaging/nix/derakht.nix` — update `version` and `sha256`
 3. `packaging/arch/PKGBUILD` — update `pkgver` and `sha256sums`
 4. `packaging/homebrew/derakht-cli.rb` — update `url` and `sha256`
 5. `packaging/rpm/derakht.spec` — update `Version:` and add `%changelog` entry
