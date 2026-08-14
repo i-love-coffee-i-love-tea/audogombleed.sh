@@ -15,7 +15,7 @@
 set -gx __CLI_SHELL fish
 
 # Version (stamped by release.sh)
-set -gx __CLI_VERSION "2.0.0"
+set -gx __CLI_VERSION "2.0.0+1"
 
 # ── Helpers ──
 

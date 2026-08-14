@@ -15,7 +15,7 @@
 set -gx __CLI_SHELL fish
 
 # Version (stamped by release.sh)
-set -gx __CLI_VERSION "2.0.0"
+set -gx __CLI_VERSION "2.0.0+1"
 
 # ── Helpers ──
 
@@ -47,13 +47,35 @@ function _cli_check_file_permissions
         set context file
     end
 
+    # check if it's a symlink and validate the target
+    if test -L "$file"
+        set -l target (readlink -f "$file" 2>/dev/null)
+        if test -z "$target"
+            echo "config error: $context '$file' is a symlink that cannot be resolved" >&2
+            return 1
+        end
+        if not test -f "$target"
+            echo "config error: $context '$file' symlink target '$target' is not a regular file" >&2
+            return 1
+        end
+        set -l target_perms (stat -L -c '%a' "$target" 2>/dev/null; or stat -L -f '%Lp' "$target" 2>/dev/null)
+        if test -n "$target_perms"
+            set -l others (string sub -s -1 -- $target_perms)
+            if test "$others" = 7
+                echo "config error: $context '$file' symlink target '$target' is world-writable" >&2
+                return 1
+            end
+        end
+    end
+
     if not test -f "$file"
         echo "config error: $context '$file' is not a regular file" >&2
         return 1
     end
 
     # Check for world-executable permission (7xx)
-    set -l perms (stat -c '%a' "$file" 2>/dev/null; or stat -f '%Lp' "$file" 2>/dev/null)
+    # Use -L to follow symlinks to the target's permissions
+    set -l perms (stat -L -c '%a' "$file" 2>/dev/null; or stat -L -f '%Lp' "$file" 2>/dev/null)
     if test -n "$perms"
         set -l others (string sub -s -1 -- $perms)
         if test "$others" = 7
@@ -2328,15 +2350,101 @@ function _cli_expand_abbreviated_args
     end
 
     # Append any remaining args beyond the defined ones
-    for j in (seq (math $i) (count $args))
-        set -a __CLI_EXPANDED_ARGS $args[$j]
+    if test $i -le (count $args)
+        for j in (seq (math $i) (count $args))
+            set -a __CLI_EXPANDED_ARGS $args[$j]
+        end
     end
+end
+
+# splits a word like "ijfm" into individual characters for first-letter matching
+# returns 0 if the word looks like a first-letter abbreviation (all alpha, length > 1)
+# returns 1 otherwise
+function _cli_split_abbreviated_word
+    set -l word $argv[1]
+    set -l len (string length -- $word)
+
+    # must be at least 2 characters and all alphabetic
+    if test $len -lt 2; or not string match -qr '^[a-zA-Z]+$' -- $word
+        return 1
+    end
+
+    # output each character on a separate line
+    for i in (seq 1 $len)
+        string sub -s $i -l 1 -- $word
+    end
+    return 0
+end
+
+# tries to expand a word as a no-space abbreviation (e.g., "ijfm" -> "install jar from maven")
+# returns 0 and outputs the expanded command if successful
+# returns 1 if the word doesn't look like a valid no-space abbreviation
+function _cli_try_nospace_abbreviation
+    set -l word $argv[1]
+    set -l rest $argv[2..-1]
+
+    set -l chars (_cli_split_abbreviated_word $word)
+    if test (count $chars) -eq 0
+        return 1
+    end
+
+    # Try to expand just the characters (no extra args) to see if they
+    # form a valid multi-word command abbreviation
+    set -l cmd_only (_cli_expand_abbreviated_command $chars)
+    if test (count $cmd_only) -eq 0
+        return 1
+    end
+
+    # Verify it's a complete command and that every character maps to a
+    # command word (not swallowed as args). __CLI_CMD_WORDS is set by
+    # _cli_is_command_complete and contains just the matched command.
+    if not _cli_is_command_complete "$cmd_only"
+        return 1
+    end
+    if test -z "$__CLI_CMD_WORDS"
+        return 1
+    end
+    set -l cmd_word_count (count (string split ' ' -- $__CLI_CMD_WORDS))
+    if test $cmd_word_count -ne (count $chars)
+        return 1
+    end
+
+    # Success — return expanded command with any remaining args appended
+    if test (count $rest) -gt 0
+        echo "$cmd_only $rest"
+    else
+        echo "$cmd_only"
+    end
+    return 0
 end
 
 function _cli_expand_abbreviated_command
     set -l matched_words ""
     set -l remaining $argv
     set -l query
+
+    # Try no-space abbreviation (e.g., "ijfm" -> "install jar from maven")
+    # Only try if the first argument doesn't match any command as a normal abbreviation
+    if test (count $remaining) -ge 1; and not string match -q '* *' -- $remaining[1]
+        # First check if the word matches any command normally
+        set -l normal_matches (_cli_getmatchingcommands $remaining[1])
+        if test (count $normal_matches) -eq 0
+            # No normal matches, try no-space abbreviation
+            _cli_log 4 "trying no-space abbreviation for: '$remaining[1]'"
+            set -l nospace_result
+            if test (count $remaining) -eq 1
+                set nospace_result (_cli_try_nospace_abbreviation $remaining[1])
+            else
+                set nospace_result (_cli_try_nospace_abbreviation $remaining[1] $remaining[2..-1])
+            end
+            if test $status -eq 0; and test -n "$nospace_result"
+                _cli_log 4 "no-space abbreviation succeeded: '$nospace_result'"
+                echo $nospace_result
+                return 0
+            end
+            _cli_log 4 "no-space abbreviation failed, trying normal matching"
+        end
+    end
 
     while test (count $remaining) -gt 0
         if test -z "$matched_words"
@@ -2369,6 +2477,11 @@ function _cli_expand_abbreviated_command
             end
         end
         set -l unique_matches (printf '%s\n' $matches | sort -u)
+
+        # Handle empty matches - in fish, printf on empty array produces an empty line
+        if test (count $matches) -eq 0
+            return 1
+        end
 
         if test (count $unique_matches) -eq 1
             if test -z "$matched_words"
@@ -2491,7 +2604,8 @@ function _cli_execute
         # This must run before exit 53 check
         set -l placeholder_count 0
         for n in 1 2 3 4 5 6 7 8 9
-            if string match -q -- "*\\$n*" "$cmd_expr"
+            set -l ph "\\$n"
+            if string match -q -- "*$ph*" "$cmd_expr"
                 set placeholder_count $n
             end
         end
@@ -2567,8 +2681,11 @@ function _cli_execute
         set -l remaining_args
         set -l i 1
         for arg in $args
-            if string match -q -- "*\\$i*" "$cmd_expr"
-                set cmd_expr (string replace "\\$i" $arg -- $cmd_expr)
+            # Build placeholder outside the glob pattern — fish 4.6+
+            # treats \$ inside "*...*" as a literal $ instead of expanding.
+            set -l ph "\\$i"
+            if string match -q -- "*$ph*" "$cmd_expr"
+                set cmd_expr (string replace "$ph" $arg -- $cmd_expr)
             else
                 set -a remaining_args $arg
             end
@@ -2750,12 +2867,33 @@ end
 if not set -q __CLI_PROGNAME
     set -g __CLI_PROGNAME (path basename (status filename))
 end
+
+# Guard: reject direct execution (like derakht.sh does under bash/zsh)
+if test "$__CLI_PROGNAME" = "derakht.fish"
+    echo "This script is not intended to be called directly." >&2
+    echo "Create a wrapper script and an alias with the same name." >&2
+    echo >&2
+    echo "    # once: create a config file and a fish wrapper" >&2
+    echo "    touch ~/.yourcli.conf" >&2
+    echo "    echo '#!/usr/bin/env fish' > ~/bin/yourcli" >&2
+    echo "    echo 'set -g __CLI_PROGNAME yourcli' >> ~/bin/yourcli" >&2
+    echo "    echo 'set -g __cli_wrapper_argv \$argv' >> ~/bin/yourcli" >&2
+    echo "    echo 'source ~/bin/derakht.fish' >> ~/bin/yourcli" >&2
+    echo "    chmod +x ~/bin/yourcli" >&2
+    exit 49
+end
 set -g __CLI_CONFIG_FILE "$HOME/.$__CLI_PROGNAME.conf"
 
 # ── Initialize (always — functions need __CLI_CONFIG_FILE set) ──
 
 _cli_read_awk_script
 _cli_read_validator_script
+
+# Check config file permissions before loading
+if not _cli_check_file_permissions "$__CLI_CONFIG_FILE" "config file"
+    exit 54
+end
+
 _cli_load_config_environment
 _cli_completion_init
 _cli_load_command_word_functions
