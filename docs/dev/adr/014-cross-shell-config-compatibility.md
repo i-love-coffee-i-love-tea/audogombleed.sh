@@ -413,6 +413,6 @@ Fish users must duplicate ALL env settings in `[env.fish]`. Nothing shared.
 ## References
 
 - ADR-006: Config file structure
-- ADR-014: AWK/shell split: parsing in AWK, matching in shell
+- ADR-013: AWK/shell split: parsing in AWK, matching in shell
 - `docs/FISH-COMPARISON.md`: Fish shell API comparison
 - `docs/dev/FISH-PLAN.md`: Fish integration implementation plan
