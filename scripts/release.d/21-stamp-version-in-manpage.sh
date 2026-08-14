@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# release.d hook: stamp $version and current year into the manpage (.TH header).
+# release.d hook: stamp $full_version and current year into the manpage (.TH header).
 #
-# Exports from release.sh: $version $manpage
+# Exports from release.sh: $full_version $manpage
 #
 set -euo pipefail
 
-sed -i "s/^\(\.TH [^ ]\+ [0-9]\+ \)\"[^\"]*\" \"[^\"]*\"/\1\"$(date +%Y)\" \"$version\"/" "$manpage"
-echo "Stamped $version in $manpage"
+sed -i "s/^\(\.TH [^ ]\+ [0-9]\+ \)\"[^\"]*\" \"[^\"]*\"/\1\"$(date +%Y)\" \"$full_version\"/" "$manpage"
+echo "Stamped $full_version in $manpage"

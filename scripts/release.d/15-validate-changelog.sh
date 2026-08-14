@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # release.d hook: validate CHANGELOG.md is ready for release stamping.
+# Uses $version (base) — changelog entries don't carry the +N rebuild suffix.
 #
 # Exports from release.sh: $version
 #

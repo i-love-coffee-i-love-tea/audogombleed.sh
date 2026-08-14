@@ -458,3 +458,83 @@ When releasing a new version, update all packaging files:
 The `release.d/` hooks handle steps 1-5 automatically during `release.sh`.
 
 Then follow the update steps for each ecosystem.
+
+---
+
+## Repackaging without retagging (`+N` suffix)
+
+Sometimes you need to rebuild packages for the same source version — for
+example when a CI build fails, a packaging hook has a bug, or you need to
+fix a packaging-only issue without changing the source code. In these cases
+you don't want to create a new git tag (the source hasn't changed), but
+package managers need a version bump to accept the new build.
+
+The solution is a **rebuild suffix**: `2.0.0+1`, `2.0.0+2`, etc.
+
+### How it works
+
+```bash
+# Original release — creates tag v2.0.0
+./scripts/release.sh 2.0.0
+
+# Repackage — reuses tag v2.0.0, bumps package metadata only
+./scripts/release.sh 2.0.0+1
+```
+
+The `+N` suffix is parsed into separate variables:
+
+| Variable | `2.0.0` | `2.0.0+1` | Used for |
+|----------|---------|-----------|----------|
+| `$version` | `2.0.0` | `2.0.0` | git tag, changelog, source URLs |
+| `$rebuild` | *(empty)* | `1` | Arch `pkgrel`, RPM `Release` |
+| `$full_version` | `2.0.0` | `2.0.0+1` | `__CLI_VERSION`, manpage, Nix/Homebrew version |
+
+The git tag stays `v2.0.0` — only package metadata changes:
+
+- **Debian**: version becomes `2.0.0+1` (Debian natively supports `+` in versions)
+- **Arch**: `pkgver=2.0.0`, `pkgrel=2` (rebuild number in its own field)
+- **RPM**: `Version: 2.0.0`, `Release: 2%{?dist}` (rebuild in Release field)
+- **Nix**: `version = "2.0.0+1"`, `rev = "v2.0.0"` (source tag unchanged)
+- **Homebrew**: formula version `2.0.0+1`, tarball URL still points to `v2.0.0`
+- **Changelog**: stays `## 2.0.0 (2026-08-11)` — the `+N` is packaging metadata only
+
+### When to use
+
+- CI release job failed but the tag is already pushed — repackage with `+1`
+- Packaging hook had a bug (wrong path, missing file) — fix the hook, repackage
+- Package repository rejected the upload (lintian, COPR) — fix and resubmit
+- You need to rebuild against a newer toolchain without changing source
+
+### When NOT to use
+
+- Source code changed — release a proper patch version (`2.0.1`) instead
+- You haven't pushed the tag yet — just delete it locally and re-release:
+  ```bash
+  git tag -d v2.0.0
+  ./scripts/release.sh 2.0.0
+  ```
+
+### CI workflow trigger combinations
+
+The release workflow (`.github/workflows/release.yml`) is triggered manually
+with a `version` input. The behavior depends on the combination of the input
+version and existing tags:
+
+| Input | Tag `v2.0.0` exists? | Result |
+|-------|---------------------|--------|
+| `2.0.0` | No | **OK** — creates tag `v2.0.0`, builds packages, creates release |
+| `2.0.0` | Yes | **FAIL** — cannot re-release the same version; use `+N` suffix |
+| `2.0.0+1` | No | **FAIL** — repackaging requires the base tag to exist |
+| `2.0.0+1` | Yes | **OK** — reuses tag `v2.0.0`, builds packages, creates release `v2.0.0+1` |
+| `2.0.0+1` (again) | Yes | **FAIL** — release `v2.0.0+1` already exists on GitHub |
+| `2.0.0+2` | Yes | **OK** — reuses tag `v2.0.0`, creates release `v2.0.0+2` |
+
+The workflow parses the `+N` suffix and uses the base version (`2.0.0`) for:
+- Git tag reference and creation
+- Source tarball names (RPM, Arch)
+- Changelog section lookup
+
+The full version (`2.0.0+1`) is used for:
+- Package version in `.deb`, `.rpm`, Arch, Homebrew, Nix, FreeBSD
+- GitHub release name
+- `__CLI_VERSION` in the script (verified against input)

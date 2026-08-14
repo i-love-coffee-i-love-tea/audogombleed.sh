@@ -2,12 +2,12 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "derakht-cli";
-  version = "2.0.0";
+  version = "2.0.0+1";
 
   src = fetchFromGitHub {
     owner = "i-love-coffee-i-love-tea";
     repo = "derakht-cli";
-    rev = "v${version}";
+    rev = "v2.0.0";
     sha256 = ""; # fill in after first build
   };
 

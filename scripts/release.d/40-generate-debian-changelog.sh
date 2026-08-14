@@ -17,6 +17,9 @@ else
     fi
 fi
 
+# Strip rebuild suffix (+N) for CHANGELOG.md lookup — changelog uses base version
+changelog_version="${version%%+*}"
+
 changelog_md="CHANGELOG.md"
 changelog_deb="debian/changelog"
 
@@ -27,7 +30,8 @@ fi
 
 # Extract the section for this version from CHANGELOG.md.
 # Looks for "## X.Y.Z" and grabs everything until the next "## " or end of file.
-section=$(awk -v ver="$version" '
+# Uses changelog_version (base) since changelog entries don't carry +N suffix.
+section=$(awk -v ver="$changelog_version" '
     /^## / {
         if (found) exit
         if ($2 == ver) found = 1

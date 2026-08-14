@@ -17,6 +17,7 @@ done
 if [ $# -ne 1 ]; then
     echo "usage: $0 [--dry-run] [--no-tag] <version>"
     echo "  e.g. $0 1.2.0"
+    echo "       $0 2.0.0+1        # rebuild 1 of version 2.0.0"
     echo "       $0 --dry-run 1.2.0"
     echo "       $0 --no-tag 1.2.0"
     exit 1
@@ -24,13 +25,24 @@ fi
 
 cd "$PROJECT_ROOT"
 
-version="$1"
+full_version="$1"
+
+# Parse rebuild suffix: "2.0.0+1" → version="2.0.0", rebuild="1"
+# "2.0.0" → version="2.0.0", rebuild=""
+if [[ "$full_version" == *+* ]]; then
+    version="${full_version%%+*}"
+    rebuild="${full_version#*+}"
+else
+    version="$full_version"
+    rebuild=""
+fi
+
 script="derakht.sh"
 manpage="derakht.1"
 changelog="debian/changelog"
 hook_dir="$SCRIPT_DIR/release.d"
 
-export version script manpage changelog dry_run no_tag
+export version rebuild full_version script manpage changelog dry_run no_tag
 
 if $dry_run; then
     echo "[dry-run] Running validation hooks..."

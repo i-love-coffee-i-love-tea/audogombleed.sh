@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # release.d hook: convert "## Unreleased" section in CHANGELOG.md to
 # "## <version> (<date>)". Removes the Unreleased header entirely.
+# Uses $version (base) — the +N rebuild suffix is packaging metadata only.
 #
 # Exports from release.sh: $version
 #

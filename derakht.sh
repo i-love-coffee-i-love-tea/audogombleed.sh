@@ -65,7 +65,7 @@
 #
 # 	Documentation is available here: https://github.com/i-love-coffee-i-love-tea/derakht-cli
 #	
-__CLI_VERSION="2.0.0"
+__CLI_VERSION="2.0.0+1"
 
 # Cache uname once at source time — avoids subprocess fork in every stat call
 __CLI_UNAME="$(uname)"
@@ -3943,7 +3943,7 @@ _cli_try_nospace_abbreviation() {
 	local word="$1"
 	shift
 	local -a chars
-	chars=($(_cli_split_abbreviated_word "$word"))
+	mapfile -t chars < <(_cli_split_abbreviated_word "$word")
 	if [ ${#chars[@]} -eq 0 ]; then
 		return 1
 	fi
@@ -3959,8 +3959,7 @@ _cli_try_nospace_abbreviation() {
 	# Verify it's a complete command and that every character maps to a
 	# command word (not swallowed as args). __CLI_CMD_WORDS is set by
 	# _cli_is_command_complete and contains just the matched command.
-	_cli_is_command_complete "$cmd_only"
-	if [ $? -ne 0 ] || [ -z "$__CLI_CMD_WORDS" ]; then
+	if ! _cli_is_command_complete "$cmd_only" || [ -z "$__CLI_CMD_WORDS" ]; then
 		return 1
 	fi
 	local cmd_word_count
@@ -3991,17 +3990,17 @@ _cli_expand_abbreviated_command() {
 	if [ $# -ge 1 ] && [[ "$1" != *" "* ]]; then
 		# First check if the word matches any command normally
 		local -a normal_matches
-		normal_matches=($(_cli_getmatchingcommands "$1"))
+		mapfile -t normal_matches < <(_cli_getmatchingcommands "$1")
 		if [ ${#normal_matches[@]} -eq 0 ]; then
 			# No normal matches, try no-space abbreviation
 			_cli_log 4 "trying no-space abbreviation for: '$1'"
-			local nospace_result
+			local nospace_result nospace_rc=1
 			if [ $# -eq 1 ]; then
-				nospace_result=$(_cli_try_nospace_abbreviation "$1")
+				nospace_result=$(_cli_try_nospace_abbreviation "$1") && nospace_rc=0
 			else
-				nospace_result=$(_cli_try_nospace_abbreviation "$1" "${@:2}")
+				nospace_result=$(_cli_try_nospace_abbreviation "$1" "${@:2}") && nospace_rc=0
 			fi
-			if [ $? -eq 0 ] && [ -n "$nospace_result" ]; then
+			if [ "$nospace_rc" -eq 0 ] && [ -n "$nospace_result" ]; then
 				_cli_log 4 "no-space abbreviation succeeded: '$nospace_result'"
 				echo "$nospace_result"
 				return 0

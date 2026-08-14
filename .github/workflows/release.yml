@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to release (e.g. 2.1.0)"
+        description: "Version to release (e.g. 2.1.0 or 2.0.0+1 to repackage)"
         required: true
         type: string
 
@@ -19,6 +19,7 @@ jobs:
   test:
     name: "test: smoke"
     runs-on: ubuntu-latest
+    needs: [version]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -36,11 +37,11 @@ jobs:
       - name: Verify version matches script
         run: |
           script_version=$(grep '^__CLI_VERSION=' derakht.sh | cut -d'"' -f2)
-          if [ "${{ inputs.version }}" != "$script_version" ]; then
-            echo "error: input version (${{ inputs.version }}) != script version ($script_version)"
+          if [ "${{ needs.version.outputs.version }}" != "$script_version" ]; then
+            echo "error: input version (${{ needs.version.outputs.version }}) != script version ($script_version)"
             exit 1
           fi
-          echo "--- version ${{ inputs.version }} OK ---"
+          echo "--- version ${{ needs.version.outputs.version }} OK ---"
       - name: Smoke test (bash + zsh + fish)
         run: |
           ln -sf "${CLI_SCRIPT_UNDER_TEST:-./derakht.sh}" ./testcli
@@ -53,15 +54,30 @@ jobs:
       - name: Run tests
         run: test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
 
-  # ── Helper: extract version from tag ──────────────────────────────
+  # ── Helper: parse version (supports +N rebuild suffix) ──────────
   version:
-    name: "extract version"
+    name: "parse version"
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.v.outputs.version }}
+      base_version: ${{ steps.v.outputs.base_version }}
+      rebuild: ${{ steps.v.outputs.rebuild }}
+      tag: ${{ steps.v.outputs.tag }}
     steps:
       - id: v
-        run: echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+        run: |
+          full="${{ inputs.version }}"
+          if [[ "$full" == *+* ]]; then
+            base="${full%%+*}"
+            rebuild="${full#*+}"
+          else
+            base="$full"
+            rebuild=""
+          fi
+          echo "version=$full" >> "$GITHUB_OUTPUT"
+          echo "base_version=$base" >> "$GITHUB_OUTPUT"
+          echo "rebuild=$rebuild" >> "$GITHUB_OUTPUT"
+          echo "tag=v$base" >> "$GITHUB_OUTPUT"
 
   # ── Build + test .deb (Debian/Ubuntu) ─────────────────────────────
   build-deb:
@@ -166,6 +182,7 @@ jobs:
       image: fedora:latest
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      BASE_VERSION: ${{ needs.version.outputs.base_version }}
       SOURCE_DATE_EPOCH: 0
     steps:
       - name: Install git for checkout
@@ -182,13 +199,13 @@ jobs:
       - name: Build .rpm
         run: |
           rpmdev-setuptree
-          mkdir /tmp/src && cp -a . "/tmp/src/derakht-cli-${PKG_VERSION}"
-          ./scripts/make-tarball.sh ~/rpmbuild/SOURCES/derakht-cli-${PKG_VERSION}.tar.gz \
-            /tmp/src "derakht-cli-${PKG_VERSION}"
+          mkdir /tmp/src && cp -a . "/tmp/src/derakht-cli-${BASE_VERSION}"
+          ./scripts/make-tarball.sh ~/rpmbuild/SOURCES/derakht-cli-${BASE_VERSION}.tar.gz \
+            /tmp/src "derakht-cli-${BASE_VERSION}"
           rm -rf /tmp/src
           rpmbuild -ba packaging/rpm/derakht-cli.spec
       - name: Install .rpm
-        run: rpm -ivh ~/rpmbuild/RPMS/noarch/derakht-cli-${PKG_VERSION}-1.*.rpm
+        run: rpm -ivh ~/rpmbuild/RPMS/noarch/derakht-cli-${BASE_VERSION}-1.*.rpm
       - name: Test installed binary
         run: |
           derakht --version | grep -q "$PKG_VERSION"
@@ -213,6 +230,7 @@ jobs:
       image: archlinux:latest
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      BASE_VERSION: ${{ needs.version.outputs.base_version }}
       SOURCE_DATE_EPOCH: 0
     steps:
       - name: Install git for checkout
@@ -229,15 +247,15 @@ jobs:
       - name: Build .pkg.tar.zst
         run: |
           cd packaging/arch
-          mkdir /tmp/src && cp -a ../.. "/tmp/src/derakht-cli-${PKG_VERSION}"
-          ../../scripts/make-tarball.sh "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" \
-            /tmp/src "derakht-cli-${PKG_VERSION}"
+          mkdir /tmp/src && cp -a ../.. "/tmp/src/derakht-cli-${BASE_VERSION}"
+          ../../scripts/make-tarball.sh "/tmp/derakht-cli-${BASE_VERSION}.tar.gz" \
+            /tmp/src "derakht-cli-${BASE_VERSION}"
           rm -rf /tmp/src
-          sha=$(sha256sum "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
-          sed -i "s|source=.*|source=(\"derakht-cli-${PKG_VERSION}.tar.gz::file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\")|" PKGBUILD
+          sha=$(sha256sum "/tmp/derakht-cli-${BASE_VERSION}.tar.gz" | cut -d' ' -f1)
+          sed -i "s|source=.*|source=(\"derakht-cli-${BASE_VERSION}.tar.gz::file:///tmp/derakht-cli-${BASE_VERSION}.tar.gz\")|" PKGBUILD
           sed -i "s|sha256sums=.*|sha256sums=('$sha')|" PKGBUILD
           useradd -m builder
-          chown -R builder:builder "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" "$GITHUB_WORKSPACE"
+          chown -R builder:builder "/tmp/derakht-cli-${BASE_VERSION}.tar.gz" "$GITHUB_WORKSPACE"
           su builder -c "cd $GITHUB_WORKSPACE/packaging/arch && makepkg --noconfirm --nodeps"
       - name: Install .pkg.tar.zst
         run: pacman -U --noconfirm packaging/arch/derakht-cli-*.pkg.tar.zst
@@ -251,9 +269,9 @@ jobs:
           test/_bats/bin/bats test/*/*-bash.bats test/*/*-all.bats --tap
       - name: Fix PKGBUILD for release
         run: |
-          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${BASE_VERSION}.tar.gz"
           release_sha=$(curl -sL "$release_url" | sha256sum | cut -d' ' -f1)
-          sed -i "s|source=.*|source=(\"derakht-cli-${PKG_VERSION}.tar.gz::${release_url}\")|" packaging/arch/PKGBUILD
+          sed -i "s|source=.*|source=(\"derakht-cli-${BASE_VERSION}.tar.gz::${release_url}\")|" packaging/arch/PKGBUILD
           sed -i "s|sha256sums=.*|sha256sums=('${release_sha}')|" packaging/arch/PKGBUILD
       - name: Upload .pkg.tar.zst
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -396,6 +414,7 @@ jobs:
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      BASE_VERSION: ${{ needs.version.outputs.base_version }}
       SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -446,7 +465,7 @@ jobs:
       - name: Fix formula for release
         run: |
           # Restore formula to point to the GitHub release tarball with real SHA256
-          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${BASE_VERSION}.tar.gz"
           release_sha=$(curl -sL "$release_url" | shasum -a 256 | cut -d' ' -f1)
           sed -i '' "s|url .*|url \"$release_url\"|" packaging/homebrew/derakht-cli.rb
           sed -i '' "s|sha256 .*|sha256 \"$release_sha\"|" packaging/homebrew/derakht-cli.rb
@@ -466,6 +485,7 @@ jobs:
       image: fedora:latest
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      BASE_VERSION: ${{ needs.version.outputs.base_version }}
       SOURCE_DATE_EPOCH: 0
     steps:
       - name: Install git for checkout
@@ -482,13 +502,13 @@ jobs:
       - name: Build .rpm
         run: |
           rpmdev-setuptree
-          mkdir /tmp/src && cp -a . "/tmp/src/derakht-cli-${PKG_VERSION}"
-          ./scripts/make-tarball.sh ~/rpmbuild/SOURCES/derakht-cli-${PKG_VERSION}.tar.gz \
-            /tmp/src "derakht-cli-${PKG_VERSION}"
+          mkdir /tmp/src && cp -a . "/tmp/src/derakht-cli-${BASE_VERSION}"
+          ./scripts/make-tarball.sh ~/rpmbuild/SOURCES/derakht-cli-${BASE_VERSION}.tar.gz \
+            /tmp/src "derakht-cli-${BASE_VERSION}"
           rm -rf /tmp/src
           rpmbuild -ba packaging/rpm/derakht-cli-fish.spec
       - name: Install .rpm
-        run: rpm -ivh ~/rpmbuild/RPMS/noarch/derakht-cli-fish-${PKG_VERSION}-1.*.rpm
+        run: rpm -ivh ~/rpmbuild/RPMS/noarch/derakht-cli-fish-${BASE_VERSION}-1.*.rpm
       - name: Test installed file
         run: |
           test -f /usr/bin/derakht-fish
@@ -513,6 +533,7 @@ jobs:
       image: archlinux:latest
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      BASE_VERSION: ${{ needs.version.outputs.base_version }}
       SOURCE_DATE_EPOCH: 0
     steps:
       - name: Install git for checkout
@@ -529,15 +550,15 @@ jobs:
       - name: Build .pkg.tar.zst
         run: |
           cd packaging/arch
-          mkdir /tmp/src && cp -a ../.. "/tmp/src/derakht-cli-${PKG_VERSION}"
-          ../../scripts/make-tarball.sh "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" \
-            /tmp/src "derakht-cli-${PKG_VERSION}"
+          mkdir /tmp/src && cp -a ../.. "/tmp/src/derakht-cli-${BASE_VERSION}"
+          ../../scripts/make-tarball.sh "/tmp/derakht-cli-${BASE_VERSION}.tar.gz" \
+            /tmp/src "derakht-cli-${BASE_VERSION}"
           rm -rf /tmp/src
-          sha=$(sha256sum "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" | cut -d' ' -f1)
-          sed -i "s|source=.*|source=(\"derakht-cli-${PKG_VERSION}.tar.gz::file:///tmp/derakht-cli-${PKG_VERSION}.tar.gz\")|" PKGBUILD-fish
+          sha=$(sha256sum "/tmp/derakht-cli-${BASE_VERSION}.tar.gz" | cut -d' ' -f1)
+          sed -i "s|source=.*|source=(\"derakht-cli-${BASE_VERSION}.tar.gz::file:///tmp/derakht-cli-${BASE_VERSION}.tar.gz\")|" PKGBUILD-fish
           sed -i "s|sha256sums=.*|sha256sums=('$sha')|" PKGBUILD-fish
           useradd -m builder
-          chown -R builder:builder "/tmp/derakht-cli-${PKG_VERSION}.tar.gz" "$GITHUB_WORKSPACE"
+          chown -R builder:builder "/tmp/derakht-cli-${BASE_VERSION}.tar.gz" "$GITHUB_WORKSPACE"
           su builder -c "cd $GITHUB_WORKSPACE/packaging/arch && makepkg --noconfirm --nodeps -p PKGBUILD-fish"
       - name: Install .pkg.tar.zst
         run: pacman -U --noconfirm packaging/arch/derakht-cli-fish-*.pkg.tar.zst
@@ -551,9 +572,9 @@ jobs:
           test/_bats/bin/bats test/*/*-fish.bats --tap
       - name: Fix PKGBUILD-fish for release
         run: |
-          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${BASE_VERSION}.tar.gz"
           release_sha=$(curl -sL "$release_url" | sha256sum | cut -d' ' -f1)
-          sed -i "s|source=.*|source=(\"derakht-cli-${PKG_VERSION}.tar.gz::${release_url}\")|" packaging/arch/PKGBUILD-fish
+          sed -i "s|source=.*|source=(\"derakht-cli-${BASE_VERSION}.tar.gz::${release_url}\")|" packaging/arch/PKGBUILD-fish
           sed -i "s|sha256sums=.*|sha256sums=('${release_sha}')|" packaging/arch/PKGBUILD-fish
       - name: Upload .pkg.tar.zst (fish)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -571,6 +592,7 @@ jobs:
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      BASE_VERSION: ${{ needs.version.outputs.base_version }}
       SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -604,7 +626,7 @@ jobs:
       - name: Fix formula for release
         run: |
           # Restore formula to point to the GitHub release tarball with real SHA256
-          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${BASE_VERSION}.tar.gz"
           release_sha=$(curl -sL "$release_url" | shasum -a 256 | cut -d' ' -f1)
           sed -i '' "s|url .*|url \"$release_url\"|" packaging/homebrew/derakht-cli-fish.rb
           sed -i '' "s|sha256 .*|sha256 \"$release_sha\"|" packaging/homebrew/derakht-cli-fish.rb
@@ -622,6 +644,7 @@ jobs:
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      BASE_VERSION: ${{ needs.version.outputs.base_version }}
       SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -650,7 +673,7 @@ jobs:
       - name: Fix nix expression for release
         run: |
           export PATH="$HOME/.nix-profile/bin:$PATH"
-          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${BASE_VERSION}.tar.gz"
           release_sha=$(nix-prefetch-url --unpack "$release_url" 2>/dev/null)
           sed -i "s|sha256 = \"[^\"]*\"|sha256 = \"${release_sha}\"|" packaging/nix/derakht.nix
       - name: Upload nix expression
@@ -667,6 +690,7 @@ jobs:
     needs: [test, version]
     env:
       PKG_VERSION: ${{ needs.version.outputs.version }}
+      BASE_VERSION: ${{ needs.version.outputs.base_version }}
       SOURCE_DATE_EPOCH: 0
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -693,7 +717,7 @@ jobs:
       - name: Fix nix expression for release
         run: |
           export PATH="$HOME/.nix-profile/bin:$PATH"
-          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${PKG_VERSION}.tar.gz"
+          release_url="https://github.com/i-love-coffee-i-love-tea/derakht-cli/archive/refs/tags/v${BASE_VERSION}.tar.gz"
           release_sha=$(nix-prefetch-url --unpack "$release_url" 2>/dev/null)
           sed -i "s|sha256 = \"[^\"]*\"|sha256 = \"${release_sha}\"|" packaging/nix/derakht-fish.nix
       - name: Upload nix expression (fish)
@@ -721,11 +745,13 @@ jobs:
       - name: Extract release notes
         id: notes
         run: |
+          # Use base version for changelog lookup (entries are ## 2.0.0, not ## 2.0.0+1)
+          base_version="${{ needs.version.outputs.base_version }}"
           version="${{ needs.version.outputs.version }}"
           notes_file=$(mktemp)
           # Extract the version section, then strip internal sections
           # (### Renamed, ### CI) that are not relevant to end users.
-          awk -v ver="$version" '
+          awk -v ver="$base_version" '
             /^## / { if (found) exit; if ($2 == ver) found=1; next }
             found && /^### / { skip = ($0 ~ /^### Renamed/ || $0 ~ /^### CI/) }
             found && !skip { print }
@@ -746,10 +772,25 @@ jobs:
 
       - name: Create and push tag
         env:
-          PKG_VERSION: ${{ needs.version.outputs.version }}
+          TAG: ${{ needs.version.outputs.tag }}
+          REBUILD: ${{ needs.version.outputs.rebuild }}
         run: |
-          git tag "v${PKG_VERSION}"
-          git push origin "v${PKG_VERSION}"
+          if [ -n "$REBUILD" ]; then
+            # Repackage: tag must already exist
+            if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+              echo "error: repackaging requires existing tag $TAG, but it was not found"
+              exit 1
+            fi
+            echo "Tag $TAG already exists (repackaging), skipping creation"
+          else
+            # Fresh release: tag must not exist
+            if git rev-parse "$TAG" >/dev/null 2>&1; then
+              echo "error: tag $TAG already exists — use +N suffix to repackage (e.g. ${{ needs.version.outputs.base_version }}+1)"
+              exit 1
+            fi
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
 
       - name: Create GitHub release
         env:
