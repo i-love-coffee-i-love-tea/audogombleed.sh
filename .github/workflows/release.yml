@@ -1,17 +1,14 @@
 name: "Release"
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version to release (e.g. 2.0.0)"
-        required: true
-        type: string
+  push:
+    tags:
+      - "v*"
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ inputs.version }}
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -35,12 +32,13 @@ jobs:
           sudo apt-get install -y -qq zsh fish
       - name: Verify version matches tag
         run: |
+          tag_version="${GITHUB_REF_NAME#v}"
           script_version=$(grep '^__CLI_VERSION=' derakht.sh | cut -d'"' -f2)
-          if [ "${{ inputs.version }}" != "$script_version" ]; then
-            echo "error: input version (${{ inputs.version }}) != script version ($script_version)"
+          if [ "$tag_version" != "$script_version" ]; then
+            echo "error: tag version ($tag_version) != script version ($script_version)"
             exit 1
           fi
-          echo "--- version ${{ inputs.version }} OK ---"
+          echo "--- version $tag_version OK ---"
       - name: Smoke test (bash + zsh + fish)
         run: |
           ln -sf "${CLI_SCRIPT_UNDER_TEST:-./derakht.sh}" ./testcli
@@ -61,7 +59,7 @@ jobs:
       version: ${{ steps.v.outputs.version }}
     steps:
       - id: v
-        run: echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
   # ── Build + test .deb (Debian/Ubuntu) ─────────────────────────────
   build-deb:
@@ -657,6 +655,8 @@ jobs:
     needs: [build-deb, build-rpm, build-arch, build-freebsd, build-homebrew, build-deb-fish, build-rpm-fish, build-arch-fish, build-freebsd-fish, build-homebrew-fish, build-nix, build-nix-fish, version]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
 
       - name: Download all artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -708,8 +708,8 @@ jobs:
             [ -f "$f" ] && assets+=("$f")
           done
           for attempt in 1 2 3; do
-            if gh release create "v${{ inputs.version }}" \
-              --title "v${{ inputs.version }}" \
+            if gh release create "$GITHUB_REF_NAME" \
+              --title "$GITHUB_REF_NAME" \
               --notes-file "${{ steps.notes.outputs.notes_file }}" \
               "${assets[@]}"; then
               exit 0
