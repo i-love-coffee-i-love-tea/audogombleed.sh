@@ -82,6 +82,8 @@ jobs:
           key: apt-release-deb
       - name: Install build dependencies
         run: sudo apt-get update -qq && sudo apt-get install -y -qq dpkg-dev debhelper build-essential zsh
+      - name: Stamp installed path in manpage
+        run: sed -i 's|__INSTALLED_PATH__|/usr/bin/derakht|g' derakht.1
       - name: Build .deb
         run: ./scripts/release.d/70-build-deb.sh
       - name: Copy .deb into workspace
@@ -122,6 +124,7 @@ jobs:
           sudo apt-get install -y -qq dpkg-dev fish gawk
       - name: Build .deb
         run: |
+          sed -i 's|__INSTALLED_PATH__|/usr/bin/derakht|g' derakht.1
           pkgdir="/tmp/derakht-cli-fish-${PKG_VERSION}"
           mkdir -p "$pkgdir/DEBIAN" "$pkgdir/usr/bin" "$pkgdir/usr/share/man/man1"
           cat > "$pkgdir/DEBIAN/control" <<EOF
@@ -174,6 +177,8 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install build dependencies
         run: dnf install -y rpm-build rpmdevtools bash gawk zsh
+      - name: Stamp installed path in manpage
+        run: sed -i 's|__INSTALLED_PATH__|/usr/bin/derakht|g' derakht.1
       - name: Build .rpm
         run: |
           rpmdev-setuptree
@@ -219,6 +224,8 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install dependencies
         run: pacman -Syu --noconfirm bash gawk zsh base-devel
+      - name: Stamp installed path in manpage
+        run: sed -i 's|__INSTALLED_PATH__|/usr/bin/derakht|g' derakht.1
       - name: Build .pkg.tar.zst
         run: |
           cd packaging/arch
@@ -273,6 +280,7 @@ jobs:
           run: |
             set -e
             export PATH="/usr/local/bin:$PATH"
+            sed -i 's|__INSTALLED_PATH__|/usr/local/bin/derakht|g' derakht.1
             # Stage files relative to prefix (/usr/local)
             mkdir -p /tmp/stage/usr/local/bin /tmp/stage/usr/local/share/man/man1
             cp derakht.sh /tmp/stage/usr/local/bin/derakht
@@ -334,6 +342,7 @@ jobs:
           run: |
             set -e
             export PATH="/usr/local/bin:$PATH"
+            sed -i 's|__INSTALLED_PATH__|/usr/local/bin/derakht|g' derakht.1
             # Stage files relative to prefix (/usr/local)
             mkdir -p /tmp/stage/usr/local/bin /tmp/stage/usr/local/share/man/man1
             cp derakht.fish /tmp/stage/usr/local/bin/derakht-fish
@@ -393,6 +402,10 @@ jobs:
         run: |
           brew install bash gawk || true
           brew link --overwrite bash gawk
+      - name: Stamp installed path in manpage
+        run: |
+          prefix="$(brew --prefix)"
+          sed -i '' "s|__INSTALLED_PATH__|${prefix}/bin/derakht|g" derakht.1
       - name: Test formula install
         run: |
           # Build local tarball for testing
@@ -456,6 +469,8 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install build dependencies
         run: dnf install -y rpm-build rpmdevtools fish gawk
+      - name: Stamp installed path in manpage
+        run: sed -i 's|__INSTALLED_PATH__|/usr/bin/derakht|g' derakht.1
       - name: Build .rpm
         run: |
           rpmdev-setuptree
@@ -501,6 +516,8 @@ jobs:
         run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install dependencies
         run: pacman -Syu --noconfirm fish gawk base-devel
+      - name: Stamp installed path in manpage
+        run: sed -i 's|__INSTALLED_PATH__|/usr/bin/derakht|g' derakht.1
       - name: Build .pkg.tar.zst
         run: |
           cd packaging/arch
@@ -547,6 +564,10 @@ jobs:
         run: |
           brew install fish gawk || true
           brew link --overwrite fish gawk
+      - name: Stamp installed path in manpage
+        run: |
+          prefix="$(brew --prefix)"
+          sed -i '' "s|__INSTALLED_PATH__|${prefix}/bin/derakht|g" derakht.1
       - name: Test formula install
         run: |
           # Build local tarball for testing
@@ -596,6 +617,8 @@ jobs:
           bash /tmp/install-nix.sh --no-daemon
           echo "$HOME/.nix-profile/bin" >> "$GITHUB_PATH"
           echo "/nix/var/nix/profiles/default/bin" >> "$GITHUB_PATH"
+      - name: Stamp installed path in manpage
+        run: sed -i 's|__INSTALLED_PATH__|/usr/bin/derakht|g' derakht.1
       - name: Build and test via nix
         run: |
           export PATH="$HOME/.nix-profile/bin:$PATH"
@@ -633,6 +656,8 @@ jobs:
           bash /tmp/install-nix.sh --no-daemon
           echo "$HOME/.nix-profile/bin" >> "$GITHUB_PATH"
           echo "/nix/var/nix/profiles/default/bin" >> "$GITHUB_PATH"
+      - name: Stamp installed path in manpage
+        run: sed -i 's|__INSTALLED_PATH__|/usr/bin/derakht|g' derakht.1
       - name: Build and test via nix
         run: |
           export PATH="$HOME/.nix-profile/bin:$PATH"

@@ -1,10 +1,10 @@
-.TH DERAKHT.SH 1 "2026" "2.0.0" "User Commands"
+.TH DERAKHT 1 "2026" "2.0.0" "User Commands"
 .SH NAME
-derakht.sh \- create CLIs with auto\-completable command trees
+derakht \- create CLIs with auto\-completable command trees
 .SH SYNOPSIS
 .B Create a symlink (the filename becomes the CLI name):
 .RS
-ln \-s ~/bin/derakht.sh ~/bin/\fICLINAME\fR
+ln \-s __INSTALLED_PATH__ ~/bin/\fICLINAME\fR
 .RE
 .PP
 .B Create a config file (must match the symlink name):
@@ -22,7 +22,7 @@ source ~/bin/\fICLINAME\fR
 \fICLINAME\fR [\fIOPTIONS\fR] [\fICOMMAND\fR \&...]
 .RE
 .SH DESCRIPTION
-.B derakht.sh
+.B derakht
 is a declarative framework for building shell CLIs with tab completion,
 command abbreviation, help output, and command execution\&. Commands and
 arguments are defined in a plain\-text config file; no coding is required\&.
@@ -65,14 +65,19 @@ Get
 .B derakht.sh
 into a directory of your choice (e\&.g\&.
 .BR ~/bin/ )\&.
+The path
+.B __INSTALLED_PATH__
+in the examples below should then be replaced with
+.BR ~/bin/derakht.sh .
 .SS Create CLI symlinks
 Regardless of install method, each CLI needs a symlink\&. The filename
 becomes the CLI name, determines the config file path, and is used to
 register tab completion:
 .RS
 .nf
-ln \-s /usr/bin/derakht ~/bin/mycli    # after \&.deb install
+ln \-s /usr/bin/derakht ~/bin/mycli    # after \&.deb / \&.rpm install
 ln \-s ~/bin/derakht.sh ~/bin/mycli    # after manual download
+ln \-s /usr/local/bin/derakht ~/bin/mycli  # after FreeBSD install
 .fi
 .RE
 .SH GETTING STARTED
@@ -81,13 +86,13 @@ The symlink filename becomes the CLI name, determines the config file
 path, and is used to register tab completion:
 .RS
 .nf
-ln \-s ~/bin/derakht.sh ~/bin/mycli
+ln \-s __INSTALLED_PATH__ ~/bin/mycli
 .fi
 .RE
 .PP
 Using a symlink (instead of copying the script) means all your CLIs
 share one source file \(em update
-.B derakht.sh
+.B derakht
 once and every CLI picks up the new version\&.
 .SS Step 2: Create a config file
 Must be named \fB~/\&.\fICLINAME\fR\fB\&.conf\fR:
@@ -162,8 +167,8 @@ Tab completion always runs in your shell regardless of mode\&.
 Each symlink gets its own config file and variable namespace:
 .RS
 .nf
-ln \-s ~/bin/derakht.sh ~/bin/cluster
-ln \-s ~/bin/derakht.sh ~/bin/music
+ln \-s __INSTALLED_PATH__ ~/bin/cluster
+ln \-s __INSTALLED_PATH__ ~/bin/music
 .fi
 .RE
 .I cluster
