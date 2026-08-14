@@ -70,7 +70,7 @@ Shell session:
     plan  apply  destroy
     $ tf p<TAB>
     plan
-    $ tf plan st<TAB>
+    $ tf plan s<TAB>
     staging
     $ tf plan staging
     >> executes: terraform plan -var-file=staging.tfvars
